@@ -1,0 +1,96 @@
+Quem vai usar
+Gênero: masculino, feminino, unissex, infantil.​
+
+Faixa etária: adulto, juvenil, infantil.​
+
+Largura do pé: padrão, larga, extra-larga (quando disponível).​
+
+Uso e modalidade
+Categoria macro: tênis, meias, tornozeleiras, tensores/panturrilha, outros acessórios de pernas e pés.​
+
+Modalidade esportiva: corrida, caminhada, treino/academia, casual esportivo, basquete, futsal, trilha, crossfit, futebol society, outros.​
+
+Tipo de uso: treino leve, treino intenso, competição/provas longas, uso diário, recuperação/saúde (no caso de meias e compressores).​
+
+Tipo de terreno: rua/asfalto, esteira, trilha/terra, quadra indoor, quadra outdoor.​
+
+Numeração e ajuste
+Numeração (BR): 33 a 48+ (com flag “numeração especial”).​
+
+Grade de tamanhos infantil: 25–34.​
+
+Ajuste: cai pequeno, tamanho exato, cai grande (pode ser inferido por IA com base em avaliações).​
+
+Marca, linha e coleção
+Marca: Nike, Adidas, Olympikus, Mizuno, Asics, Puma, Fila, Skechers, etc.​
+
+Linha/modelo: ex.: Pegasus, Nimbus, Olympikus Corre, etc.​
+
+Coleção/ano: lançamento, coleção atual, coleções anteriores (se a origem expuser ou a IA inferir).​
+
+Características técnicas de tênis
+Tipo de pisada: neutra, pronada, supinada.​
+
+Tipo de amortecimento: máximo, moderado, responsivo/rápido, firme.​
+
+Nível de suporte/estabilidade: neutro, estável, controle de movimento.​
+
+Drop aproximado: baixo (0–4 mm), médio (5–8 mm), alto (9–12 mm).​
+
+Peso: leve (até ~250 g), médio, pesado (limites definidos por você).​
+
+Flexibilidade: baixa, média, alta (pode ser classificação por IA).​
+
+Tipo de solado: trilha/cravos, borracha aderente, solado liso/indoor, solado segmentado.​
+
+Material do cabedal: mesh respirável, knit, sintético, couro, combinado.​
+
+Ventilação/respirabilidade: baixa, média, alta.​
+
+Altura do cano: baixo, médio, alto (especialmente para basquete/treino).​
+
+Estética e estilo
+Cor principal: preto, branco, azul, vermelho, cinza, verde, rosa, multicolorido, etc.​
+
+Estilo visual: minimalista, robusto, retrô, “chunky”, performance. (tag da IA.)
+
+Público de imagem: lifestyle, performance, casual esportivo.​
+
+Reputação e prova social
+Avaliação média: 1–5 estrelas (faixas: 4+; 4.5+ etc.).​
+
+Quantidade de avaliações: baixa, média, alta (ou número exato).​
+
+Popularidade no site: mais vistos, mais clicados, mais favoritados (usa suas tabelas de cliques/favoritos).​
+
+Preço e oferta
+Faixa de preço: min/max, ou faixas pré-definidas (ex.: até 200, 200–400, 400–600, 600+).​
+
+Desconto atual: sem desconto, até 20%, 20–40%, 40–60%, 60%+.​
+
+Condições especiais: frete grátis, entrega rápida, parcelamento sem juros, retirada em loja (quando disponível pela origem).​
+
+Logística e origem
+Origem/marketplace: Mercado Livre, outros afiliados futuros (Magazine Luiza, Centauro, etc.).​
+
+Local do vendedor (quando a origem der): mesma região, mesmo estado, nacional.​
+
+Prazo estimado de entrega: curto, médio, longo (mapeado a faixas de dias).​
+
+Específico para meias e compressores
+Tipo de produto: meia esportiva, meia de compressão, canelito, tornozeleira, tensor de panturrilha, tensor de joelho/perna.​
+
+Nível de compressão: leve, moderada, alta (quando a origem informar; pode usar IA para agrupar).​
+
+Altura da meia/compressor: invisível, cano baixo, médio, alto, 3/4, 7/8, até a coxa.​
+
+Tamanho (meias/compressão): P, M, G, GG ou numeração equivalente.​
+
+Finalidade: performance esportiva, recuperação muscular, circulação/viagem, prevenção de lesões.​
+
+Parte do corpo: pé, tornozelo, panturrilha, perna inteira.​
+
+Estado e controle interno
+Disponibilidade: em estoque, pouco estoque, esgotado, estoque desconhecido (da origem).​
+
+Status interno: ativo, oculto, em revisão (controle de curadoria no seu painel).​

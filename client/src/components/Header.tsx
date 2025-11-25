@@ -2,9 +2,11 @@ import { Search, ShoppingCart, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { Link, useLocation } from "wouter";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [location] = useLocation();
 
   return (
     <header className="sticky top-0 z-50 bg-background border-b">
@@ -23,9 +25,11 @@ export default function Header() {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-primary" data-testid="text-logo">
-              SportsFoot
-            </h1>
+            <Link href="/">
+              <h1 className="text-2xl font-bold text-primary cursor-pointer" data-testid="text-logo">
+                SportsFoot
+              </h1>
+            </Link>
           </div>
 
           <div className="flex-1 max-w-xl hidden md:flex">
@@ -79,29 +83,39 @@ export default function Header() {
         <div className="container mx-auto px-4">
           <ul className="flex items-center gap-8 py-3 text-sm font-medium">
             <li>
-              <a href="#tenis" className="hover-elevate px-3 py-2 rounded-md" data-testid="link-tenis">
-                Tênis
-              </a>
+              <Link href="/catalogo?categoria=tenis">
+                <span className={`hover-elevate px-3 py-2 rounded-md cursor-pointer ${location.includes('catalogo') ? 'bg-muted' : ''}`} data-testid="link-tenis">
+                  Tênis
+                </span>
+              </Link>
             </li>
             <li>
-              <a href="#meias" className="hover-elevate px-3 py-2 rounded-md" data-testid="link-meias">
-                Meias
-              </a>
+              <Link href="/catalogo?categoria=meias">
+                <span className="hover-elevate px-3 py-2 rounded-md cursor-pointer" data-testid="link-meias">
+                  Meias
+                </span>
+              </Link>
             </li>
             <li>
-              <a href="#acessorios" className="hover-elevate px-3 py-2 rounded-md" data-testid="link-acessorios">
-                Acessórios
-              </a>
+              <Link href="/catalogo?categoria=acessorios">
+                <span className="hover-elevate px-3 py-2 rounded-md cursor-pointer" data-testid="link-acessorios">
+                  Acessórios
+                </span>
+              </Link>
             </li>
             <li>
-              <a href="#marcas" className="hover-elevate px-3 py-2 rounded-md" data-testid="link-marcas">
-                Marcas
-              </a>
+              <Link href="/catalogo?marcas=todas">
+                <span className="hover-elevate px-3 py-2 rounded-md cursor-pointer" data-testid="link-marcas">
+                  Marcas
+                </span>
+              </Link>
             </li>
             <li>
-              <a href="#ofertas" className="text-destructive hover-elevate px-3 py-2 rounded-md" data-testid="link-ofertas">
-                Ofertas
-              </a>
+              <Link href="/catalogo?ofertas=true">
+                <span className="text-destructive hover-elevate px-3 py-2 rounded-md cursor-pointer" data-testid="link-ofertas">
+                  Ofertas
+                </span>
+              </Link>
             </li>
           </ul>
         </div>

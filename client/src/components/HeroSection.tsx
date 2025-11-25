@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import heroImage from "@assets/generated_images/hero_banner_athletic_lifestyle.png";
 
 export default function HeroSection() {
@@ -20,13 +21,15 @@ export default function HeroSection() {
             Produtos selecionados do Mercado Livre
           </p>
           <div className="flex gap-4 flex-wrap">
-            <Button 
-              size="lg" 
-              className="text-lg"
-              data-testid="button-hero-shop"
-            >
-              Ver Produtos
-            </Button>
+            <Link href="/catalogo">
+              <Button 
+                size="lg" 
+                className="text-lg"
+                data-testid="button-hero-shop"
+              >
+                Ver Produtos
+              </Button>
+            </Link>
             <Button 
               size="lg" 
               variant="outline" 
