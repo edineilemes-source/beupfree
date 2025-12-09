@@ -23,7 +23,7 @@ interface PerplexityResponse {
 }
 
 interface PerplexityOptions {
-  model?: "llama-3.1-sonar-small-128k-online" | "llama-3.1-sonar-large-128k-online" | "llama-3.1-sonar-huge-128k-online";
+  model?: "sonar" | "sonar-pro" | "sonar-reasoning" | "sonar-reasoning-pro";
   maxTokens?: number;
   temperature?: number;
   searchRecencyFilter?: "month" | "week" | "day" | "hour";
@@ -57,7 +57,7 @@ export async function askPerplexity(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: options.model || "llama-3.1-sonar-small-128k-online",
+      model: options.model || "sonar",
       messages,
       max_tokens: options.maxTokens,
       temperature: options.temperature ?? 0.2,
