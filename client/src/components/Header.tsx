@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import logoImage from "@assets/Logo_com_Silhueta_de_Jogador_Celebrando_1765327821571.png";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -14,9 +15,9 @@ export default function Header() {
         Frete Grátis em compras acima de R$ 299 | Parceiro Oficial Mercado Livre
       </div>
       
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button 
               variant="ghost" 
               size="icon" 
@@ -26,9 +27,21 @@ export default function Header() {
               <Menu className="h-5 w-5" />
             </Button>
             <Link href="/">
-              <h1 className="text-2xl font-bold text-primary cursor-pointer" data-testid="text-logo">
-                SportsFoot
-              </h1>
+              <div className="flex items-center gap-2 cursor-pointer" data-testid="link-logo">
+                <img 
+                  src={logoImage} 
+                  alt="BeUpFree Logo" 
+                  className="h-10 w-auto"
+                />
+                <div className="flex flex-col">
+                  <span className="text-xl font-bold tracking-tight text-primary" data-testid="text-logo">
+                    BeUpFree
+                  </span>
+                  <span className="text-[10px] text-muted-foreground -mt-1 hidden sm:block">
+                    Liberte sua performance
+                  </span>
+                </div>
+              </div>
             </Link>
           </div>
 
@@ -64,7 +77,7 @@ export default function Header() {
           </div>
         </div>
 
-        <div className="mt-4 md:hidden">
+        <div className="mt-3 md:hidden">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -79,12 +92,12 @@ export default function Header() {
         </div>
       </div>
 
-      <nav className="border-t hidden lg:block">
+      <nav className="border-t hidden lg:block bg-muted/30">
         <div className="container mx-auto px-4">
           <ul className="flex items-center gap-8 py-3 text-sm font-medium">
             <li>
               <Link href="/catalogo?categoria=tenis">
-                <span className={`hover-elevate px-3 py-2 rounded-md cursor-pointer ${location.includes('catalogo') ? 'bg-muted' : ''}`} data-testid="link-tenis">
+                <span className={`hover-elevate px-3 py-2 rounded-md cursor-pointer ${location.includes('catalogo') ? 'bg-primary/10 text-primary' : ''}`} data-testid="link-tenis">
                   Tênis
                 </span>
               </Link>
@@ -112,7 +125,7 @@ export default function Header() {
             </li>
             <li>
               <Link href="/catalogo?ofertas=true">
-                <span className="text-destructive hover-elevate px-3 py-2 rounded-md cursor-pointer" data-testid="link-ofertas">
+                <span className="text-accent-foreground bg-accent/80 hover-elevate px-3 py-2 rounded-md cursor-pointer font-semibold" data-testid="link-ofertas">
                   Ofertas
                 </span>
               </Link>

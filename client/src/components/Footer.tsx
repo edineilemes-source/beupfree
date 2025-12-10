@@ -1,4 +1,5 @@
 import { Facebook, Instagram, Youtube } from "lucide-react";
+import logoImage from "@assets/Logo_com_Silhueta_de_Jogador_Celebrando_1765327821571.png";
 
 export default function Footer() {
   return (
@@ -6,11 +7,18 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="font-bold text-xl mb-4 text-primary" data-testid="text-footer-logo">
-              SportsFoot
-            </h3>
+            <div className="flex items-center gap-2 mb-4">
+              <img 
+                src={logoImage} 
+                alt="BeUpFree Logo" 
+                className="h-8 w-auto"
+              />
+              <h3 className="font-bold text-xl text-primary" data-testid="text-footer-logo">
+                BeUpFree
+              </h3>
+            </div>
             <p className="text-sm text-muted-foreground mb-4" data-testid="text-footer-description">
-              Sua loja de confiança para tênis e acessórios esportivos. Parceiro oficial do Mercado Livre.
+              Liberte sua performance! Sua loja de confiança para tênis e acessórios esportivos. Parceiro oficial do Mercado Livre.
             </p>
             <div className="flex gap-3">
               <a 
@@ -75,7 +83,7 @@ export default function Footer() {
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
           <p data-testid="text-footer-copyright">
-            © 2024 SportsFoot. Todos os direitos reservados.
+            © 2024 BeUpFree. Todos os direitos reservados.
           </p>
         </div>
       </div>
