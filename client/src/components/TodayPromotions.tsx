@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Flame } from "lucide-react";
-import { Link } from "wouter";
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Flame, ExternalLink } from "lucide-react";
 
 interface ProductImage {
   id: string;
@@ -38,6 +37,12 @@ interface Product {
   discount: number;
   formattedPrice: string;
   formattedOriginalPrice: string | null;
+  affiliateUrl: string | null;
+}
+
+function generateMercadoLivreUrl(productName: string, brand?: string): string {
+  const searchQuery = brand ? `${productName} ${brand}` : productName;
+  return `https://lista.mercadolivre.com.br/${encodeURIComponent(searchQuery).replace(/%20/g, '-')}`;
 }
 
 interface ProductsResponse {
@@ -49,6 +54,7 @@ function PromotionCard({ product }: { product: Product }) {
   const price = parseFloat(product.price);
   const originalPrice = product.compareAtPrice ? parseFloat(product.compareAtPrice) : null;
   const imageUrl = product.images[0]?.url || "https://via.placeholder.com/300x200?text=Sem+Imagem";
+  const mlUrl = product.affiliateUrl || generateMercadoLivreUrl(product.name, product.brand?.name);
 
   return (
     <Card className="flex-shrink-0 w-[200px] md:w-[240px] overflow-hidden hover-elevate" data-testid={`promo-card-${product.id}`}>
@@ -74,9 +80,15 @@ function PromotionCard({ product }: { product: Product }) {
           </span>
         </div>
         <div className="flex items-center justify-end">
-          <Link href={`/catalogo?produto=${product.id}`}>
-            <Button size="sm" variant="secondary" data-testid={`button-view-${product.id}`}>Ver</Button>
-          </Link>
+          <Button 
+            size="sm" 
+            variant="secondary" 
+            onClick={() => window.open(mlUrl, '_blank')}
+            data-testid={`button-view-${product.id}`}
+          >
+            <ExternalLink className="h-3 w-3 mr-1" />
+            Ver
+          </Button>
         </div>
       </div>
     </Card>
@@ -198,9 +210,14 @@ export default function TodayPromotions() {
                     </span>
                   </div>
                   <div className="flex items-center justify-end">
-                    <Link href={`/catalogo?produto=${product.id}`}>
-                      <Button size="sm" variant="secondary">Ver</Button>
-                    </Link>
+                    <Button 
+                      size="sm" 
+                      variant="secondary"
+                      onClick={() => window.open(product.affiliateUrl || generateMercadoLivreUrl(product.name, product.brand?.name), '_blank')}
+                    >
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      Ver
+                    </Button>
                   </div>
                 </div>
               </Card>

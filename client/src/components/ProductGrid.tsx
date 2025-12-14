@@ -35,6 +35,12 @@ interface Product {
   formattedPrice: string;
   formattedOriginalPrice: string | null;
   isFeatured: boolean;
+  affiliateUrl: string | null;
+}
+
+function generateMercadoLivreUrl(productName: string, brand?: string): string {
+  const searchQuery = brand ? `${productName} ${brand}` : productName;
+  return `https://lista.mercadolivre.com.br/${encodeURIComponent(searchQuery).replace(/%20/g, '-')}`;
 }
 
 interface ProductsResponse {
@@ -99,6 +105,7 @@ export default function ProductGrid() {
               oldPrice={product.compareAtPrice ? parseFloat(product.compareAtPrice) : undefined}
               image={product.images[0]?.url || "https://via.placeholder.com/300x300?text=Sem+Imagem"}
               category={product.category?.name || ""}
+              mercadoLivreUrl={product.affiliateUrl || generateMercadoLivreUrl(product.name, product.brand?.name)}
             />
           ))}
         </div>
