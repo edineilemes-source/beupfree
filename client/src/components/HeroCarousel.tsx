@@ -50,7 +50,8 @@ const banners = [
 ];
 
 function generateMercadoLivreUrl(searchTerm: string): string {
-  return `https://lista.mercadolivre.com.br/${encodeURIComponent(searchTerm).replace(/%20/g, '-')}`;
+  const baseUrl = `https://lista.mercadolivre.com.br/${encodeURIComponent(searchTerm).replace(/%20/g, '-')}`;
+  return `${baseUrl}?matt_tool=14610626&matt_word=&matt_source=google&matt_campaign_id=14610626`;
 }
 
 export default function HeroCarousel() {

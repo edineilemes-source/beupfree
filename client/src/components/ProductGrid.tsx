@@ -40,7 +40,8 @@ interface Product {
 
 function generateMercadoLivreUrl(productName: string, brand?: string): string {
   const searchQuery = brand ? `${productName} ${brand}` : productName;
-  return `https://lista.mercadolivre.com.br/${encodeURIComponent(searchQuery).replace(/%20/g, '-')}`;
+  const baseUrl = `https://lista.mercadolivre.com.br/${encodeURIComponent(searchQuery).replace(/%20/g, '-')}`;
+  return `${baseUrl}?matt_tool=14610626&matt_word=&matt_source=google&matt_campaign_id=14610626`;
 }
 
 interface ProductsResponse {

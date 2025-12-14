@@ -113,7 +113,7 @@ class MercadoLivreService {
 
   generateAffiliateLink(permalink: string): string {
     const separator = permalink.includes("?") ? "&" : "?";
-    return `${permalink}${separator}matt_tool=beupfree&matt_word=&matt_source=google&matt_campaign_id=beupfree`;
+    return `${permalink}${separator}matt_tool=14610626&matt_word=&matt_source=google&matt_campaign_id=14610626`;
   }
 
   async searchProducts(query: string, options?: {
