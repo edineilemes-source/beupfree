@@ -38,12 +38,6 @@ interface Product {
   affiliateUrl: string | null;
 }
 
-function generateMercadoLivreUrl(productName: string, brand?: string): string {
-  const searchQuery = brand ? `${productName} ${brand}` : productName;
-  const baseUrl = `https://lista.mercadolivre.com.br/${encodeURIComponent(searchQuery).replace(/%20/g, '-')}`;
-  return `${baseUrl}?matt_tool=14610626&matt_word=&matt_source=google&matt_campaign_id=14610626`;
-}
-
 interface ProductsResponse {
   total: number;
   products: Product[];
@@ -86,13 +80,6 @@ export default function ProductGrid() {
           <h2 className="text-3xl md:text-4xl font-bold" data-testid="text-products-title">
             Produtos em Destaque
           </h2>
-          <a 
-            href="/catalogo" 
-            className="text-primary font-semibold hover:underline"
-            data-testid="link-view-all"
-          >
-            Ver todos os produtos
-          </a>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
@@ -106,7 +93,7 @@ export default function ProductGrid() {
               oldPrice={product.compareAtPrice ? parseFloat(product.compareAtPrice) : undefined}
               image={product.images[0]?.url || "https://via.placeholder.com/300x300?text=Sem+Imagem"}
               category={product.category?.name || ""}
-              mercadoLivreUrl={product.affiliateUrl || generateMercadoLivreUrl(product.name, product.brand?.name)}
+              mercadoLivreUrl={product.affiliateUrl || "#"}
             />
           ))}
         </div>

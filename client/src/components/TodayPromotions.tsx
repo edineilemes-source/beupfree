@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Flame, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Flame, ExternalLink, Truck } from "lucide-react";
 
 interface ProductImage {
   id: string;
@@ -38,12 +38,7 @@ interface Product {
   formattedPrice: string;
   formattedOriginalPrice: string | null;
   affiliateUrl: string | null;
-}
-
-function generateMercadoLivreUrl(productName: string, brand?: string): string {
-  const searchQuery = brand ? `${productName} ${brand}` : productName;
-  const baseUrl = `https://lista.mercadolivre.com.br/${encodeURIComponent(searchQuery).replace(/%20/g, '-')}`;
-  return `${baseUrl}?matt_tool=14610626&matt_word=&matt_source=google&matt_campaign_id=14610626`;
+  metadata?: { freeShipping?: boolean };
 }
 
 interface ProductsResponse {
@@ -55,21 +50,27 @@ function PromotionCard({ product }: { product: Product }) {
   const price = parseFloat(product.price);
   const originalPrice = product.compareAtPrice ? parseFloat(product.compareAtPrice) : null;
   const imageUrl = product.images[0]?.url || "https://via.placeholder.com/300x200?text=Sem+Imagem";
-  const mlUrl = product.affiliateUrl || generateMercadoLivreUrl(product.name, product.brand?.name);
+  const freeShipping = product.metadata?.freeShipping || false;
 
   return (
     <Card className="flex-shrink-0 w-[200px] md:w-[240px] overflow-hidden hover-elevate" data-testid={`promo-card-${product.id}`}>
       <div className="relative">
-        <img src={imageUrl} alt={product.name} className="w-full h-32 object-cover" />
+        <img src={imageUrl} alt={product.name} className="w-full h-32 object-contain bg-white p-2" />
         {product.discount > 0 && (
           <Badge className="absolute top-2 left-2 bg-destructive text-destructive-foreground">
             -{product.discount}%
           </Badge>
         )}
+        {freeShipping && (
+          <Badge className="absolute top-2 right-2 bg-green-600 text-white">
+            <Truck className="h-3 w-3 mr-1" />
+            Grátis
+          </Badge>
+        )}
       </div>
       <div className="p-3">
         <p className="text-xs text-muted-foreground">{product.brand?.name || "Marca"}</p>
-        <h4 className="font-medium text-sm line-clamp-2 mb-2">{product.name}</h4>
+        <h4 className="font-medium text-sm line-clamp-2 mb-2 min-h-[2.5rem]">{product.name}</h4>
         <div className="flex items-center gap-2 mb-2">
           {originalPrice && (
             <span className="text-xs text-muted-foreground line-through">
@@ -83,12 +84,16 @@ function PromotionCard({ product }: { product: Product }) {
         <div className="flex items-center justify-end">
           <Button 
             size="sm" 
-            variant="secondary" 
-            onClick={() => window.open(mlUrl, '_blank')}
+            variant="default" 
+            onClick={() => {
+              if (product.affiliateUrl) {
+                window.open(product.affiliateUrl, '_blank');
+              }
+            }}
             data-testid={`button-view-${product.id}`}
           >
             <ExternalLink className="h-3 w-3 mr-1" />
-            Ver
+            Comprar
           </Button>
         </div>
       </div>
@@ -159,7 +164,7 @@ export default function TodayPromotions() {
   return (
     <section className="py-8 bg-muted/30" data-testid="today-promotions">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
             <h3 className="text-xl font-bold flex items-center gap-2">
               <Flame className="h-6 w-6 text-destructive" />
@@ -189,7 +194,7 @@ export default function TodayPromotions() {
                   <img 
                     src={product.images[0]?.url || "https://via.placeholder.com/300x200"} 
                     alt={product.name} 
-                    className="w-full h-32 object-cover" 
+                    className="w-full h-32 object-contain bg-white p-2" 
                   />
                   {product.discount > 0 && (
                     <Badge className="absolute top-2 left-2 bg-destructive text-destructive-foreground">
@@ -213,11 +218,15 @@ export default function TodayPromotions() {
                   <div className="flex items-center justify-end">
                     <Button 
                       size="sm" 
-                      variant="secondary"
-                      onClick={() => window.open(product.affiliateUrl || generateMercadoLivreUrl(product.name, product.brand?.name), '_blank')}
+                      variant="default"
+                      onClick={() => {
+                        if (product.affiliateUrl) {
+                          window.open(product.affiliateUrl, '_blank');
+                        }
+                      }}
                     >
                       <ExternalLink className="h-3 w-3 mr-1" />
-                      Ver
+                      Comprar
                     </Button>
                   </div>
                 </div>

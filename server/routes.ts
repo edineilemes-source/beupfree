@@ -462,19 +462,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const brandMap = new Map(brands.map(b => [b.slug, b.id]));
       const categoryMap = new Map(categories.map(c => [c.slug, c.id]));
 
+      const AFFILIATE_CODE = "14610626";
+      const generateAffiliateLink = (mlUrl: string) => {
+        const sep = mlUrl.includes("?") ? "&" : "?";
+        return `${mlUrl}${sep}matt_tool=${AFFILIATE_CODE}&matt_word=&matt_source=google&matt_campaign_id=${AFFILIATE_CODE}`;
+      };
+
       const demoProducts = [
-        { name: "Nike Air Max 270", brand: "nike", category: "corrida", price: 799.90, originalPrice: 999.90, image: "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/e0b3e476-4a2c-4e5f-bb9e-e0c83cf5d5a4/tenis-air-max-270-XRBc3p.png", featured: true },
-        { name: "Adidas Ultraboost 22", brand: "adidas", category: "corrida", price: 899.90, originalPrice: 1199.90, image: "https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/19fa95e5de9e47d587f8ad7a00f81ee1_9366/Tenis_Ultraboost_22_Preto_GZ0127_01_standard.jpg", featured: true },
-        { name: "Nike Revolution 6", brand: "nike", category: "corrida", price: 299.90, originalPrice: 399.90, image: "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/8e1d9c2f-5c3e-4c1c-9c3f-5e5b5f5a5a5a/tenis-revolution-6-2vVb3p.png", featured: false },
-        { name: "Puma RS-X3", brand: "puma", category: "casual", price: 599.90, originalPrice: 749.90, image: "https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/374915/01/sv01/fnd/BRA/fmt/png/T%C3%AAnis-RS-X3-Puzzle", featured: true },
-        { name: "Mizuno Wave Rider 26", brand: "mizuno", category: "corrida", price: 699.90, originalPrice: 899.90, image: "https://images.mizuno.com.br/produtos/4148970-0099_tenis-mizuno-wave-rider-26/01.jpg", featured: true },
-        { name: "Asics Gel-Nimbus 25", brand: "asics", category: "corrida", price: 899.90, originalPrice: 1099.90, image: "https://images.asics.com/is/image/asics/1011B547_020_SR_RT_GLB?wid=500&hei=500&fmt=jpg", featured: true },
-        { name: "Nike Mercurial Vapor 15", brand: "nike", category: "futebol", price: 599.90, originalPrice: 799.90, image: "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/0d0e0e0e-0e0e-0e0e-0e0e-0e0e0e0e0e0e/chuteira-mercurial-vapor-15.png", featured: true },
-        { name: "Adidas Predator Edge", brand: "adidas", category: "futebol", price: 549.90, originalPrice: 699.90, image: "https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e/Chuteira_Predator_Edge.jpg", featured: false },
-        { name: "Nike Metcon 8", brand: "nike", category: "academia", price: 649.90, originalPrice: 799.90, image: "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a/tenis-metcon-8.png", featured: false },
-        { name: "Adidas Forum Low", brand: "adidas", category: "casual", price: 499.90, originalPrice: 599.90, image: "https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b/Tenis_Forum_Low.jpg", featured: true },
-        { name: "Olympikus Corre 1", brand: "olympikus", category: "corrida", price: 199.90, originalPrice: 279.90, image: "https://static.dafiti.com.br/p/olympikus-tenis-olympikus-corre-1-masculino-preto-8888-8888881-1-zoom.jpg", featured: false },
-        { name: "Fila Racer Move", brand: "fila", category: "corrida", price: 249.90, originalPrice: 329.90, image: "https://fila.vtexassets.com/arquivos/ids/275547-800-800?v=638046604785470000&width=800&height=800&aspect=true", featured: false },
+        { 
+          name: "Tênis Nike Air Max SC Masculino", 
+          brand: "nike", 
+          category: "corrida", 
+          price: 379.99, 
+          originalPrice: 549.99, 
+          image: "https://http2.mlstatic.com/D_NQ_NP_2X_946029-MLB72036506233_102023-F.webp",
+          mlUrl: "https://www.mercadolivre.com.br/tenis-nike-air-max-sc-masculino/p/MLB21907858",
+          featured: true 
+        },
+        { 
+          name: "Tênis Adidas Runfalcon 3.0 Masculino", 
+          brand: "adidas", 
+          category: "corrida", 
+          price: 249.99, 
+          originalPrice: 349.99, 
+          image: "https://http2.mlstatic.com/D_NQ_NP_2X_928936-MLA54968820490_042023-F.webp",
+          mlUrl: "https://www.mercadolivre.com.br/tenis-adidas-runfalcon-30-masculino/p/MLB21221990",
+          featured: true 
+        },
+        { 
+          name: "Tênis Nike Revolution 6 Next Nature Masculino", 
+          brand: "nike", 
+          category: "corrida", 
+          price: 279.99, 
+          originalPrice: 399.99, 
+          image: "https://http2.mlstatic.com/D_NQ_NP_2X_853689-MLB52505996877_112022-F.webp",
+          mlUrl: "https://www.mercadolivre.com.br/tenis-nike-revolution-6-next-nature-masculino/p/MLB17050389",
+          featured: true 
+        },
+        { 
+          name: "Tênis Olympikus Corre 1 Masculino", 
+          brand: "olympikus", 
+          category: "corrida", 
+          price: 149.99, 
+          originalPrice: 229.99, 
+          image: "https://http2.mlstatic.com/D_NQ_NP_2X_865115-MLB49715652757_042022-F.webp",
+          mlUrl: "https://www.mercadolivre.com.br/tenis-olympikus-corre-1-masculino/p/MLB18183837",
+          featured: true 
+        },
+        { 
+          name: "Tênis Fila Racer Move Masculino", 
+          brand: "fila", 
+          category: "corrida", 
+          price: 189.99, 
+          originalPrice: 279.99, 
+          image: "https://http2.mlstatic.com/D_NQ_NP_2X_615691-MLB51339082730_082022-F.webp",
+          mlUrl: "https://www.mercadolivre.com.br/tenis-fila-racer-move-masculino/p/MLB19108729",
+          featured: true 
+        },
+        { 
+          name: "Tênis Puma Transport Masculino", 
+          brand: "puma", 
+          category: "corrida", 
+          price: 199.99, 
+          originalPrice: 299.99, 
+          image: "https://http2.mlstatic.com/D_NQ_NP_2X_739467-MLB54542899694_032023-F.webp",
+          mlUrl: "https://www.mercadolivre.com.br/tenis-puma-transport-masculino/p/MLB21099929",
+          featured: true 
+        },
+        { 
+          name: "Chuteira Nike Mercurial Vapor 15 Club FG/MG", 
+          brand: "nike", 
+          category: "futebol", 
+          price: 349.99, 
+          originalPrice: 499.99, 
+          image: "https://http2.mlstatic.com/D_NQ_NP_2X_846099-MLB72661232574_112023-F.webp",
+          mlUrl: "https://www.mercadolivre.com.br/chuteira-nike-mercurial-vapor-15-club-fgmg/p/MLB22134829",
+          featured: true 
+        },
+        { 
+          name: "Chuteira Adidas X Speedportal.4 FXG", 
+          brand: "adidas", 
+          category: "futebol", 
+          price: 279.99, 
+          originalPrice: 399.99, 
+          image: "https://http2.mlstatic.com/D_NQ_NP_2X_718505-MLB54171608653_032023-F.webp",
+          mlUrl: "https://www.mercadolivre.com.br/chuteira-adidas-x-speedportal4-fxg/p/MLB20987609",
+          featured: false 
+        },
+        { 
+          name: "Tênis Nike Court Vision Low Masculino", 
+          brand: "nike", 
+          category: "casual", 
+          price: 329.99, 
+          originalPrice: 449.99, 
+          image: "https://http2.mlstatic.com/D_NQ_NP_2X_932660-MLB51869254149_102022-F.webp",
+          mlUrl: "https://www.mercadolivre.com.br/tenis-nike-court-vision-low-masculino/p/MLB15816181",
+          featured: true 
+        },
+        { 
+          name: "Tênis Adidas Forum Low Masculino", 
+          brand: "adidas", 
+          category: "casual", 
+          price: 399.99, 
+          originalPrice: 599.99, 
+          image: "https://http2.mlstatic.com/D_NQ_NP_2X_621298-MLB53102953088_012023-F.webp",
+          mlUrl: "https://www.mercadolivre.com.br/tenis-adidas-forum-low-masculino/p/MLB19785427",
+          featured: true 
+        },
+        { 
+          name: "Tênis Mizuno Wave Rider 27 Masculino", 
+          brand: "mizuno", 
+          category: "corrida", 
+          price: 599.99, 
+          originalPrice: 899.99, 
+          image: "https://http2.mlstatic.com/D_NQ_NP_2X_693989-MLB73847048097_012024-F.webp",
+          mlUrl: "https://www.mercadolivre.com.br/tenis-mizuno-wave-rider-27-masculino/p/MLB23006541",
+          featured: true 
+        },
+        { 
+          name: "Tênis Asics Gel-Excite 10 Masculino", 
+          brand: "asics", 
+          category: "corrida", 
+          price: 399.99, 
+          originalPrice: 549.99, 
+          image: "https://http2.mlstatic.com/D_NQ_NP_2X_656108-MLB73020474412_112023-F.webp",
+          mlUrl: "https://www.mercadolivre.com.br/tenis-asics-gel-excite-10-masculino/p/MLB22648927",
+          featured: true 
+        },
       ];
 
       let created = 0;
@@ -498,8 +612,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             isActive: true,
             isFeatured: p.featured,
             stockQuantity: 50,
-            affiliateUrl: null,
-            sourceUrl: null,
+            affiliateUrl: generateAffiliateLink((p as any).mlUrl || ""),
+            sourceUrl: (p as any).mlUrl || null,
             metadata: { demo: true },
           });
 
