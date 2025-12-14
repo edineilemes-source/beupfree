@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import logoImage from "@assets/Logo_com_Silhueta_de_Jogador_Celebrando_1765327821571.png";
+import logoImage from "@assets/Photoroom-20251213_085728_1765685713469.png";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");

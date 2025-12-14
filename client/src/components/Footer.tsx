@@ -1,5 +1,5 @@
 import { Facebook, Instagram, Youtube } from "lucide-react";
-import logoImage from "@assets/Logo_com_Silhueta_de_Jogador_Celebrando_1765327821571.png";
+import logoImage from "@assets/Photoroom-20251213_085728_1765685713469.png";
 
 export default function Footer() {
   return (
