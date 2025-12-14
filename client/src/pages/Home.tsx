@@ -1,5 +1,7 @@
 import Header from "@/components/Header";
-import HeroSection from "@/components/HeroSection";
+import HeroCarousel from "@/components/HeroCarousel";
+import TodayPromotions from "@/components/TodayPromotions";
+import PreviousPromotions from "@/components/PreviousPromotions";
 import CategoryGrid from "@/components/CategoryGrid";
 import ProductGrid from "@/components/ProductGrid";
 import BrandShowcase from "@/components/BrandShowcase";
@@ -12,7 +14,9 @@ export default function Home() {
     <div className="min-h-screen">
       <Header />
       <main>
-        <HeroSection />
+        <HeroCarousel />
+        <TodayPromotions />
+        <PreviousPromotions />
         <CategoryGrid />
         <ProductGrid />
         <BrandShowcase />
