@@ -413,14 +413,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               categoryId: categoryMap.get(categorySlug) || categoryMap.get('corrida') || null,
               isActive: true,
               isFeatured: p.isFeatured || false,
-              stockQuantity: p.stockQuantity || 100,
+              stock: p.stockQuantity || 100,
               affiliateUrl: p.affiliateLink || p.permalink || null,
-              sourceUrl: p.permalink || null,
-              metadata: {
-                mlId: p.id,
-                soldQuantity: p.soldQuantity,
-                freeShipping: p.freeShipping,
-              },
+              affiliateProductId: p.id,
             });
 
             if (p.image || p.thumbnail) {
@@ -428,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await storage.createProductImage({
                 productId: product.id,
                 url: imageUrl,
-                altText: p.title || p.name,
+                alt: p.title || p.name,
                 isPrimary: true,
                 sortOrder: 0,
               });
@@ -611,16 +606,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             categoryId: categoryMap.get(p.category) || null,
             isActive: true,
             isFeatured: p.featured,
-            stockQuantity: 50,
+            stock: 50,
             affiliateUrl: generateAffiliateLink((p as any).mlUrl || ""),
-            sourceUrl: (p as any).mlUrl || null,
-            metadata: { demo: true },
+            affiliateSource: "mercadolivre",
           });
 
           await storage.createProductImage({
             productId: product.id,
             url: p.image,
-            altText: p.name,
+            alt: p.name,
             isPrimary: true,
             sortOrder: 0,
           });
