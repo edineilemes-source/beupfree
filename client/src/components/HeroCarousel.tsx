@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Link } from "wouter";
+import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import runningImage from "@assets/generated_images/running_shoes_category.png";
 import casualImage from "@assets/generated_images/casual_sneakers_category.png";
 import soccerImage from "@assets/generated_images/soccer_cleats_category.png";
@@ -15,7 +14,7 @@ const banners = [
     description: "Os melhores tênis para sua performance",
     image: runningImage,
     cta: "Ver Ofertas",
-    link: "/catalogo?categoria=corrida",
+    mlSearch: "tenis corrida masculino",
     bgColor: "from-green-900/90 via-green-800/70",
   },
   {
@@ -25,7 +24,7 @@ const banners = [
     description: "Estilo e conforto para o dia a dia",
     image: casualImage,
     cta: "Conferir",
-    link: "/catalogo?categoria=casual",
+    mlSearch: "tenis casual masculino",
     bgColor: "from-yellow-900/90 via-yellow-800/70",
   },
   {
@@ -35,7 +34,7 @@ const banners = [
     description: "Domine o campo com as melhores marcas",
     image: soccerImage,
     cta: "Comprar",
-    link: "/catalogo?categoria=futebol",
+    mlSearch: "chuteira futebol",
     bgColor: "from-emerald-900/90 via-emerald-800/70",
   },
   {
@@ -45,10 +44,14 @@ const banners = [
     description: "Meias, tornozeleiras e mais",
     image: socksImage,
     cta: "Aproveitar",
-    link: "/catalogo?categoria=acessorios",
+    mlSearch: "meias esportivas kit",
     bgColor: "from-lime-900/90 via-lime-800/70",
   },
 ];
+
+function generateMercadoLivreUrl(searchTerm: string): string {
+  return `https://lista.mercadolivre.com.br/${encodeURIComponent(searchTerm).replace(/%20/g, '-')}`;
+}
 
 export default function HeroCarousel() {
   const [current, setCurrent] = useState(0);
@@ -100,11 +103,15 @@ export default function HeroCarousel() {
               <p className="text-lg md:text-xl mb-6 text-white/90">
                 {banner.description}
               </p>
-              <Link href={banner.link}>
-                <Button size="lg" className="text-lg" data-testid={`carousel-cta-${index}`}>
-                  {banner.cta}
-                </Button>
-              </Link>
+              <Button 
+                size="lg" 
+                className="text-lg gap-2" 
+                onClick={() => window.open(generateMercadoLivreUrl(banner.mlSearch), '_blank')}
+                data-testid={`carousel-cta-${index}`}
+              >
+                {banner.cta}
+                <ExternalLink className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>
