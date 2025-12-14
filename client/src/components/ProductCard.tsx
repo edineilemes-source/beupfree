@@ -5,7 +5,7 @@ import { Heart, ExternalLink } from "lucide-react";
 import { useState } from "react";
 
 interface ProductCardProps {
-  id: number;
+  id: string | number;
   name: string;
   brand: string;
   price: number;

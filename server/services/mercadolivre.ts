@@ -98,7 +98,13 @@ class MercadoLivreService {
   }
 
   private async fetchApi<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${ML_API_BASE}${endpoint}`);
+    const response = await fetch(`${ML_API_BASE}${endpoint}`, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+      }
+    });
     if (!response.ok) {
       throw new Error(`ML API Error: ${response.status} ${response.statusText}`);
     }

@@ -1,82 +1,77 @@
+import { useQuery } from "@tanstack/react-query";
 import ProductCard from "./ProductCard";
-import runningImage from "@assets/generated_images/running_shoes_category.png";
-import casualImage from "@assets/generated_images/casual_sneakers_category.png";
-import soccerImage from "@assets/generated_images/soccer_cleats_category.png";
+import { Skeleton } from "@/components/ui/skeleton";
 
-//todo: remove mock functionality
-const mockProducts = [
-  {
-    id: 1,
-    name: "Tênis Nike Air Zoom Pegasus 40 Masculino",
-    brand: "Nike",
-    price: 599.90,
-    oldPrice: 799.90,
-    image: runningImage,
-    category: "Corrida"
-  },
-  {
-    id: 2,
-    name: "Tênis Adidas Ultraboost Light Running",
-    brand: "Adidas",
-    price: 899.90,
-    oldPrice: 1099.90,
-    image: runningImage,
-    category: "Corrida"
-  },
-  {
-    id: 3,
-    name: "Tênis Nike Court Vision Low Casual",
-    brand: "Nike",
-    price: 349.90,
-    image: casualImage,
-    category: "Casual"
-  },
-  {
-    id: 4,
-    name: "Chuteira Nike Mercurial Vapor 15 Society",
-    brand: "Nike",
-    price: 699.90,
-    oldPrice: 899.90,
-    image: soccerImage,
-    category: "Futebol"
-  },
-  {
-    id: 5,
-    name: "Tênis Olympikus Corre Vento 2 Masculino",
-    brand: "Olympikus",
-    price: 279.90,
-    image: runningImage,
-    category: "Corrida"
-  },
-  {
-    id: 6,
-    name: "Tênis Adidas Stan Smith Casual Branco",
-    brand: "Adidas",
-    price: 549.90,
-    oldPrice: 699.90,
-    image: casualImage,
-    category: "Casual"
-  },
-  {
-    id: 7,
-    name: "Chuteira Adidas Predator Accuracy Society",
-    brand: "Adidas",
-    price: 799.90,
-    image: soccerImage,
-    category: "Futebol"
-  },
-  {
-    id: 8,
-    name: "Tênis Nike Revolution 7 Corrida Masculino",
-    brand: "Nike",
-    price: 329.90,
-    oldPrice: 399.90,
-    image: runningImage,
-    category: "Corrida"
-  },
-];
+interface ProductImage {
+  id: string;
+  url: string;
+  alt: string | null;
+  isPrimary: boolean;
+}
+
+interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  price: string;
+  compareAtPrice: string | null;
+  images: ProductImage[];
+  brand: Brand | null;
+  category: Category | null;
+  discount: number;
+  formattedPrice: string;
+  formattedOriginalPrice: string | null;
+  isFeatured: boolean;
+}
+
+interface ProductsResponse {
+  total: number;
+  products: Product[];
+}
 
 export default function ProductGrid() {
+  const { data, isLoading } = useQuery<ProductsResponse>({
+    queryKey: ['/api/products'],
+  });
+
+  const products = data?.products || [];
+
+  if (isLoading) {
+    return (
+      <section className="py-12 md:py-16 bg-card/30" data-testid="section-products">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+            <h2 className="text-3xl md:text-4xl font-bold" data-testid="text-products-title">
+              Produtos em Destaque
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="h-48 w-full rounded-lg" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-12 md:py-16 bg-card/30" data-testid="section-products">
       <div className="container mx-auto px-4">
@@ -85,17 +80,26 @@ export default function ProductGrid() {
             Produtos em Destaque
           </h2>
           <a 
-            href="#all-products" 
+            href="/catalogo" 
             className="text-primary font-semibold hover:underline"
             data-testid="link-view-all"
           >
-            Ver todos os produtos →
+            Ver todos os produtos
           </a>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-          {mockProducts.map((product) => (
-            <ProductCard key={product.id} {...product} />
+          {products.slice(0, 8).map((product) => (
+            <ProductCard 
+              key={product.id}
+              id={product.id}
+              name={product.name}
+              brand={product.brand?.name || ""}
+              price={parseFloat(product.price)}
+              oldPrice={product.compareAtPrice ? parseFloat(product.compareAtPrice) : undefined}
+              image={product.images[0]?.url || "https://via.placeholder.com/300x300?text=Sem+Imagem"}
+              category={product.category?.name || ""}
+            />
           ))}
         </div>
       </div>

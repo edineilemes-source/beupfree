@@ -369,6 +369,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Importar produtos do frontend (contorna bloqueio de servidor da API ML)
+  app.post("/api/products/import", async (req, res) => {
+    try {
+      const { products: importProducts } = req.body;
+      
+      if (!importProducts || !Array.isArray(importProducts)) {
+        return res.status(400).json({ error: "Campo 'products' é obrigatório e deve ser um array" });
+      }
+
+      const brands = await storage.getBrands();
+      const categories = await storage.getCategories();
+      
+      const brandMap = new Map(brands.map(b => [b.slug, b.id]));
+      const categoryMap = new Map(categories.map(c => [c.slug, c.id]));
+
+      let imported = 0;
+      let errors = 0;
+
+      for (const p of importProducts) {
+        try {
+          const brandSlug = p.brand?.toLowerCase().replace(/\s+/g, '-') || 'outra';
+          const categorySlug = p.category?.toLowerCase().replace(/\s+/g, '-') || 'corrida';
+          
+          const existingProduct = await storage.getProductBySku(p.sku || p.id);
+          if (existingProduct) {
+            await storage.updateProduct(existingProduct.id, {
+              name: p.title || p.name,
+              price: String(p.price),
+              compareAtPrice: p.originalPrice ? String(p.originalPrice) : null,
+            });
+          } else {
+            const product = await storage.createProduct({
+              name: p.title || p.name,
+              slug: (p.title || p.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 100),
+              sku: p.sku || p.id || `ML-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              description: p.description || '',
+              shortDescription: '',
+              price: String(p.price),
+              compareAtPrice: p.originalPrice ? String(p.originalPrice) : null,
+              costPrice: null,
+              brandId: brandMap.get(brandSlug) || brandMap.get('outra') || null,
+              categoryId: categoryMap.get(categorySlug) || categoryMap.get('corrida') || null,
+              isActive: true,
+              isFeatured: p.isFeatured || false,
+              stockQuantity: p.stockQuantity || 100,
+              affiliateUrl: p.affiliateLink || p.permalink || null,
+              sourceUrl: p.permalink || null,
+              metadata: {
+                mlId: p.id,
+                soldQuantity: p.soldQuantity,
+                freeShipping: p.freeShipping,
+              },
+            });
+
+            if (p.image || p.thumbnail) {
+              const imageUrl = (p.image || p.thumbnail).replace("-I.jpg", "-O.jpg").replace("http://", "https://");
+              await storage.createProductImage({
+                productId: product.id,
+                url: imageUrl,
+                altText: p.title || p.name,
+                isPrimary: true,
+                sortOrder: 0,
+              });
+            }
+          }
+          imported++;
+        } catch (err) {
+          console.error("Error importing product:", err);
+          errors++;
+        }
+      }
+
+      res.json({
+        success: true,
+        imported,
+        errors,
+        message: `${imported} produtos importados com sucesso!`,
+      });
+    } catch (error: any) {
+      console.error("Erro ao importar produtos:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Popular banco com produtos de demonstração
+  app.post("/api/products/seed", async (req, res) => {
+    try {
+      const brands = await storage.getBrands();
+      const categories = await storage.getCategories();
+      
+      const brandMap = new Map(brands.map(b => [b.slug, b.id]));
+      const categoryMap = new Map(categories.map(c => [c.slug, c.id]));
+
+      const demoProducts = [
+        { name: "Nike Air Max 270", brand: "nike", category: "corrida", price: 799.90, originalPrice: 999.90, image: "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/e0b3e476-4a2c-4e5f-bb9e-e0c83cf5d5a4/tenis-air-max-270-XRBc3p.png", featured: true },
+        { name: "Adidas Ultraboost 22", brand: "adidas", category: "corrida", price: 899.90, originalPrice: 1199.90, image: "https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/19fa95e5de9e47d587f8ad7a00f81ee1_9366/Tenis_Ultraboost_22_Preto_GZ0127_01_standard.jpg", featured: true },
+        { name: "Nike Revolution 6", brand: "nike", category: "corrida", price: 299.90, originalPrice: 399.90, image: "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/8e1d9c2f-5c3e-4c1c-9c3f-5e5b5f5a5a5a/tenis-revolution-6-2vVb3p.png", featured: false },
+        { name: "Puma RS-X3", brand: "puma", category: "casual", price: 599.90, originalPrice: 749.90, image: "https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/374915/01/sv01/fnd/BRA/fmt/png/T%C3%AAnis-RS-X3-Puzzle", featured: true },
+        { name: "Mizuno Wave Rider 26", brand: "mizuno", category: "corrida", price: 699.90, originalPrice: 899.90, image: "https://images.mizuno.com.br/produtos/4148970-0099_tenis-mizuno-wave-rider-26/01.jpg", featured: true },
+        { name: "Asics Gel-Nimbus 25", brand: "asics", category: "corrida", price: 899.90, originalPrice: 1099.90, image: "https://images.asics.com/is/image/asics/1011B547_020_SR_RT_GLB?wid=500&hei=500&fmt=jpg", featured: true },
+        { name: "Nike Mercurial Vapor 15", brand: "nike", category: "futebol", price: 599.90, originalPrice: 799.90, image: "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/0d0e0e0e-0e0e-0e0e-0e0e-0e0e0e0e0e0e/chuteira-mercurial-vapor-15.png", featured: true },
+        { name: "Adidas Predator Edge", brand: "adidas", category: "futebol", price: 549.90, originalPrice: 699.90, image: "https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e/Chuteira_Predator_Edge.jpg", featured: false },
+        { name: "Nike Metcon 8", brand: "nike", category: "academia", price: 649.90, originalPrice: 799.90, image: "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/1a1a1a1a-1a1a-1a1a-1a1a-1a1a1a1a1a1a/tenis-metcon-8.png", featured: false },
+        { name: "Adidas Forum Low", brand: "adidas", category: "casual", price: 499.90, originalPrice: 599.90, image: "https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b/Tenis_Forum_Low.jpg", featured: true },
+        { name: "Olympikus Corre 1", brand: "olympikus", category: "corrida", price: 199.90, originalPrice: 279.90, image: "https://static.dafiti.com.br/p/olympikus-tenis-olympikus-corre-1-masculino-preto-8888-8888881-1-zoom.jpg", featured: false },
+        { name: "Fila Racer Move", brand: "fila", category: "corrida", price: 249.90, originalPrice: 329.90, image: "https://fila.vtexassets.com/arquivos/ids/275547-800-800?v=638046604785470000&width=800&height=800&aspect=true", featured: false },
+      ];
+
+      let created = 0;
+      for (const p of demoProducts) {
+        try {
+          const slug = p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+          const existing = await storage.getProductBySlug(slug);
+          if (existing) continue;
+
+          const product = await storage.createProduct({
+            name: p.name,
+            slug,
+            sku: `DEMO-${slug}`,
+            description: `${p.name} - Qualidade e conforto para seu esporte.`,
+            shortDescription: `${p.name} em promoção!`,
+            price: String(p.price),
+            compareAtPrice: p.originalPrice ? String(p.originalPrice) : null,
+            costPrice: null,
+            brandId: brandMap.get(p.brand) || null,
+            categoryId: categoryMap.get(p.category) || null,
+            isActive: true,
+            isFeatured: p.featured,
+            stockQuantity: 50,
+            affiliateUrl: null,
+            sourceUrl: null,
+            metadata: { demo: true },
+          });
+
+          await storage.createProductImage({
+            productId: product.id,
+            url: p.image,
+            altText: p.name,
+            isPrimary: true,
+            sortOrder: 0,
+          });
+
+          created++;
+        } catch (err) {
+          console.error("Error creating demo product:", err);
+        }
+      }
+
+      // Create today's promotion
+      await createTodayPromotions();
+
+      res.json({
+        success: true,
+        created,
+        message: `${created} produtos de demonstração criados!`,
+      });
+    } catch (error: any) {
+      console.error("Erro ao criar produtos demo:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
