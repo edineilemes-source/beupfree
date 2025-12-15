@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, RefreshCw, ExternalLink, ArrowLeft } from "lucide-react";
-import { Link } from "wouter";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Search, RefreshCw, ExternalLink, ArrowLeft, LogIn, CheckCircle, AlertCircle } from "lucide-react";
+import { Link, useSearch } from "wouter";
 
 interface MLProduct {
   id: string;
@@ -50,9 +51,37 @@ interface MLSearchResponse {
   };
 }
 
+interface AuthStatus {
+  authenticated: boolean;
+  redirectUri: string;
+}
+
 export default function Triagem() {
   const [searchQuery, setSearchQuery] = useState("tenis esportivo masculino");
   const [activeSearch, setActiveSearch] = useState("tenis esportivo masculino");
+  const searchParams = useSearch();
+  
+  // Parse URL params for OAuth result
+  const urlParams = new URLSearchParams(searchParams);
+  const oauthSuccess = urlParams.get("success") === "true";
+  const oauthError = urlParams.get("error");
+
+  // Check auth status
+  const { data: authStatus, refetch: refetchAuth } = useQuery<AuthStatus>({
+    queryKey: ["ml-auth-status"],
+    queryFn: async () => {
+      const response = await fetch("/api/ml/auth-status");
+      return response.json();
+    },
+    staleTime: 1000 * 30,
+  });
+
+  // Refetch auth status after OAuth redirect
+  useEffect(() => {
+    if (oauthSuccess) {
+      refetchAuth();
+    }
+  }, [oauthSuccess, refetchAuth]);
 
   const { data, isLoading, refetch, isFetching, error } = useQuery<MLSearchResponse>({
     queryKey: ["ml-triagem", activeSearch],
@@ -103,6 +132,58 @@ export default function Triagem() {
             </p>
           </div>
         </div>
+
+        {/* OAuth Status/Login Card */}
+        <Card className="mb-6">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                {authStatus?.authenticated ? (
+                  <>
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <div>
+                      <p className="font-medium text-green-700">Autenticado no Mercado Livre</p>
+                      <p className="text-xs text-muted-foreground">API pronta para uso</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                    <div>
+                      <p className="font-medium">Autenticação necessária</p>
+                      <p className="text-xs text-muted-foreground">Conecte sua conta do Mercado Livre para buscar produtos</p>
+                    </div>
+                  </>
+                )}
+              </div>
+              {!authStatus?.authenticated && (
+                <Button onClick={() => window.location.href = "/api/ml/auth"} data-testid="button-ml-login">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Conectar Mercado Livre
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* OAuth result messages */}
+        {oauthSuccess && (
+          <Alert className="mb-6 border-green-500 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <AlertDescription className="text-green-700">
+              Autenticação realizada com sucesso! Você pode buscar produtos agora.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {oauthError && (
+          <Alert className="mb-6 border-destructive bg-destructive/10">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <AlertDescription className="text-destructive">
+              Erro na autenticação: {oauthError}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card className="mb-6">
           <CardHeader>

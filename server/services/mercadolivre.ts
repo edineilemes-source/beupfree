@@ -103,46 +103,27 @@ class MercadoLivreService {
     this.affiliateId = process.env.ML_AFFILIATE_ID || "beupfree";
   }
 
-  private async getAccessToken(): Promise<string | null> {
-    if (!ML_CLIENT_ID || !ML_CLIENT_SECRET) {
-      console.log("ML credentials not configured, using public API");
-      return null;
-    }
+  // Método para definir o token OAuth manualmente (usado pelo callback)
+  setAccessToken(token: string, expiresIn: number): void {
+    this.accessToken = token;
+    this.tokenExpiry = Date.now() + (expiresIn * 1000);
+    console.log("ML access token set manually, expires at:", new Date(this.tokenExpiry).toISOString());
+  }
 
-    // Check if token is still valid (with 5 min buffer)
+  // Verifica se está autenticado
+  isAuthenticated(): boolean {
+    return !!(this.accessToken && Date.now() < this.tokenExpiry - 300000);
+  }
+
+  private async getAccessToken(): Promise<string | null> {
+    // Check if we have a valid OAuth token
     if (this.accessToken && Date.now() < this.tokenExpiry - 300000) {
       return this.accessToken;
     }
 
-    try {
-      const response = await fetch(`${ML_API_BASE}/oauth/token`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          grant_type: 'client_credentials',
-          client_id: ML_CLIENT_ID,
-          client_secret: ML_CLIENT_SECRET,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        console.error("Failed to get ML access token:", error);
-        return null;
-      }
-
-      const data = await response.json();
-      this.accessToken = data.access_token;
-      this.tokenExpiry = Date.now() + (data.expires_in * 1000);
-      console.log("ML access token obtained successfully");
-      return this.accessToken;
-    } catch (error) {
-      console.error("Error getting ML access token:", error);
-      return null;
-    }
+    // Token expired or not available
+    console.log("No valid ML access token available");
+    return null;
   }
 
   private async fetchApi<T>(endpoint: string): Promise<T> {

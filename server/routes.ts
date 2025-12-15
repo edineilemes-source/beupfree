@@ -5,8 +5,84 @@ import { askPerplexity, classifyProduct, searchProductInfo } from "./services/pe
 import { mercadoLivreService } from "./services/mercadolivre";
 import { syncProductsFromML, syncBrands, syncCategories, createTodayPromotions, getProductsWithPromotions } from "./services/productSync";
 
+const ML_CLIENT_ID = process.env.ML_CLIENT_ID;
+const ML_CLIENT_SECRET = process.env.ML_CLIENT_SECRET;
+const REPLIT_DEV_DOMAIN = process.env.REPLIT_DEV_DOMAIN;
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // ============ MERCADO LIVRE OAUTH ============
+  
+  // Iniciar fluxo de autorização OAuth
+  app.get("/api/ml/auth", (req, res) => {
+    if (!ML_CLIENT_ID) {
+      return res.status(500).json({ error: "ML_CLIENT_ID não configurado" });
+    }
+    
+    const redirectUri = `https://${REPLIT_DEV_DOMAIN}/api/ml/callback`;
+    const authUrl = `https://auth.mercadolivre.com.br/authorization?response_type=code&client_id=${ML_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    
+    res.redirect(authUrl);
+  });
+
+  // Callback OAuth - recebe código e troca por token
+  app.get("/api/ml/callback", async (req, res) => {
+    try {
+      const { code, error } = req.query;
+      
+      if (error) {
+        return res.redirect(`/triagem?error=${encodeURIComponent(String(error))}`);
+      }
+      
+      if (!code) {
+        return res.redirect("/triagem?error=no_code");
+      }
+      
+      const redirectUri = `https://${REPLIT_DEV_DOMAIN}/api/ml/callback`;
+      
+      const tokenResponse = await fetch("https://api.mercadolibre.com/oauth/token", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          grant_type: "authorization_code",
+          client_id: ML_CLIENT_ID!,
+          client_secret: ML_CLIENT_SECRET!,
+          code: String(code),
+          redirect_uri: redirectUri,
+        }),
+      });
+      
+      if (!tokenResponse.ok) {
+        const errorData = await tokenResponse.text();
+        console.error("OAuth token error:", errorData);
+        return res.redirect(`/triagem?error=token_failed`);
+      }
+      
+      const tokenData = await tokenResponse.json();
+      
+      // Salva o token no serviço
+      mercadoLivreService.setAccessToken(tokenData.access_token, tokenData.expires_in);
+      
+      console.log("ML OAuth successful! Token expires in:", tokenData.expires_in, "seconds");
+      
+      res.redirect("/triagem?success=true");
+    } catch (error: any) {
+      console.error("OAuth callback error:", error);
+      res.redirect(`/triagem?error=${encodeURIComponent(error.message)}`);
+    }
+  });
+
+  // Status da autenticação
+  app.get("/api/ml/auth-status", (req, res) => {
+    res.json({
+      authenticated: mercadoLivreService.isAuthenticated(),
+      redirectUri: `https://${REPLIT_DEV_DOMAIN}/api/ml/callback`,
+    });
+  });
+
   // ============ MERCADO LIVRE ENDPOINTS ============
   
   // Buscar produtos no Mercado Livre
