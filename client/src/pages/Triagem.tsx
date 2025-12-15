@@ -56,7 +56,7 @@ export default function Triagem() {
   const [searchQuery, setSearchQuery] = useState("tenis esportivo masculino");
   const [activeSearch, setActiveSearch] = useState("tenis esportivo masculino");
 
-  const { data, isLoading, refetch, isFetching } = useQuery<MLSearchResponse>({
+  const { data, isLoading, refetch, isFetching, error } = useQuery<MLSearchResponse>({
     queryKey: ["ml-triagem", activeSearch],
     queryFn: async () => {
       const response = await fetch(
@@ -139,6 +139,18 @@ export default function Triagem() {
             <RefreshCw className="h-8 w-8 animate-spin mx-auto text-primary" />
             <p className="mt-2 text-muted-foreground">Carregando dados do Mercado Livre...</p>
           </div>
+        )}
+
+        {error && (
+          <Card className="mb-6 border-destructive">
+            <CardContent className="py-6">
+              <p className="text-destructive font-medium">Erro ao carregar produtos:</p>
+              <p className="text-sm text-muted-foreground mt-1">{(error as Error).message}</p>
+              <Button variant="outline" onClick={() => refetch()} className="mt-4" data-testid="button-retry">
+                Tentar novamente
+              </Button>
+            </CardContent>
+          </Card>
         )}
 
         {data && (
