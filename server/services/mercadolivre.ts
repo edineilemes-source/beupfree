@@ -1,6 +1,10 @@
 const ML_API_BASE = "https://api.mercadolibre.com";
 const ML_SITE_ID = "MLB"; // Brasil
 
+// Credenciais do Mercado Livre Developer
+const ML_CLIENT_ID = process.env.ML_CLIENT_ID;
+const ML_CLIENT_SECRET = process.env.ML_CLIENT_SECRET;
+
 export interface MLProduct {
   id: string;
   title: string;
@@ -92,20 +96,73 @@ export interface MLProductDetails {
 
 class MercadoLivreService {
   private affiliateId: string;
+  private accessToken: string | null = null;
+  private tokenExpiry: number = 0;
 
   constructor() {
     this.affiliateId = process.env.ML_AFFILIATE_ID || "beupfree";
   }
 
-  private async fetchApi<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${ML_API_BASE}${endpoint}`, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+  private async getAccessToken(): Promise<string | null> {
+    if (!ML_CLIENT_ID || !ML_CLIENT_SECRET) {
+      console.log("ML credentials not configured, using public API");
+      return null;
+    }
+
+    // Check if token is still valid (with 5 min buffer)
+    if (this.accessToken && Date.now() < this.tokenExpiry - 300000) {
+      return this.accessToken;
+    }
+
+    try {
+      const response = await fetch(`${ML_API_BASE}/oauth/token`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'client_credentials',
+          client_id: ML_CLIENT_ID,
+          client_secret: ML_CLIENT_SECRET,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error("Failed to get ML access token:", error);
+        return null;
       }
-    });
+
+      const data = await response.json();
+      this.accessToken = data.access_token;
+      this.tokenExpiry = Date.now() + (data.expires_in * 1000);
+      console.log("ML access token obtained successfully");
+      return this.accessToken;
+    } catch (error) {
+      console.error("Error getting ML access token:", error);
+      return null;
+    }
+  }
+
+  private async fetchApi<T>(endpoint: string): Promise<T> {
+    const token = await this.getAccessToken();
+    
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${ML_API_BASE}${endpoint}`, { headers });
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`ML API Error: ${response.status} - ${errorText}`);
       throw new Error(`ML API Error: ${response.status} ${response.statusText}`);
     }
     return response.json();

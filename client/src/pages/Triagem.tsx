@@ -50,8 +50,6 @@ interface MLSearchResponse {
   };
 }
 
-const ML_API_BASE = "https://api.mercadolibre.com";
-
 export default function Triagem() {
   const [searchQuery, setSearchQuery] = useState("tenis esportivo masculino");
   const [activeSearch, setActiveSearch] = useState("tenis esportivo masculino");
@@ -60,10 +58,11 @@ export default function Triagem() {
     queryKey: ["ml-triagem", activeSearch],
     queryFn: async () => {
       const response = await fetch(
-        `${ML_API_BASE}/sites/MLB/search?q=${encodeURIComponent(activeSearch)}&limit=10`
+        `/api/ml/triagem?q=${encodeURIComponent(activeSearch)}&limit=10`
       );
       if (!response.ok) {
-        throw new Error("Erro ao buscar dados do Mercado Livre");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Erro ao buscar dados do Mercado Livre");
       }
       return response.json();
     },
