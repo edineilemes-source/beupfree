@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, Menu, User } from "lucide-react";
+import { Search, ShoppingCart, Menu, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -74,6 +74,16 @@ export default function Header() {
             >
               <ShoppingCart className="h-5 w-5" />
             </Button>
+            <Link href="/triagem">
+              <Button 
+                variant="outline" 
+                size="icon"
+                title="Triagem - Painel Gerencial"
+                data-testid="button-triagem"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
 
