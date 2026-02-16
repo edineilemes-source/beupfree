@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BeUpFree • Ofertas (Triagem)</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    /* Estilo básico caso seu styles.css não tenha grid */
+    .container{max-width:1200px;margin:0 auto;padding:24px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:16px}
+    .card{border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:14px;background:#fff}
+    .title{font-weight:700;font-size:15px;line-height:1.2;margin:8px 0}
+    .muted{opacity:.7;font-size:13px}
+    .price{font-weight:800;font-size:18px;margin-top:8px}
+    .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;border:1px solid rgba(0,0,0,.08)}
+    .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:10px 12px;cursor:pointer}
+    .btn-primary{background:#0ea5e9;color:#fff}
+    .btn-ghost{background:transparent;border:1px solid rgba(0,0,0,.1)}
+    .img{width:100%;height:170px;object-fit:cover;border-radius:12px;background:#f3f4f6}
+    input,select{padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,.15)}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .loading{margin-top:16px}
+    .error{margin-top:16px;color:#b91c1c}
+  </style>
+</head>
+<body>
+  <!-- Se você já tem header/nav no index.html, copie e cole aqui também -->
+  <main class="container">
+    <div class="topbar">
+      <div>
+        <h1 style="margin:0">Ofertas • Triagem</h1>
+        <div class="muted">Busca automática no Mercado Livre (via sua API)</div>
+      </div>
+
+      <div class="row">
+        <input id="q" type="text" placeholder="Buscar (ex: tenis nike)" value="tenis" />
+        <select id="enrich">
+          <option value="0" selected>Rápido</option>
+          <option value="1">Completo (imagens/avaliação)</option>
+        </select>
+        <button id="btnBuscar" class="btn btn-primary">Buscar</button>
+        <button id="btnAtualizar" class="btn btn-ghost">Atualizar</button>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <span class="badge" id="status">Pronto</span>
+      <span class="muted" id="meta"></span>
+    </div>
+
+    <div id="loading" class="loading" style="display:none">Carregando ofertas…</div>
+    <div id="error" class="error" style="display:none"></div>
+
+    <section id="grid" class="card-grid"></section>
+  </main>
+
+  <script>
+    // ✅ TROQUE AQUI quando mudar o túnel
+    const API_BASE = "https://howard-positioning-indirect-consortium.trycloudflare.com";
+
+    const $ = (id) => document.getElementById(id);
+
+    function formatBRL(n){
+      if (n === null || n === undefined) return "—";
+      return Number(n).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+    }
+
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function buildCard(p){
+      const nome = escapeHtml(p.nome || "Produto");
+      const marca = escapeHtml(p.marca || "");
+      const preco = formatBRL(p.preco_atual);
+      const original = p.preco_original ? formatBRL(p.preco_original) : "";
+      const desconto = (p.desconto_percent !== null && p.desconto_percent !== undefined)
+        ? `${p.desconto_percent}% OFF`
+        : "";
+      const link = p.link_afiliado || p.url;
+
+      const img = (p.imagens && p.imagens[0]) ? p.imagens[0] : "";
+      const rating = p.avaliacao_media ? `⭐ ${p.avaliacao_media}` : "";
+      const qtd = p.qtd_avaliacoes ? `(${p.qtd_avaliacoes})` : "";
+
+      return `
+        <article class="card">
+          ${img ? `<img class="img" src="${img}" alt="${nome}">` : `<div class="img"></div>`}
+          <div class="title">${nome}</div>
+          <div class="muted">${marca}</div>
+
+          <div class="price">${preco}</div>
+          ${original ? `<div class="muted"><s>${original}</s> ${desconto ? " • " + desconto : ""}</div>` : (desconto ? `<div class="muted">${desconto}</div>` : "")}
+
+          ${(rating || qtd) ? `<div class="muted" style="margin-top:6px">${rating} ${qtd}</div>` : ""}
+
+          <div style="margin-top:12px">
+            <a class="btn btn-primary" href="${link}" target="_blank" rel="noopener">
+              Conferir no Mercado Livre ↗
+            </a>
+          </div>
+        </article>
+      `;
+    }
+
+    async function carregar(){
+      $("error").style.display = "none";
+      $("loading").style.display = "block";
+      $("status").textContent = "Carregando…";
+      $("grid").innerHTML = "";
+
+      const q = $("q").value.trim() || "tenis";
+      const enrich = $("enrich").value;
+
+      // Seu backend atual está fixo em /tenis.
+      // Então aqui vamos chamar /triagem normalmente.
+      // Depois, se você quiser busca dinâmica, eu ajusto sua API para aceitar ?q=
+      const url = `${API_BASE}/triagem?enrich=${enrich}`;
+
+      try{
+        const res = await fetch(url, { method:"GET" });
+        if(!res.ok) throw new Error("Falha HTTP " + res.status);
+
+        const data = await res.json();
+
+        $("meta").textContent =
+          `Fonte: ${data.fonte} • Coletados: ${data.coletados} • Entregues: ${data.entregues}`;
+
+        $("status").textContent = "Ok ✅";
+
+        const produtos = Array.isArray(data.produtos) ? data.produtos : [];
+        if(!produtos.length){
+          $("grid").innerHTML = `<div class="muted">Nenhum produto retornou.</div>`;
+          return;
+        }
+
+        $("grid").innerHTML = produtos.map(buildCard).join("");
+      }catch(e){
+        $("status").textContent = "Erro ❌";
+        $("error").style.display = "block";
+        $("error").textContent = "Erro ao carregar triagem: " + (e.message || e);
+      }finally{
+        $("loading").style.display = "none";
+      }
+    }
+
+    $("btnBuscar").addEventListener("click", carregar);
+    $("btnAtualizar").addEventListener("click", carregar);
+
+    // carrega automaticamente ao abrir
+    carregar();
+  </script>
+</body>
+</html>
