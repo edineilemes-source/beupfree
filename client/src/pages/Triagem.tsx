@@ -1,7 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Search, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 const API_BASE = "https://howard-positioning-indirect-consortium.trycloudflare.com";
 
@@ -58,20 +61,20 @@ function ProductCard({ p }: { p: Produto }) {
         <div className="w-full h-44 rounded-md bg-muted" />
       )}
       <div className="font-bold text-[15px] leading-tight mt-2 text-foreground">{nome}</div>
-      <div className="opacity-70 text-sm text-muted-foreground">{marca}</div>
+      <div className="text-sm text-muted-foreground">{marca}</div>
 
       <div className="font-extrabold text-lg mt-2 text-foreground">{preco}</div>
       {original && (
-        <div className="opacity-70 text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground">
           <s>{original}</s>{desconto ? ` \u2022 ${desconto}` : ""}
         </div>
       )}
       {!original && desconto && (
-        <div className="opacity-70 text-sm text-muted-foreground">{desconto}</div>
+        <div className="text-sm text-muted-foreground">{desconto}</div>
       )}
 
       {(rating || qtd) && (
-        <div className="opacity-70 text-sm mt-1 text-muted-foreground">
+        <div className="text-sm mt-1 text-muted-foreground">
           {rating} {qtd}
         </div>
       )}
@@ -94,42 +97,35 @@ function ProductCard({ p }: { p: Produto }) {
 export default function Triagem() {
   const [query, setQuery] = useState("tenis");
   const [enrich, setEnrich] = useState("0");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [status, setStatus] = useState("Pronto");
-  const [meta, setMeta] = useState("");
-  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [activeEnrich, setActiveEnrich] = useState("0");
 
-  const carregar = useCallback(async () => {
-    setError("");
-    setLoading(true);
-    setStatus("Carregando\u2026");
-    setProdutos([]);
-
-    const url = `${API_BASE}/triagem?enrich=${enrich}`;
-
-    try {
+  const { data, isLoading, isFetching, error, refetch } = useQuery<TriagemResponse>({
+    queryKey: ["/api/triagem-external", activeEnrich],
+    queryFn: async () => {
+      const url = `${API_BASE}/triagem?enrich=${activeEnrich}`;
       const res = await fetch(url, { method: "GET" });
       if (!res.ok) throw new Error("Falha HTTP " + res.status);
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 5,
+  });
 
-      const data: TriagemResponse = await res.json();
+  const allProdutos = data ? (Array.isArray(data.produtos) ? data.produtos : []) : [];
 
-      setMeta(`Fonte: ${data.fonte} \u2022 Coletados: ${data.coletados} \u2022 Entregues: ${data.entregues}`);
-      setStatus("Ok");
+  const produtos = query.trim()
+    ? allProdutos.filter((p) => {
+        const search = query.toLowerCase();
+        return (
+          (p.nome || "").toLowerCase().includes(search) ||
+          (p.marca || "").toLowerCase().includes(search)
+        );
+      })
+    : allProdutos;
 
-      const lista = Array.isArray(data.produtos) ? data.produtos : [];
-      setProdutos(lista);
-    } catch (e: any) {
-      setStatus("Erro");
-      setError("Erro ao carregar triagem: " + (e.message || e));
-    } finally {
-      setLoading(false);
-    }
-  }, [enrich]);
-
-  useEffect(() => {
-    carregar();
-  }, []);
+  const handleBuscar = () => {
+    setActiveEnrich(enrich);
+    refetch();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -152,53 +148,58 @@ export default function Triagem() {
           </div>
 
           <div className="flex gap-3 items-center flex-wrap">
-            <input
-              id="q"
-              type="text"
-              placeholder="Buscar (ex: tenis nike)"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="px-3 py-2 rounded-md border border-border bg-background text-foreground"
-              data-testid="input-search-triagem"
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Buscar (ex: tenis nike)"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
+                className="pl-10"
+                data-testid="input-search-triagem"
+              />
+            </div>
             <select
-              id="enrich"
               value={enrich}
               onChange={(e) => setEnrich(e.target.value)}
-              className="px-3 py-2 rounded-md border border-border bg-background text-foreground"
+              className="flex h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               data-testid="select-enrich"
             >
               <option value="0">Rapido</option>
-              <option value="1">Completo (imagens/avaliacao)</option>
+              <option value="1">Completo (imagens)</option>
             </select>
-            <Button onClick={carregar} data-testid="button-buscar">
+            <Button onClick={handleBuscar} disabled={isFetching} data-testid="button-buscar">
+              <Search className="h-4 w-4 mr-2" />
               Buscar
             </Button>
-            <Button variant="outline" onClick={carregar} data-testid="button-atualizar">
-              Atualizar
+            <Button variant="outline" onClick={() => refetch()} disabled={isFetching} data-testid="button-atualizar">
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             </Button>
           </div>
         </div>
 
         <div className="flex gap-3 items-center mt-3 flex-wrap">
-          <span
-            className="inline-block px-3 py-1 rounded-full text-xs border border-border text-foreground"
-            data-testid="text-status"
-          >
-            {status}
-          </span>
-          <span className="text-sm text-muted-foreground" data-testid="text-meta">{meta}</span>
+          <Badge variant={error ? "destructive" : data ? "default" : "secondary"} data-testid="text-status">
+            {isFetching ? "Carregando\u2026" : error ? "Erro" : data ? "Ok" : "Pronto"}
+          </Badge>
+          {data && (
+            <span className="text-sm text-muted-foreground" data-testid="text-meta">
+              Fonte: {data.fonte} &bull; Coletados: {data.coletados} &bull; Entregues: {data.entregues}
+            </span>
+          )}
         </div>
 
-        {loading && (
-          <div className="mt-4 text-muted-foreground" data-testid="text-loading">
+        {isLoading && (
+          <div className="mt-4 flex items-center gap-2 text-muted-foreground" data-testid="text-loading">
+            <RefreshCw className="h-4 w-4 animate-spin" />
             Carregando ofertas...
           </div>
         )}
 
         {error && (
           <div className="mt-4 text-destructive" data-testid="text-error">
-            {error}
+            Erro ao carregar triagem: {(error as Error).message}
           </div>
         )}
 
@@ -207,7 +208,7 @@ export default function Triagem() {
           style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}
           data-testid="grid-products"
         >
-          {produtos.length === 0 && !loading && !error && (
+          {produtos.length === 0 && !isLoading && !error && (
             <div className="text-sm text-muted-foreground">Nenhum produto retornou.</div>
           )}
           {produtos.map((p, i) => (
