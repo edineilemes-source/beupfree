@@ -153,6 +153,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Proxy para triagem externa (Cloudflare tunnel) - evita CORS
+  app.get("/api/ml/triagem-proxy", async (req, res) => {
+    try {
+      const { enrich } = req.query;
+      const tunnelBase = "https://classified-eyes-phone-guided.trycloudflare.com";
+      const url = `${tunnelBase}/triagem?enrich=${enrich || "0"}`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { "Accept": "application/json" },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        return res.status(response.status).json({ error: `Tunnel error: ${response.status}`, details: text });
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      console.error("Erro no proxy triagem tunnel:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Proxy para triagem - retorna dados brutos da API do ML usando autenticação
   app.get("/api/ml/triagem", async (req, res) => {
     try {

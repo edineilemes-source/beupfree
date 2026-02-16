@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
-const API_BASE = "https://howard-positioning-indirect-consortium.trycloudflare.com";
 
 interface Produto {
   nome?: string;
@@ -30,7 +29,10 @@ interface TriagemResponse {
 
 function formatBRL(n: number | null | undefined): string {
   if (n === null || n === undefined) return "\u2014";
-  return Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return Number(n).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
 }
 
 function ProductCard({ p }: { p: Produto }) {
@@ -38,11 +40,12 @@ function ProductCard({ p }: { p: Produto }) {
   const marca = p.marca || "";
   const preco = formatBRL(p.preco_atual);
   const original = p.preco_original ? formatBRL(p.preco_original) : "";
-  const desconto = (p.desconto_percent !== null && p.desconto_percent !== undefined)
-    ? `${p.desconto_percent}% OFF`
-    : "";
+  const desconto =
+    p.desconto_percent !== null && p.desconto_percent !== undefined
+      ? `${p.desconto_percent}% OFF`
+      : "";
   const link = p.link_afiliado || p.url || "#";
-  const img = (p.imagens && p.imagens[0]) ? p.imagens[0] : "";
+  const img = p.imagens && p.imagens[0] ? p.imagens[0] : "";
   const rating = p.avaliacao_media ? `${p.avaliacao_media}` : "";
   const qtd = p.qtd_avaliacoes ? `(${p.qtd_avaliacoes})` : "";
 
@@ -60,13 +63,16 @@ function ProductCard({ p }: { p: Produto }) {
       ) : (
         <div className="w-full h-44 rounded-md bg-muted" />
       )}
-      <div className="font-bold text-[15px] leading-tight mt-2 text-foreground">{nome}</div>
+      <div className="font-bold text-[15px] leading-tight mt-2 text-foreground">
+        {nome}
+      </div>
       <div className="text-sm text-muted-foreground">{marca}</div>
 
       <div className="font-extrabold text-lg mt-2 text-foreground">{preco}</div>
       {original && (
         <div className="text-sm text-muted-foreground">
-          <s>{original}</s>{desconto ? ` \u2022 ${desconto}` : ""}
+          <s>{original}</s>
+          {desconto ? ` \u2022 ${desconto}` : ""}
         </div>
       )}
       {!original && desconto && (
@@ -99,18 +105,23 @@ export default function Triagem() {
   const [enrich, setEnrich] = useState("0");
   const [activeEnrich, setActiveEnrich] = useState("0");
 
-  const { data, isLoading, isFetching, error, refetch } = useQuery<TriagemResponse>({
-    queryKey: ["/api/triagem-external", activeEnrich],
-    queryFn: async () => {
-      const url = `${API_BASE}/triagem?enrich=${activeEnrich}`;
-      const res = await fetch(url, { method: "GET" });
-      if (!res.ok) throw new Error("Falha HTTP " + res.status);
-      return res.json();
-    },
-    staleTime: 1000 * 60 * 5,
-  });
+  const { data, isLoading, isFetching, error, refetch } =
+    useQuery<TriagemResponse>({
+      queryKey: ["/api/triagem-external", activeEnrich],
+      queryFn: async () => {
+        const url = `/api/ml/triagem-proxy?enrich=${activeEnrich}`;
+        const res = await fetch(url, { method: "GET" });
+        if (!res.ok) throw new Error("Falha HTTP " + res.status);
+        return res.json();
+      },
+      staleTime: 1000 * 60 * 5,
+    });
 
-  const allProdutos = data ? (Array.isArray(data.produtos) ? data.produtos : []) : [];
+  const allProdutos = data
+    ? Array.isArray(data.produtos)
+      ? data.produtos
+      : []
+    : [];
 
   const produtos = query.trim()
     ? allProdutos.filter((p) => {
@@ -138,7 +149,10 @@ export default function Triagem() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-foreground m-0" data-testid="text-title">
+              <h1
+                className="text-2xl font-bold text-foreground m-0"
+                data-testid="text-title"
+              >
                 Ofertas - Triagem
               </h1>
               <div className="text-sm text-muted-foreground">
@@ -169,29 +183,56 @@ export default function Triagem() {
               <option value="0">Rapido</option>
               <option value="1">Completo (imagens)</option>
             </select>
-            <Button onClick={handleBuscar} disabled={isFetching} data-testid="button-buscar">
+            <Button
+              onClick={handleBuscar}
+              disabled={isFetching}
+              data-testid="button-buscar"
+            >
               <Search className="h-4 w-4 mr-2" />
               Buscar
             </Button>
-            <Button variant="outline" onClick={() => refetch()} disabled={isFetching} data-testid="button-atualizar">
-              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            <Button
+              variant="outline"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              data-testid="button-atualizar"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+              />
             </Button>
           </div>
         </div>
 
         <div className="flex gap-3 items-center mt-3 flex-wrap">
-          <Badge variant={error ? "destructive" : data ? "default" : "secondary"} data-testid="text-status">
-            {isFetching ? "Carregando\u2026" : error ? "Erro" : data ? "Ok" : "Pronto"}
+          <Badge
+            variant={error ? "destructive" : data ? "default" : "secondary"}
+            data-testid="text-status"
+          >
+            {isFetching
+              ? "Carregando\u2026"
+              : error
+                ? "Erro"
+                : data
+                  ? "Ok"
+                  : "Pronto"}
           </Badge>
           {data && (
-            <span className="text-sm text-muted-foreground" data-testid="text-meta">
-              Fonte: {data.fonte} &bull; Coletados: {data.coletados} &bull; Entregues: {data.entregues}
+            <span
+              className="text-sm text-muted-foreground"
+              data-testid="text-meta"
+            >
+              Fonte: {data.fonte} &bull; Coletados: {data.coletados} &bull;
+              Entregues: {data.entregues}
             </span>
           )}
         </div>
 
         {isLoading && (
-          <div className="mt-4 flex items-center gap-2 text-muted-foreground" data-testid="text-loading">
+          <div
+            className="mt-4 flex items-center gap-2 text-muted-foreground"
+            data-testid="text-loading"
+          >
             <RefreshCw className="h-4 w-4 animate-spin" />
             Carregando ofertas...
           </div>
@@ -205,11 +246,15 @@ export default function Triagem() {
 
         <section
           className="grid gap-4 mt-4"
-          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}
+          style={{
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          }}
           data-testid="grid-products"
         >
           {produtos.length === 0 && !isLoading && !error && (
-            <div className="text-sm text-muted-foreground">Nenhum produto retornou.</div>
+            <div className="text-sm text-muted-foreground">
+              Nenhum produto retornou.
+            </div>
           )}
           {produtos.map((p, i) => (
             <ProductCard key={i} p={p} />
