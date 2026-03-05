@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
-
 interface Produto {
   nome?: string;
   marca?: string;
@@ -123,15 +122,7 @@ export default function Triagem() {
       : []
     : [];
 
-  const produtos = query.trim()
-    ? allProdutos.filter((p) => {
-        const search = query.toLowerCase();
-        return (
-          (p.nome || "").toLowerCase().includes(search) ||
-          (p.marca || "").toLowerCase().includes(search)
-        );
-      })
-    : allProdutos;
+  const produtos = allProdutos;
 
   const handleBuscar = () => {
     setActiveEnrich(enrich);
