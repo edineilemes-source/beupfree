@@ -14,6 +14,7 @@ import {
   createTodayPromotions,
   getProductsWithPromotions,
 } from "./services/productSync";
+import { scrapeAllSources } from "./services/mlScraper";
 
 const ML_CLIENT_ID = process.env.ML_CLIENT_ID;
 const ML_CLIENT_SECRET = process.env.ML_CLIENT_SECRET;
@@ -177,6 +178,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Erro ao buscar promoções ML:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Scraper de ofertas ML - páginas públicas estratégicas
+  app.get("/api/ml/scrape-ofertas", async (req, res) => {
+    try {
+      const result = await scrapeAllSources();
+      res.json({
+        fonte: result.fontes.join(", "),
+        coletados: result.total,
+        entregues: result.produtos.length,
+        produtos: result.produtos,
+        erros: result.erros,
+      });
+    } catch (error: any) {
+      console.error("Erro no scraper ML:", error);
       res.status(500).json({ error: error.message });
     }
   });
