@@ -2,45 +2,28 @@ import { useQuery } from "@tanstack/react-query";
 import ProductCard from "./ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface ProductImage {
+interface BestOffer {
   id: string;
-  url: string;
-  alt: string | null;
-  isPrimary: boolean;
+  currentPrice: string;
+  originalPrice: string | null;
+  discountPercent: number | null;
+  affiliateUrl: string;
+  freeShipping: boolean;
 }
 
-interface Brand {
+interface ProductFromAPI {
   id: string;
-  name: string;
-  slug: string;
-  logo: string | null;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  price: string;
-  compareAtPrice: string | null;
-  images: ProductImage[];
-  brand: Brand | null;
-  category: Category | null;
-  discount: number;
-  formattedPrice: string;
-  formattedOriginalPrice: string | null;
-  isFeatured: boolean;
-  affiliateUrl: string | null;
+  mainName: string;
+  mainImageUrl: string | null;
+  brand: { name: string } | null;
+  category: { name: string } | null;
+  bestOffer: BestOffer | null;
+  offersCount: number;
 }
 
 interface ProductsResponse {
   total: number;
-  products: Product[];
+  products: ProductFromAPI[];
 }
 
 export default function ProductGrid() {
@@ -73,6 +56,10 @@ export default function ProductGrid() {
     );
   }
 
+  if (products.length === 0) {
+    return null;
+  }
+
   return (
     <section className="py-12 md:py-16 bg-card/30" data-testid="section-products">
       <div className="container mx-auto px-4">
@@ -87,13 +74,15 @@ export default function ProductGrid() {
             <ProductCard 
               key={product.id}
               id={product.id}
-              name={product.name}
+              name={product.mainName}
               brand={product.brand?.name || ""}
-              price={parseFloat(product.price)}
-              oldPrice={product.compareAtPrice ? parseFloat(product.compareAtPrice) : undefined}
-              image={product.images[0]?.url || "https://via.placeholder.com/300x300?text=Sem+Imagem"}
+              price={product.bestOffer ? parseFloat(product.bestOffer.currentPrice) : 0}
+              oldPrice={product.bestOffer?.originalPrice ? parseFloat(product.bestOffer.originalPrice) : undefined}
+              discount={product.bestOffer?.discountPercent || undefined}
+              image={product.mainImageUrl || ""}
               category={product.category?.name || ""}
-              mercadoLivreUrl={product.affiliateUrl || "#"}
+              affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
+              freeShipping={product.bestOffer?.freeShipping || false}
             />
           ))}
         </div>

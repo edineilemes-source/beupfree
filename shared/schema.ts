@@ -8,7 +8,6 @@ import {
   boolean, 
   timestamp, 
   jsonb,
-  primaryKey,
   index,
   pgEnum
 } from "drizzle-orm/pg-core";
@@ -16,36 +15,69 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // ============================================
-// ENUMS - Estados padronizados
+// ENUMS
 // ============================================
 
-export const orderStatusEnum = pgEnum('order_status', [
-  'pending',      // Aguardando pagamento
-  'paid',         // Pago
-  'processing',   // Em processamento
-  'shipped',      // Enviado
-  'delivered',    // Entregue
-  'cancelled',    // Cancelado
-  'refunded'      // Reembolsado
+export const catalogStatusEnum = pgEnum('catalog_status', [
+  'draft',
+  'published',
+  'archived'
 ]);
 
-export const promotionTypeEnum = pgEnum('promotion_type', [
-  'percentage',   // Desconto percentual
-  'fixed',        // Desconto fixo
-  'bogo',         // Buy One Get One
-  'shipping'      // Frete grátis
+export const offerStatusEnum = pgEnum('offer_status', [
+  'active',
+  'paused',
+  'expired',
+  'removed'
 ]);
 
-export const paymentMethodEnum = pgEnum('payment_method', [
-  'pix',
-  'credit_card',
-  'debit_card',
-  'boleto',
-  'affiliate'     // Link afiliado (ML)
+export const triageStatusEnum = pgEnum('triage_status', [
+  'pending',
+  'approved',
+  'rejected',
+  'skipped'
+]);
+
+export const curationActionEnum = pgEnum('curation_action', [
+  'approve',
+  'reject',
+  'skip',
+  'edit_approve'
+]);
+
+export const collectionStatusEnum = pgEnum('collection_status', [
+  'running',
+  'completed',
+  'failed',
+  'partial'
 ]);
 
 // ============================================
-// CATEGORIAS - Hierárquica com auto-referência
+// MARCAS
+// ============================================
+
+export const brands = pgTable("brands", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  displayName: text("display_name"),
+  logo: text("logo"),
+  description: text("description"),
+  website: text("website"),
+  isActive: boolean("is_active").default(true),
+  isFeatured: boolean("is_featured").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_brands_slug").on(table.slug)
+]);
+
+export const brandsRelations = relations(brands, ({ many }) => ({
+  products: many(products)
+}));
+
+// ============================================
+// CATEGORIAS - Hierárquica
 // ============================================
 
 export const categories = pgTable("categories", {
@@ -56,9 +88,9 @@ export const categories = pgTable("categories", {
   image: text("image"),
   icon: text("icon"),
   parentId: varchar("parent_id", { length: 36 }),
+  level: integer("level").default(1),
   sortOrder: integer("sort_order").default(0),
   isActive: boolean("is_active").default(true),
-  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -77,118 +109,50 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
 }));
 
 // ============================================
-// MARCAS - Informações de marca
-// ============================================
-
-export const brands = pgTable("brands", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull().unique(),
-  slug: text("slug").notNull().unique(),
-  logo: text("logo"),
-  description: text("description"),
-  website: text("website"),
-  isActive: boolean("is_active").default(true),
-  isFeatured: boolean("is_featured").default(false),
-  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_brands_slug").on(table.slug)
-]);
-
-export const brandsRelations = relations(brands, ({ many }) => ({
-  products: many(products)
-}));
-
-// ============================================
-// PRODUTOS - Core do e-commerce
+// PRODUTOS - Identidade normalizada (sem preço)
 // ============================================
 
 export const products = pgTable("products", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  sku: text("sku").notNull().unique(),
-  name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
-  description: text("description"),
-  shortDescription: text("short_description"),
-  
-  // Preços
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  compareAtPrice: decimal("compare_at_price", { precision: 10, scale: 2 }),
-  costPrice: decimal("cost_price", { precision: 10, scale: 2 }),
-  
-  // Estoque
-  stock: integer("stock").default(0),
-  lowStockThreshold: integer("low_stock_threshold").default(5),
-  trackInventory: boolean("track_inventory").default(true),
-  
-  // Relações
-  categoryId: varchar("category_id", { length: 36 }).references(() => categories.id),
   brandId: varchar("brand_id", { length: 36 }).references(() => brands.id),
-  
-  // Atributos flexíveis (cor, tamanho, material, etc)
-  attributes: jsonb("attributes").$type<{
-    color?: string;
-    size?: string;
-    material?: string;
-    weight?: number;
-    dimensions?: { width: number; height: number; depth: number };
-    [key: string]: unknown;
-  }>().default({}),
-  
-  // Especificações técnicas
-  specifications: jsonb("specifications").$type<Record<string, string>>().default({}),
-  
-  // Tags para busca e filtros
+  mainCategoryId: varchar("main_category_id", { length: 36 }).references(() => categories.id),
+  mainName: text("main_name").notNull(),
+  slug: text("slug").notNull().unique(),
+  shortName: text("short_name"),
+  shortDescription: text("short_description"),
+  detailedDescription: text("detailed_description"),
+  gender: varchar("gender", { length: 40 }),
+  usageType: varchar("usage_type", { length: 60 }),
+  primaryColor: varchar("primary_color", { length: 60 }),
+  mainImageUrl: text("main_image_url"),
+  averageRating: decimal("average_rating", { precision: 3, scale: 2 }),
+  totalReviews: integer("total_reviews").default(0),
+  catalogStatus: catalogStatusEnum("catalog_status").default('draft'),
+  qualityScore: decimal("quality_score", { precision: 5, scale: 2 }),
   tags: text("tags").array().default(sql`ARRAY[]::text[]`),
-  
-  // SEO
   metaTitle: text("meta_title"),
   metaDescription: text("meta_description"),
-  
-  // Status
-  isActive: boolean("is_active").default(true),
-  isFeatured: boolean("is_featured").default(false),
-  isNewArrival: boolean("is_new_arrival").default(false),
-  
-  // Afiliados - Link externo (Mercado Livre, etc)
-  affiliateUrl: text("affiliate_url"),
-  affiliateSource: text("affiliate_source"), // 'mercadolivre', 'amazon', etc
-  affiliateProductId: text("affiliate_product_id"),
-  
-  // Analytics
-  viewCount: integer("view_count").default(0),
-  salesCount: integer("sales_count").default(0),
-  
-  // Timestamps
+  publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  deletedAt: timestamp("deleted_at"), // Soft delete
 }, (table) => [
-  index("idx_products_category").on(table.categoryId),
   index("idx_products_brand").on(table.brandId),
+  index("idx_products_category").on(table.mainCategoryId),
   index("idx_products_slug").on(table.slug),
-  index("idx_products_sku").on(table.sku),
-  index("idx_products_active").on(table.isActive),
-  index("idx_products_featured").on(table.isFeatured)
+  index("idx_products_status").on(table.catalogStatus)
 ]);
 
 export const productsRelations = relations(products, ({ one, many }) => ({
-  category: one(categories, {
-    fields: [products.categoryId],
-    references: [categories.id]
-  }),
   brand: one(brands, {
     fields: [products.brandId],
     references: [brands.id]
   }),
+  category: one(categories, {
+    fields: [products.mainCategoryId],
+    references: [categories.id]
+  }),
   images: many(productImages),
-  variants: many(productVariants),
-  reviews: many(reviews),
-  promotionProducts: many(promotionProducts),
-  wishlistItems: many(wishlistItems),
-  cartItems: many(cartItems),
-  orderItems: many(orderItems)
+  offers: many(offers)
 }));
 
 // ============================================
@@ -215,513 +179,213 @@ export const productImagesRelations = relations(productImages, ({ one }) => ({
 }));
 
 // ============================================
-// VARIANTES DE PRODUTO (tamanhos, cores específicas)
+// MARKETPLACES
 // ============================================
 
-export const productVariants = pgTable("product_variants", {
+export const marketplaces = pgTable("marketplaces", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id, { onDelete: 'cascade' }),
-  sku: text("sku").notNull().unique(),
-  name: text("name").notNull(), // Ex: "Azul - 42"
-  
-  // Opções da variante
-  options: jsonb("options").$type<{
-    color?: string;
-    size?: string;
-    [key: string]: unknown;
-  }>().default({}),
-  
-  // Preço específico da variante (se diferente)
-  price: decimal("price", { precision: 10, scale: 2 }),
-  compareAtPrice: decimal("compare_at_price", { precision: 10, scale: 2 }),
-  
-  // Estoque
-  stock: integer("stock").default(0),
-  
-  // Imagem específica
-  image: text("image"),
-  
+  name: varchar("name", { length: 120 }).notNull().unique(),
+  slug: varchar("slug", { length: 160 }).notNull().unique(),
+  baseUrl: text("base_url"),
+  affiliateCode: varchar("affiliate_code", { length: 60 }),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_product_variants_product").on(table.productId),
-  index("idx_product_variants_sku").on(table.sku)
-]);
-
-export const productVariantsRelations = relations(productVariants, ({ one }) => ({
-  product: one(products, {
-    fields: [productVariants.productId],
-    references: [products.id]
-  })
-}));
+});
 
 // ============================================
-// PROMOÇÕES - Sistema flexível de descontos
+// OFERTAS - Ocorrência comercial (preço + link + marketplace)
 // ============================================
 
-export const promotions = pgTable("promotions", {
+export const offers = pgTable("offers", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
-  description: text("description"),
-  
-  type: promotionTypeEnum("type").notNull().default('percentage'),
-  value: decimal("value", { precision: 10, scale: 2 }).notNull(), // % ou valor fixo
-  
-  // Regras de aplicação
-  minPurchaseAmount: decimal("min_purchase_amount", { precision: 10, scale: 2 }),
-  maxDiscountAmount: decimal("max_discount_amount", { precision: 10, scale: 2 }),
-  usageLimit: integer("usage_limit"),
-  usageCount: integer("usage_count").default(0),
-  
-  // Período de validade
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
-  
-  // Visual
-  bannerImage: text("banner_image"),
-  badgeText: text("badge_text"), // Ex: "50% OFF"
-  badgeColor: text("badge_color"),
-  
-  // Aplicação
-  appliesToAll: boolean("applies_to_all").default(false),
-  categoryIds: text("category_ids").array().default(sql`ARRAY[]::text[]`),
-  brandIds: text("brand_ids").array().default(sql`ARRAY[]::text[]`),
-  
-  isActive: boolean("is_active").default(true),
-  isPriority: boolean("is_priority").default(false), // Exibir no carrossel
-  
-  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_promotions_dates").on(table.startDate, table.endDate),
-  index("idx_promotions_active").on(table.isActive)
-]);
-
-export const promotionsRelations = relations(promotions, ({ many }) => ({
-  promotionProducts: many(promotionProducts)
-}));
-
-// ============================================
-// PRODUTOS EM PROMOÇÃO (Many-to-Many)
-// ============================================
-
-export const promotionProducts = pgTable("promotion_products", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  promotionId: varchar("promotion_id", { length: 36 }).notNull().references(() => promotions.id, { onDelete: 'cascade' }),
-  productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id, { onDelete: 'cascade' }),
-  customDiscount: decimal("custom_discount", { precision: 10, scale: 2 }), // Desconto específico
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_promo_products_promotion").on(table.promotionId),
-  index("idx_promo_products_product").on(table.productId)
-]);
-
-export const promotionProductsRelations = relations(promotionProducts, ({ one }) => ({
-  promotion: one(promotions, {
-    fields: [promotionProducts.promotionId],
-    references: [promotions.id]
-  }),
-  product: one(products, {
-    fields: [promotionProducts.productId],
-    references: [products.id]
-  })
-}));
-
-// ============================================
-// CUPONS DE DESCONTO
-// ============================================
-
-export const coupons = pgTable("coupons", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  code: text("code").notNull().unique(),
-  description: text("description"),
-  
-  type: promotionTypeEnum("type").notNull().default('percentage'),
-  value: decimal("value", { precision: 10, scale: 2 }).notNull(),
-  
-  minPurchaseAmount: decimal("min_purchase_amount", { precision: 10, scale: 2 }),
-  maxDiscountAmount: decimal("max_discount_amount", { precision: 10, scale: 2 }),
-  
-  usageLimit: integer("usage_limit"),
-  usageLimitPerUser: integer("usage_limit_per_user").default(1),
-  usageCount: integer("usage_count").default(0),
-  
-  startDate: timestamp("start_date"),
-  endDate: timestamp("end_date"),
-  
-  isActive: boolean("is_active").default(true),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_coupons_code").on(table.code)
-]);
-
-// ============================================
-// USUÁRIOS
-// ============================================
-
-export const users = pgTable("users", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  
-  // Perfil
-  firstName: text("first_name"),
-  lastName: text("last_name"),
-  phone: text("phone"),
-  cpf: text("cpf"),
-  birthDate: timestamp("birth_date"),
-  avatar: text("avatar"),
-  
-  // Status
-  isActive: boolean("is_active").default(true),
-  isVerified: boolean("is_verified").default(false),
-  isAdmin: boolean("is_admin").default(false),
-  
-  // Preferências (JSONB para flexibilidade)
-  preferences: jsonb("preferences").$type<{
-    newsletter?: boolean;
-    notifications?: boolean;
-    favoriteCategories?: string[];
-    [key: string]: unknown;
-  }>().default({}),
-  
-  // Auth
-  lastLoginAt: timestamp("last_login_at"),
-  verificationToken: text("verification_token"),
-  resetPasswordToken: text("reset_password_token"),
-  resetPasswordExpires: timestamp("reset_password_expires"),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_users_email").on(table.email)
-]);
-
-export const usersRelations = relations(users, ({ many }) => ({
-  addresses: many(addresses),
-  orders: many(orders),
-  reviews: many(reviews),
-  wishlistItems: many(wishlistItems),
-  cartItems: many(cartItems),
-  searchHistory: many(searchHistory)
-}));
-
-// ============================================
-// ENDEREÇOS
-// ============================================
-
-export const addresses = pgTable("addresses", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  
-  label: text("label"), // Casa, Trabalho, etc
-  recipientName: text("recipient_name").notNull(),
-  phone: text("phone"),
-  
-  zipCode: text("zip_code").notNull(),
-  street: text("street").notNull(),
-  number: text("number").notNull(),
-  complement: text("complement"),
-  neighborhood: text("neighborhood").notNull(),
-  city: text("city").notNull(),
-  state: text("state").notNull(),
-  country: text("country").default('Brasil'),
-  
-  isDefault: boolean("is_default").default(false),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_addresses_user").on(table.userId)
-]);
-
-export const addressesRelations = relations(addresses, ({ one }) => ({
-  user: one(users, {
-    fields: [addresses.userId],
-    references: [users.id]
-  })
-}));
-
-// ============================================
-// CARRINHO
-// ============================================
-
-export const cartItems = pgTable("cart_items", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id", { length: 36 }).references(() => users.id, { onDelete: 'cascade' }),
-  sessionId: text("session_id"), // Para carrinhos anônimos
-  
-  productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id, { onDelete: 'cascade' }),
-  variantId: varchar("variant_id", { length: 36 }).references(() => productVariants.id),
-  
-  quantity: integer("quantity").notNull().default(1),
-  
-  // Snapshot do preço no momento de adicionar
-  priceAtAdd: decimal("price_at_add", { precision: 10, scale: 2 }).notNull(),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_cart_user").on(table.userId),
-  index("idx_cart_session").on(table.sessionId),
-  index("idx_cart_product").on(table.productId)
-]);
-
-export const cartItemsRelations = relations(cartItems, ({ one }) => ({
-  user: one(users, {
-    fields: [cartItems.userId],
-    references: [users.id]
-  }),
-  product: one(products, {
-    fields: [cartItems.productId],
-    references: [products.id]
-  }),
-  variant: one(productVariants, {
-    fields: [cartItems.variantId],
-    references: [productVariants.id]
-  })
-}));
-
-// ============================================
-// PEDIDOS
-// ============================================
-
-export const orders = pgTable("orders", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  orderNumber: text("order_number").notNull().unique(),
-  
-  userId: varchar("user_id", { length: 36 }).references(() => users.id),
-  
-  // Status
-  status: orderStatusEnum("status").notNull().default('pending'),
-  
-  // Valores
-  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
-  discount: decimal("discount", { precision: 10, scale: 2 }).default('0'),
-  shippingCost: decimal("shipping_cost", { precision: 10, scale: 2 }).default('0'),
-  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
-  
-  // Cupom aplicado
-  couponId: varchar("coupon_id", { length: 36 }).references(() => coupons.id),
-  couponCode: text("coupon_code"),
-  
-  // Pagamento
-  paymentMethod: paymentMethodEnum("payment_method"),
-  paymentDetails: jsonb("payment_details").$type<Record<string, unknown>>().default({}),
-  paidAt: timestamp("paid_at"),
-  
-  // Endereço de entrega (snapshot)
-  shippingAddress: jsonb("shipping_address").$type<{
-    recipientName: string;
-    phone?: string;
-    zipCode: string;
-    street: string;
-    number: string;
-    complement?: string;
-    neighborhood: string;
-    city: string;
-    state: string;
-    country: string;
-  }>().notNull(),
-  
-  // Rastreio
-  trackingCode: text("tracking_code"),
-  trackingUrl: text("tracking_url"),
-  shippedAt: timestamp("shipped_at"),
-  deliveredAt: timestamp("delivered_at"),
-  
-  // Afiliado
-  affiliateSource: text("affiliate_source"),
-  affiliateOrderId: text("affiliate_order_id"),
-  
-  notes: text("notes"),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_orders_user").on(table.userId),
-  index("idx_orders_status").on(table.status),
-  index("idx_orders_number").on(table.orderNumber)
-]);
-
-export const ordersRelations = relations(orders, ({ one, many }) => ({
-  user: one(users, {
-    fields: [orders.userId],
-    references: [users.id]
-  }),
-  coupon: one(coupons, {
-    fields: [orders.couponId],
-    references: [coupons.id]
-  }),
-  items: many(orderItems)
-}));
-
-// ============================================
-// ITENS DO PEDIDO
-// ============================================
-
-export const orderItems = pgTable("order_items", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar("order_id", { length: 36 }).notNull().references(() => orders.id, { onDelete: 'cascade' }),
   productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id),
-  variantId: varchar("variant_id", { length: 36 }).references(() => productVariants.id),
-  
-  quantity: integer("quantity").notNull(),
-  
-  // Snapshot do produto no momento da compra
-  productSnapshot: jsonb("product_snapshot").$type<{
-    name: string;
-    sku: string;
-    price: number;
-    image?: string;
-    attributes?: Record<string, unknown>;
-  }>().notNull(),
-  
-  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
-  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
-  
-  // Se for afiliado, link usado
+  marketplaceId: varchar("marketplace_id", { length: 36 }).references(() => marketplaces.id),
+  currentPrice: decimal("current_price", { precision: 10, scale: 2 }).notNull(),
+  originalPrice: decimal("original_price", { precision: 10, scale: 2 }),
+  discountPercent: integer("discount_percent"),
+  currency: varchar("currency", { length: 10 }).default('BRL'),
+  originalUrl: text("original_url"),
   affiliateUrl: text("affiliate_url"),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_order_items_order").on(table.orderId),
-  index("idx_order_items_product").on(table.productId)
-]);
-
-export const orderItemsRelations = relations(orderItems, ({ one }) => ({
-  order: one(orders, {
-    fields: [orderItems.orderId],
-    references: [orders.id]
-  }),
-  product: one(products, {
-    fields: [orderItems.productId],
-    references: [products.id]
-  }),
-  variant: one(productVariants, {
-    fields: [orderItems.variantId],
-    references: [productVariants.id]
-  })
-}));
-
-// ============================================
-// AVALIAÇÕES
-// ============================================
-
-export const reviews = pgTable("reviews", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id, { onDelete: 'cascade' }),
-  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  orderId: varchar("order_id", { length: 36 }).references(() => orders.id),
-  
-  rating: integer("rating").notNull(), // 1-5
-  title: text("title"),
-  comment: text("comment"),
-  
-  // Pros e Contras
-  pros: text("pros").array().default(sql`ARRAY[]::text[]`),
-  cons: text("cons").array().default(sql`ARRAY[]::text[]`),
-  
-  // Imagens da avaliação
-  images: text("images").array().default(sql`ARRAY[]::text[]`),
-  
-  // Moderação
-  isApproved: boolean("is_approved").default(false),
-  isVerifiedPurchase: boolean("is_verified_purchase").default(false),
-  
-  // Utilidade
-  helpfulCount: integer("helpful_count").default(0),
-  
+  sellerName: varchar("seller_name", { length: 200 }),
+  sellerRating: decimal("seller_rating", { precision: 3, scale: 2 }),
+  freeShipping: boolean("free_shipping").default(false),
+  installments: varchar("installments", { length: 100 }),
+  externalId: varchar("external_id", { length: 100 }),
+  status: offerStatusEnum("status").default('active'),
+  lastSeenAt: timestamp("last_seen_at").defaultNow(),
+  capturedAt: timestamp("captured_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
-  index("idx_reviews_product").on(table.productId),
-  index("idx_reviews_user").on(table.userId),
-  index("idx_reviews_rating").on(table.rating)
+  index("idx_offers_product").on(table.productId),
+  index("idx_offers_marketplace").on(table.marketplaceId),
+  index("idx_offers_status").on(table.status),
+  index("idx_offers_external").on(table.externalId)
 ]);
 
-export const reviewsRelations = relations(reviews, ({ one }) => ({
+export const offersRelations = relations(offers, ({ one }) => ({
   product: one(products, {
-    fields: [reviews.productId],
+    fields: [offers.productId],
     references: [products.id]
   }),
-  user: one(users, {
-    fields: [reviews.userId],
-    references: [users.id]
-  }),
-  order: one(orders, {
-    fields: [reviews.orderId],
-    references: [orders.id]
+  marketplace: one(marketplaces, {
+    fields: [offers.marketplaceId],
+    references: [marketplaces.id]
   })
 }));
 
 // ============================================
-// WISHLIST
+// ORIGENS DE COLETA
 // ============================================
 
-export const wishlistItems = pgTable("wishlist_items", {
+export const collectionSources = pgTable("collection_sources", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
-  productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id, { onDelete: 'cascade' }),
-  
-  // Notificar quando houver promoção
-  notifyOnSale: boolean("notify_on_sale").default(false),
-  
+  name: varchar("name", { length: 200 }).notNull(),
+  sourceType: varchar("source_type", { length: 60 }).notNull(),
+  url: text("url"),
+  marketplaceId: varchar("marketplace_id", { length: 36 }).references(() => marketplaces.id),
+  config: jsonb("config").$type<Record<string, unknown>>().default({}),
+  isActive: boolean("is_active").default(true),
+  lastRunAt: timestamp("last_run_at"),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ============================================
+// LOTES DE COLETA
+// ============================================
+
+export const collectionBatches = pgTable("collection_batches", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  sourceId: varchar("source_id", { length: 36 }).references(() => collectionSources.id),
+  status: collectionStatusEnum("status").default('running'),
+  totalCollected: integer("total_collected").default(0),
+  totalErrors: integer("total_errors").default(0),
+  startedAt: timestamp("started_at").defaultNow(),
+  finishedAt: timestamp("finished_at"),
+  errorLog: text("error_log"),
+});
+
+// ============================================
+// ITENS BRUTOS COLETADOS
+// ============================================
+
+export const rawCollectedItems = pgTable("raw_collected_items", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  batchId: varchar("batch_id", { length: 36 }).notNull().references(() => collectionBatches.id),
+  externalId: varchar("external_id", { length: 100 }),
+  rawTitle: text("raw_title").notNull(),
+  rawPrice: decimal("raw_price", { precision: 10, scale: 2 }),
+  rawOriginalPrice: decimal("raw_original_price", { precision: 10, scale: 2 }),
+  rawImageUrl: text("raw_image_url"),
+  rawUrl: text("raw_url"),
+  rawDiscount: integer("raw_discount"),
+  rawData: jsonb("raw_data").$type<Record<string, unknown>>().default({}),
+  contentHash: varchar("content_hash", { length: 64 }),
+  collectedAt: timestamp("collected_at").defaultNow(),
 }, (table) => [
-  index("idx_wishlist_user").on(table.userId),
-  index("idx_wishlist_product").on(table.productId)
+  index("idx_raw_items_batch").on(table.batchId),
+  index("idx_raw_items_hash").on(table.contentHash),
+  index("idx_raw_items_external").on(table.externalId)
 ]);
 
-export const wishlistItemsRelations = relations(wishlistItems, ({ one }) => ({
-  user: one(users, {
-    fields: [wishlistItems.userId],
-    references: [users.id]
-  }),
-  product: one(products, {
-    fields: [wishlistItems.productId],
-    references: [products.id]
-  })
-}));
-
 // ============================================
-// HISTÓRICO DE BUSCAS - Para analytics e recomendações
+// ITENS PROCESSADOS
 // ============================================
 
-export const searchHistory = pgTable("search_history", {
+export const processedItems = pgTable("processed_items", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id", { length: 36 }).references(() => users.id, { onDelete: 'set null' }),
-  sessionId: text("session_id"),
-  
-  query: text("query").notNull(),
-  filters: jsonb("filters").$type<Record<string, unknown>>().default({}),
-  resultsCount: integer("results_count"),
-  
-  // Qual produto foi clicado após a busca
-  clickedProductId: varchar("clicked_product_id", { length: 36 }).references(() => products.id),
-  
-  createdAt: timestamp("created_at").defaultNow(),
+  rawItemId: varchar("raw_item_id", { length: 36 }).references(() => rawCollectedItems.id),
+  normalizedTitle: text("normalized_title").notNull(),
+  detectedBrand: varchar("detected_brand", { length: 120 }),
+  detectedCategory: varchar("detected_category", { length: 120 }),
+  detectedGender: varchar("detected_gender", { length: 40 }),
+  price: decimal("price", { precision: 10, scale: 2 }),
+  originalPrice: decimal("original_price", { precision: 10, scale: 2 }),
+  discountPercent: integer("discount_percent"),
+  imageUrl: text("image_url"),
+  sourceUrl: text("source_url"),
+  affiliateUrl: text("affiliate_url"),
+  externalId: varchar("external_id", { length: 100 }),
+  freeShipping: boolean("free_shipping").default(false),
+  contentHash: varchar("content_hash", { length: 64 }),
+  isDuplicate: boolean("is_duplicate").default(false),
+  matchedProductId: varchar("matched_product_id", { length: 36 }),
+  processedAt: timestamp("processed_at").defaultNow(),
 }, (table) => [
-  index("idx_search_user").on(table.userId),
-  index("idx_search_query").on(table.query)
+  index("idx_processed_raw").on(table.rawItemId),
+  index("idx_processed_hash").on(table.contentHash)
 ]);
 
-export const searchHistoryRelations = relations(searchHistory, ({ one }) => ({
-  user: one(users, {
-    fields: [searchHistory.userId],
-    references: [users.id]
-  }),
-  clickedProduct: one(products, {
-    fields: [searchHistory.clickedProductId],
-    references: [products.id]
-  })
-}));
+// ============================================
+// FILA DE TRIAGEM
+// ============================================
+
+export const triageQueue = pgTable("triage_queue", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  processedItemId: varchar("processed_item_id", { length: 36 }).notNull().references(() => processedItems.id),
+  status: triageStatusEnum("status").default('pending'),
+  priority: integer("priority").default(0),
+  suggestedProductId: varchar("suggested_product_id", { length: 36 }),
+  suggestedBrandId: varchar("suggested_brand_id", { length: 36 }),
+  suggestedCategoryId: varchar("suggested_category_id", { length: 36 }),
+  adminNotes: text("admin_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+}, (table) => [
+  index("idx_triage_status").on(table.status),
+  index("idx_triage_processed").on(table.processedItemId)
+]);
+
+// ============================================
+// AÇÕES DE CURADORIA
+// ============================================
+
+export const curationActions = pgTable("curation_actions", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  triageItemId: varchar("triage_item_id", { length: 36 }).notNull().references(() => triageQueue.id),
+  action: curationActionEnum("action").notNull(),
+  rejectionReason: text("rejection_reason"),
+  corrections: jsonb("corrections").$type<Record<string, unknown>>().default({}),
+  resultProductId: varchar("result_product_id", { length: 36 }),
+  resultOfferId: varchar("result_offer_id", { length: 36 }),
+  performedAt: timestamp("performed_at").defaultNow(),
+});
+
+// ============================================
+// CLIQUES AFILIADOS
+// ============================================
+
+export const affiliateClicks = pgTable("affiliate_clicks", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  offerId: varchar("offer_id", { length: 36 }).references(() => offers.id),
+  productId: varchar("product_id", { length: 36 }).references(() => products.id),
+  sourcePageUrl: text("source_page_url"),
+  userAgent: text("user_agent"),
+  ipHash: varchar("ip_hash", { length: 64 }),
+  clickedAt: timestamp("clicked_at").defaultNow(),
+}, (table) => [
+  index("idx_clicks_offer").on(table.offerId),
+  index("idx_clicks_product").on(table.productId),
+  index("idx_clicks_date").on(table.clickedAt)
+]);
+
+// ============================================
+// SEO PAGES
+// ============================================
+
+export const seoPages = pgTable("seo_pages", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  heading: text("heading"),
+  introText: text("intro_text"),
+  pageType: varchar("page_type", { length: 60 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 // ============================================
 // NEWSLETTER
@@ -739,6 +403,22 @@ export const newsletterSubscribers = pgTable("newsletter_subscribers", {
 ]);
 
 // ============================================
+// HISTÓRICO DE BUSCAS
+// ============================================
+
+export const searchHistory = pgTable("search_history", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: text("session_id"),
+  query: text("query").notNull(),
+  filters: jsonb("filters").$type<Record<string, unknown>>().default({}),
+  resultsCount: integer("results_count"),
+  clickedProductId: varchar("clicked_product_id", { length: 36 }).references(() => products.id),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_search_query").on(table.query)
+]);
+
+// ============================================
 // CONFIGURAÇÕES DO SISTEMA
 // ============================================
 
@@ -751,90 +431,89 @@ export const systemSettings = pgTable("system_settings", {
 });
 
 // ============================================
-// ZOD SCHEMAS para validação
+// ADMIN USERS (simples, sem auth completa no MVP)
 // ============================================
 
-// Categories
-export const insertCategorySchema = createInsertSchema(categories).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertCategory = z.infer<typeof insertCategorySchema>;
-export type Category = typeof categories.$inferSelect;
+export const adminUsers = pgTable("admin_users", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
-// Brands
+// ============================================
+// ZOD SCHEMAS & TYPES
+// ============================================
+
 export const insertBrandSchema = createInsertSchema(brands).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertBrand = z.infer<typeof insertBrandSchema>;
 export type Brand = typeof brands.$inferSelect;
 
-// Products
-export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true, updatedAt: true, deletedAt: true, viewCount: true, salesCount: true });
+export const insertCategorySchema = createInsertSchema(categories).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type Category = typeof categories.$inferSelect;
+
+export const insertProductSchema = createInsertSchema(products).omit({ id: true, createdAt: true, updatedAt: true, publishedAt: true });
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Product = typeof products.$inferSelect;
 
-// Product Images
 export const insertProductImageSchema = createInsertSchema(productImages).omit({ id: true, createdAt: true });
 export type InsertProductImage = z.infer<typeof insertProductImageSchema>;
 export type ProductImage = typeof productImages.$inferSelect;
 
-// Product Variants
-export const insertProductVariantSchema = createInsertSchema(productVariants).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertProductVariant = z.infer<typeof insertProductVariantSchema>;
-export type ProductVariant = typeof productVariants.$inferSelect;
+export const insertMarketplaceSchema = createInsertSchema(marketplaces).omit({ id: true, createdAt: true });
+export type InsertMarketplace = z.infer<typeof insertMarketplaceSchema>;
+export type Marketplace = typeof marketplaces.$inferSelect;
 
-// Promotions
-export const insertPromotionSchema = createInsertSchema(promotions).omit({ id: true, createdAt: true, updatedAt: true, usageCount: true });
-export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
-export type Promotion = typeof promotions.$inferSelect;
+export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, createdAt: true, updatedAt: true, capturedAt: true, lastSeenAt: true });
+export type InsertOffer = z.infer<typeof insertOfferSchema>;
+export type Offer = typeof offers.$inferSelect;
 
-// Coupons
-export const insertCouponSchema = createInsertSchema(coupons).omit({ id: true, createdAt: true, updatedAt: true, usageCount: true });
-export type InsertCoupon = z.infer<typeof insertCouponSchema>;
-export type Coupon = typeof coupons.$inferSelect;
+export const insertCollectionSourceSchema = createInsertSchema(collectionSources).omit({ id: true, createdAt: true });
+export type InsertCollectionSource = z.infer<typeof insertCollectionSourceSchema>;
+export type CollectionSource = typeof collectionSources.$inferSelect;
 
-// Users
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true, lastLoginAt: true, verificationToken: true, resetPasswordToken: true, resetPasswordExpires: true });
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export const insertCollectionBatchSchema = createInsertSchema(collectionBatches).omit({ id: true });
+export type InsertCollectionBatch = z.infer<typeof insertCollectionBatchSchema>;
+export type CollectionBatch = typeof collectionBatches.$inferSelect;
 
-// Addresses
-export const insertAddressSchema = createInsertSchema(addresses).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertAddress = z.infer<typeof insertAddressSchema>;
-export type Address = typeof addresses.$inferSelect;
+export const insertRawCollectedItemSchema = createInsertSchema(rawCollectedItems).omit({ id: true, collectedAt: true });
+export type InsertRawCollectedItem = z.infer<typeof insertRawCollectedItemSchema>;
+export type RawCollectedItem = typeof rawCollectedItems.$inferSelect;
 
-// Cart Items
-export const insertCartItemSchema = createInsertSchema(cartItems).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
-export type CartItem = typeof cartItems.$inferSelect;
+export const insertProcessedItemSchema = createInsertSchema(processedItems).omit({ id: true, processedAt: true });
+export type InsertProcessedItem = z.infer<typeof insertProcessedItemSchema>;
+export type ProcessedItem = typeof processedItems.$inferSelect;
 
-// Orders
-export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertOrder = z.infer<typeof insertOrderSchema>;
-export type Order = typeof orders.$inferSelect;
+export const insertTriageQueueSchema = createInsertSchema(triageQueue).omit({ id: true, createdAt: true, resolvedAt: true });
+export type InsertTriageQueue = z.infer<typeof insertTriageQueueSchema>;
+export type TriageQueueItem = typeof triageQueue.$inferSelect;
 
-// Order Items
-export const insertOrderItemSchema = createInsertSchema(orderItems).omit({ id: true, createdAt: true });
-export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
-export type OrderItem = typeof orderItems.$inferSelect;
+export const insertCurationActionSchema = createInsertSchema(curationActions).omit({ id: true, performedAt: true });
+export type InsertCurationAction = z.infer<typeof insertCurationActionSchema>;
+export type CurationAction = typeof curationActions.$inferSelect;
 
-// Reviews
-export const insertReviewSchema = createInsertSchema(reviews).omit({ id: true, createdAt: true, updatedAt: true, helpfulCount: true });
-export type InsertReview = z.infer<typeof insertReviewSchema>;
-export type Review = typeof reviews.$inferSelect;
+export const insertAffiliateClickSchema = createInsertSchema(affiliateClicks).omit({ id: true, clickedAt: true });
+export type InsertAffiliateClick = z.infer<typeof insertAffiliateClickSchema>;
+export type AffiliateClick = typeof affiliateClicks.$inferSelect;
 
-// Wishlist
-export const insertWishlistItemSchema = createInsertSchema(wishlistItems).omit({ id: true, createdAt: true });
-export type InsertWishlistItem = z.infer<typeof insertWishlistItemSchema>;
-export type WishlistItem = typeof wishlistItems.$inferSelect;
+export const insertSeoPageSchema = createInsertSchema(seoPages).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSeoPage = z.infer<typeof insertSeoPageSchema>;
+export type SeoPage = typeof seoPages.$inferSelect;
 
-// Search History
-export const insertSearchHistorySchema = createInsertSchema(searchHistory).omit({ id: true, createdAt: true });
-export type InsertSearchHistory = z.infer<typeof insertSearchHistorySchema>;
-export type SearchHistory = typeof searchHistory.$inferSelect;
-
-// Newsletter
 export const insertNewsletterSubscriberSchema = createInsertSchema(newsletterSubscribers).omit({ id: true, subscribedAt: true, unsubscribedAt: true });
 export type InsertNewsletterSubscriber = z.infer<typeof insertNewsletterSubscriberSchema>;
 export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
 
-// System Settings
+export const insertSearchHistorySchema = createInsertSchema(searchHistory).omit({ id: true, createdAt: true });
+export type InsertSearchHistory = z.infer<typeof insertSearchHistorySchema>;
+export type SearchHistory = typeof searchHistory.$inferSelect;
+
 export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({ id: true, updatedAt: true });
 export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
 export type SystemSetting = typeof systemSettings.$inferSelect;
+
+export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({ id: true, createdAt: true });
+export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+export type AdminUser = typeof adminUsers.$inferSelect;

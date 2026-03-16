@@ -1,14 +1,25 @@
-# BeUpFree - E-commerce de Calçados Esportivos
+# BeUpFree - Portal Afiliado de Calçados Esportivos
 
 ## Overview
 
-BeUpFree is a Brazilian e-commerce platform specializing in athletic footwear and sports accessories (tênis, meias, tornozeleiras). The application operates as an affiliate storefront, curating products from Mercado Livre and presenting them through a modern, conversion-optimized shopping experience. The platform targets Brazilian consumers looking for running shoes, casual sneakers, soccer cleats, and sports accessories.
+BeUpFree is a Brazilian affiliate portal specializing in athletic footwear and sports accessories. It scrapes public offer pages from Mercado Livre, processes them through a Collect → Process → Triage → Publish pipeline, and presents curated products with affiliate links (code: 14610626). The platform targets Brazilian consumers looking for running shoes, casual sneakers, soccer cleats, and sports accessories.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
+
+### Core Pipeline: Collect → Process → Triage → Publish
+1. **Collect**: `server/jobs/collect.ts` scrapes ML public offer pages via `server/services/mlScraper.ts`, saves raw data to `raw_collected_items`
+2. **Process**: Auto-detects brand, category, generates affiliate URL; saves to `processed_items`
+3. **Triage**: Items enter `triage_queue` for admin approval/rejection at `/admin/triagem`
+4. **Publish**: Approved items create a `product` + `offer` + `product_image` in the public catalog
+
+### Key Principle: Produto ≠ Oferta
+- A **Product** is a catalog entry (name, brand, category, images, slug)
+- An **Offer** is a price point from a marketplace (price, discount, affiliate URL, expiration)
+- One product can have multiple offers; the best offer is shown publicly
 
 ### Frontend Architecture
 - **Framework**: React 18 with TypeScript
@@ -18,11 +29,15 @@ Preferred communication style: Simple, everyday language.
 - **Component Library**: shadcn/ui components built on Radix UI primitives
 - **Build Tool**: Vite with React plugin
 
-The frontend follows a component-based architecture with:
-- Reusable UI components in `client/src/components/ui/`
-- Feature components in `client/src/components/`
-- Page components in `client/src/pages/`
-- Path aliases configured: `@/` for client source, `@shared/` for shared code, `@assets/` for static assets
+Pages:
+- `/` — Home (landing page with hero, categories, featured products)
+- `/catalogo` — Catalog (real products from API with offers)
+- `/admin/triagem` — Admin triage page (approve/reject collected items)
+
+Key components:
+- `client/src/components/ProductCard.tsx` — Product card with affiliate link, price, discount badge
+- `client/src/components/Header.tsx` — Public header with nav and admin settings link
+- `client/src/pages/AdminTriagem.tsx` — Triage queue with collect, approve, reject actions
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express
@@ -31,51 +46,62 @@ The frontend follows a component-based architecture with:
 - **Development**: tsx for hot reloading, Vite middleware for frontend serving
 - **Production**: esbuild bundling, static file serving
 
-The server has separate entry points:
-- `server/index-dev.ts`: Development with Vite HMR integration
-- `server/index-prod.ts`: Production with static file serving
-
 ### Database Layer
 - **ORM**: Drizzle ORM with PostgreSQL dialect
 - **Schema Location**: `shared/schema.ts` (shared between frontend and backend)
 - **Migrations**: Drizzle Kit with push-based migrations (`npm run db:push`)
 - **Connection**: Node-postgres (pg) pool with Neon serverless support
 
-The schema includes comprehensive e-commerce entities:
-- Users, Categories (hierarchical), Brands
-- Products with images, variants, and technical specifications
-- Orders, Cart items, Reviews, Wishlists
-- Promotions with various discount types
-- Newsletter subscribers and search history
-
-### Key Design Patterns
-1. **Affiliate Model**: Products link to Mercado Livre via affiliate URLs rather than direct purchasing
-2. **Product Classification**: Extensive filter taxonomy for athletic footwear (pisada, amortecimento, drop, etc.)
-3. **AI Integration**: Perplexity AI service for product classification and information enrichment
-4. **Product Sync**: Background service to import and sync products from Mercado Livre API
+Schema tables:
+- **Reference data**: brands, categories, marketplaces
+- **Catalog**: products, product_images, offers
+- **Pipeline**: collection_sources, collection_batches, raw_collected_items, processed_items, triage_queue, curation_actions
+- **Analytics**: affiliate_clicks, search_history, newsletter_subscribers
+- **Admin**: admin_users, system_settings
 
 ### API Structure
-- `/api/ml/*`: Mercado Livre integration endpoints (search, promotions)
-- `/api/products`: Product catalog with filtering and pagination
-- `/api/brands`, `/api/categories`: Reference data endpoints
-- Product sync endpoints for admin operations
+- `/api/products` — Public product catalog (includes bestOffer with price/affiliate URL)
+- `/api/brands`, `/api/categories` — Reference data
+- `/api/ml/scrape-ofertas` — Direct ML scraper endpoint
+- `/api/admin/collect` — POST: trigger collection pipeline
+- `/api/admin/triage` — GET: pending triage items
+- `/api/admin/triage/:id/approve` — POST: approve and publish
+- `/api/admin/triage/:id/reject` — POST: reject item
+- `/api/init` — Seed brands, categories, marketplace
+
+### Key Files
+- `shared/schema.ts` — All Drizzle tables, enums, Zod schemas, types
+- `server/storage.ts` — DatabaseStorage class with all CRUD operations
+- `server/routes.ts` — Express route definitions
+- `server/jobs/collect.ts` — Collection pipeline job
+- `server/services/mlScraper.ts` — Mercado Livre HTML scraper
+- `server/services/productSync.ts` — Product sync utilities, affiliate link generator
+- `server/services/perplexityService.ts` — AI classification via Perplexity
+
+### ML Scraper Output Fields
+The scraper (`mlScraper.ts`) returns objects with these fields:
+- `nome`, `marca`, `preco_atual`, `preco_original`, `desconto_percent`
+- `link_afiliado`, `url`, `imagens` (array), `avaliacao_media`, `qtd_avaliacoes`
+- `frete_gratis`, `parcelas`, `fonte`
 
 ## External Dependencies
 
 ### Third-Party Services
-- **Mercado Livre API**: Primary product data source and affiliate link generation (MLB site ID for Brazil)
-- **Perplexity AI**: Product classification and information enrichment via chat completions API
-- **Neon Database**: PostgreSQL hosting (serverless-compatible)
+- **Mercado Livre**: Product data via HTML scraping (API blocked by Replit IP - do NOT use direct ML API)
+- **Perplexity AI**: Product classification and information enrichment
+- **Affiliate Code**: 14610626 (appended to ML product links via matt_tool parameter)
 
 ### Key NPM Packages
 - **UI**: Radix UI primitives, Embla Carousel, Lucide icons, react-icons
 - **Forms**: React Hook Form with Zod validation
 - **Database**: drizzle-orm, drizzle-zod, pg, @neondatabase/serverless
-- **Utilities**: date-fns, clsx, tailwind-merge, class-variance-authority
+- **Scraping**: cheerio (HTML parsing)
+- **Utilities**: date-fns, clsx, tailwind-merge, class-variance-authority, uuid
 
 ### Environment Variables Required
 - `DATABASE_URL`: PostgreSQL connection string
 - `PERPLEXITY_API_KEY`: For AI-powered product classification
+- `ML_CLIENT_ID`, `ML_CLIENT_SECRET`: Mercado Livre API credentials (not currently used due to IP block)
 
 ### Design System
-The project uses a custom green/yellow/white color scheme defined in CSS variables, following Nike.com-inspired e-commerce patterns with product-first visual hierarchy and mobile-first responsive design.
+Custom green/yellow/white color scheme defined in CSS variables, following Nike.com-inspired e-commerce patterns with product-first visual hierarchy and mobile-first responsive design.

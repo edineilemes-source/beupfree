@@ -1,18 +1,19 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ExternalLink } from "lucide-react";
-import { useState } from "react";
+import { ExternalLink, Truck } from "lucide-react";
 
 interface ProductCardProps {
-  id: string | number;
+  id: string;
   name: string;
   brand: string;
   price: number;
   oldPrice?: number;
+  discount?: number;
   image: string;
   category: string;
-  mercadoLivreUrl?: string;
+  affiliateUrl: string;
+  freeShipping?: boolean;
 }
 
 export default function ProductCard({
@@ -21,12 +22,13 @@ export default function ProductCard({
   brand,
   price,
   oldPrice,
+  discount,
   image,
   category,
-  mercadoLivreUrl = "#"
+  affiliateUrl,
+  freeShipping,
 }: ProductCardProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
-  const discount = oldPrice ? Math.round(((oldPrice - price) / oldPrice) * 100) : 0;
+  const computedDiscount = discount || (oldPrice ? Math.round(((oldPrice - price) / oldPrice) * 100) : 0);
 
   return (
     <Card 
@@ -42,31 +44,25 @@ export default function ProductCard({
             data-testid={`img-product-${id}`}
           />
           
-          <div className="absolute top-2 left-2">
+          <div className="absolute top-2 left-2 flex flex-col gap-1">
             <Badge variant="secondary" className="font-semibold" data-testid={`badge-brand-${id}`}>
               {brand}
             </Badge>
+            {freeShipping && (
+              <Badge variant="default" className="bg-green-600" data-testid={`badge-shipping-${id}`}>
+                <Truck className="w-3 h-3 mr-1" />
+                Frete Grátis
+              </Badge>
+            )}
           </div>
           
-          {discount > 0 && (
+          {computedDiscount > 0 && (
             <div className="absolute top-2 right-2">
               <Badge variant="destructive" data-testid={`badge-discount-${id}`}>
-                -{discount}%
+                -{computedDiscount}%
               </Badge>
             </div>
           )}
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`absolute bottom-2 right-2 bg-white/90 hover:bg-white ${
-              isFavorite ? "text-destructive" : ""
-            }`}
-            onClick={() => setIsFavorite(!isFavorite)}
-            data-testid={`button-favorite-${id}`}
-          >
-            <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
-          </Button>
         </div>
 
         <div className="p-4 space-y-3">
@@ -80,7 +76,7 @@ export default function ProductCard({
           </div>
 
           <div className="space-y-1">
-            {oldPrice && (
+            {oldPrice && oldPrice > price && (
               <p className="text-sm text-muted-foreground line-through" data-testid={`text-old-price-${id}`}>
                 R$ {oldPrice.toFixed(2)}
               </p>
@@ -93,7 +89,7 @@ export default function ProductCard({
           <Button 
             className="w-full gap-2" 
             variant="default"
-            onClick={() => window.open(mercadoLivreUrl, '_blank')}
+            onClick={() => window.open(affiliateUrl, '_blank')}
             data-testid={`button-buy-${id}`}
           >
             <ExternalLink className="h-4 w-4" />

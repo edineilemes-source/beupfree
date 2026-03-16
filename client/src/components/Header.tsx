@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, Menu, User, Settings } from "lucide-react";
+import { Search, Menu, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -60,26 +60,12 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              data-testid="button-account"
-            >
-              <User className="h-5 w-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              data-testid="button-cart"
-            >
-              <ShoppingCart className="h-5 w-5" />
-            </Button>
-            <Link href="/triagem">
+            <Link href="/admin/triagem">
               <Button 
                 variant="outline" 
                 size="icon"
-                title="Triagem - Painel Gerencial"
-                data-testid="button-triagem"
+                title="Painel Admin"
+                data-testid="button-admin"
               >
                 <Settings className="h-5 w-5" />
               </Button>
