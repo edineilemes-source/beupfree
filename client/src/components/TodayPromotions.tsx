@@ -6,62 +6,48 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Flame, ExternalLink, Truck } from "lucide-react";
 
-interface ProductImage {
+interface BestOffer {
   id: string;
-  url: string;
-  alt: string | null;
-  isPrimary: boolean;
+  currentPrice: string;
+  originalPrice: string | null;
+  discountPercent: number | null;
+  affiliateUrl: string;
+  freeShipping: boolean;
 }
 
-interface Brand {
+interface ProductFromAPI {
   id: string;
-  name: string;
-  slug: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  price: string;
-  compareAtPrice: string | null;
-  images: ProductImage[];
-  brand: Brand | null;
-  category: Category | null;
-  discount: number;
-  formattedPrice: string;
-  formattedOriginalPrice: string | null;
-  affiliateUrl: string | null;
-  metadata?: { freeShipping?: boolean };
+  mainName: string;
+  mainImageUrl: string | null;
+  brand: { name: string } | null;
+  category: { name: string } | null;
+  bestOffer: BestOffer | null;
+  offersCount: number;
 }
 
 interface ProductsResponse {
   total: number;
-  products: Product[];
+  products: ProductFromAPI[];
 }
 
-function PromotionCard({ product }: { product: Product }) {
-  const price = parseFloat(product.price);
-  const originalPrice = product.compareAtPrice ? parseFloat(product.compareAtPrice) : null;
-  const imageUrl = product.images[0]?.url || "https://via.placeholder.com/300x200?text=Sem+Imagem";
-  const freeShipping = product.metadata?.freeShipping || false;
+function PromotionCard({ product }: { product: ProductFromAPI }) {
+  const offer = product.bestOffer;
+  if (!offer) return null;
+
+  const price = parseFloat(offer.currentPrice);
+  const originalPrice = offer.originalPrice ? parseFloat(offer.originalPrice) : null;
+  const imageUrl = product.mainImageUrl || "";
 
   return (
     <Card className="flex-shrink-0 w-[200px] md:w-[240px] overflow-hidden hover-elevate" data-testid={`promo-card-${product.id}`}>
       <div className="relative">
-        <img src={imageUrl} alt={product.name} className="w-full h-32 object-contain bg-white p-2" />
-        {product.discount > 0 && (
+        <img src={imageUrl} alt={product.mainName} className="w-full h-32 object-contain bg-white p-2" />
+        {offer.discountPercent && offer.discountPercent > 0 && (
           <Badge className="absolute top-2 left-2 bg-destructive text-destructive-foreground">
-            -{product.discount}%
+            -{offer.discountPercent}%
           </Badge>
         )}
-        {freeShipping && (
+        {offer.freeShipping && (
           <Badge className="absolute top-2 right-2 bg-green-600 text-white">
             <Truck className="h-3 w-3 mr-1" />
             Grátis
@@ -69,10 +55,10 @@ function PromotionCard({ product }: { product: Product }) {
         )}
       </div>
       <div className="p-3">
-        <p className="text-xs text-muted-foreground">{product.brand?.name || "Marca"}</p>
-        <h4 className="font-medium text-sm line-clamp-2 mb-2 min-h-[2.5rem]">{product.name}</h4>
+        <p className="text-xs text-muted-foreground">{product.brand?.name || ""}</p>
+        <h4 className="font-medium text-sm line-clamp-2 mb-2 min-h-[2.5rem]">{product.mainName}</h4>
         <div className="flex items-center gap-2 mb-2">
-          {originalPrice && (
+          {originalPrice && originalPrice > price && (
             <span className="text-xs text-muted-foreground line-through">
               R$ {originalPrice.toFixed(2).replace('.', ',')}
             </span>
@@ -86,8 +72,8 @@ function PromotionCard({ product }: { product: Product }) {
             size="sm" 
             variant="default" 
             onClick={() => {
-              if (product.affiliateUrl) {
-                window.open(product.affiliateUrl, '_blank');
+              if (offer.affiliateUrl) {
+                window.open(offer.affiliateUrl, '_blank');
               }
             }}
             data-testid={`button-view-${product.id}`}
@@ -109,7 +95,7 @@ export default function TodayPromotions() {
     queryKey: ['/api/products'],
   });
 
-  const products = data?.products?.filter(p => p.discount > 0) || [];
+  const products = data?.products?.filter(p => p.bestOffer && p.bestOffer.discountPercent && p.bestOffer.discountPercent > 0) || [];
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -189,48 +175,7 @@ export default function TodayPromotions() {
         {isExpanded ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
             {products.map((product) => (
-              <Card key={product.id} className="overflow-hidden hover-elevate">
-                <div className="relative">
-                  <img 
-                    src={product.images[0]?.url || "https://via.placeholder.com/300x200"} 
-                    alt={product.name} 
-                    className="w-full h-32 object-contain bg-white p-2" 
-                  />
-                  {product.discount > 0 && (
-                    <Badge className="absolute top-2 left-2 bg-destructive text-destructive-foreground">
-                      -{product.discount}%
-                    </Badge>
-                  )}
-                </div>
-                <div className="p-3">
-                  <p className="text-xs text-muted-foreground">{product.brand?.name}</p>
-                  <h4 className="font-medium text-sm line-clamp-2 mb-2">{product.name}</h4>
-                  <div className="flex flex-col gap-1 mb-2">
-                    {product.formattedOriginalPrice && (
-                      <span className="text-xs text-muted-foreground line-through">
-                        {product.formattedOriginalPrice}
-                      </span>
-                    )}
-                    <span className="text-primary font-bold">
-                      {product.formattedPrice}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-end">
-                    <Button 
-                      size="sm" 
-                      variant="default"
-                      onClick={() => {
-                        if (product.affiliateUrl) {
-                          window.open(product.affiliateUrl, '_blank');
-                        }
-                      }}
-                    >
-                      <ExternalLink className="h-3 w-3 mr-1" />
-                      Comprar
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+              <PromotionCard key={product.id} product={product} />
             ))}
           </div>
         ) : (
