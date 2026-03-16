@@ -1,0 +1,1705 @@
+Antes de eu cravar o plano de codificação: você vai manter o backend Express (pasta server/) para rodar a coleta/tratamento, ou quer ir 100% Supabase (Edge Functions + Cron)?
+
+Enquanto você confirma, abaixo vai uma estratégia pronta para sair do “plano” e chegar no código, baseada no Anexo 1 (projeto técnico) e no Anexo 2 (base React atual com Wouter + React Query e página Triagem), assumindo o caminho mais comum e eficiente:
+
+React para público + admin
+Supabase para Postgres + Auth (admin) + Storage (imagens) + (opcional) Edge Functions
+Node/Express (server/) como “worker/orquestrador” de coleta/tratamento (porque scraping/ETL costuma ser melhor fora do browser e fora do request do usuário)
+Visão macro (3 fases virando código)
+✅ Fase 1 — Coleta (entrar dado bruto)
+Objetivo: colocar ofertas “como vieram do mundo real” dentro do banco, com rastreabilidade.
+
+Saída (artefatos prontos):
+
+Tabelas Supabase de staging (itens brutos + lotes)
+Um serviço (server) que cria lotes de coleta
+Rotas/admin para acompanhar status (opcional no MVP, mas ajuda muito)
+✅ Fase 2 — Tratamento (normalizar + deduplicar + preparar para decisão)
+Objetivo: transformar “ruído” em item avaliável: marca sugerida, categoria sugerida, possíveis duplicados, score de confiança.
+
+Saída:
+
+Tabela processed_items
+Funções de normalização (título, marca, categoria, atributos)
+Deduplicação mínima funcional (hash + heurística)
+✅ Fase 3 — Curadoria (aprovar/rejeitar/publicar)
+Objetivo: uma fila clara de decisão humana (ou semi-automática), que publica no catálogo somente o que foi aprovado.
+
+Saída:
+
+Página admin de triagem (aproveita sua rota /triagem atual e evolui ela para /admin/triagem)
+Tabelas: triage_queue, curation_actions, rejection_reasons
+Publicação gera/atualiza products e offers
+Etapas práticas para sair do plano e ir para a codificação (roadmap técnico)
+0) Travar o “MVP operacional” (1 checklist, sem filosofia)
+Regra do MVP (do Anexo 1): BeUpFree não é loja. É catálogo curado + ofertas + clique afiliado + SEO.
+
+No MVP entram:
+
+Coleta (1 fonte inicial) → Tratamento → Triagem → Publicação
+Catálogo público listando ofertas publicadas
+Tracking básico de clique
+Não entram:
+
+carrinho, pedidos, pagamento, conta de cliente “comprador”
+1) Banco no Supabase (primeiro código que vale ouro)
+Crie no Supabase um schema mínimo que permita o pipeline inteiro rodar.
+
+1.1 Tabelas mínimas (MVP real)
+Staging/Coleta
+
+collection_sources
+collection_batches
+raw_collected_items
+Tratamento
+
+processed_items
+Curadoria
+
+triage_queue
+curation_actions
+rejection_reasons
+admin_users (ou usar auth.users + tabela profile)
+Catálogo público
+
+brands
+categories
+products
+offers
+Monetização
+
+affiliate_clicks
+Observação importante: isso é exatamente a espinha dorsal defendida no Anexo 1: produto ≠ oferta, e dado bruto não contamina o publicado.
+
+1.2 Regras (constraints) que evitam dor depois
+offers.product_id NOT NULL
+products.slug UNIQUE
+brands.slug e categories.slug UNIQUE
+Índices:
+raw_collected_items(dedup_hash)
+offers(product_id, marketplace_id, external_item_id) (se existir external id)
+triage_queue(triage_status, priority)
+2) Backend de pipeline (Coleta + Tratamento) — codificação objetiva
+Pelo seu Anexo 2, você já tem server/ com estrutura Express e serviços (ex.: Mercado Livre). A estratégia é:
+
+2.1 Criar 3 módulos no server/
+A) server/jobs/collect.ts
+
+cria um collection_batch
+executa coleta (ex.: Mercado Livre)
+grava N itens em raw_collected_items
+finaliza lote com contagens
+B) server/jobs/process.ts
+
+lê raw_collected_items pendentes
+normaliza (título, marca, categoria)
+calcula dedup_hash (se não veio pronto)
+grava processed_items
+coloca na triage_queue com priority baseada em score/risco
+C) server/jobs/publish.ts (opcional no MVP)
+
+quando aprovado, consolida em products/offers
+2.2 Integração com Supabase no server
+usar @supabase/supabase-js com service role key somente no server
+o React nunca pode ter service role key (senão vira “open bar” no banco)
+3) Tratamento (normalização + deduplicação) — o mínimo que funciona
+3.1 Normalização de título (função pura)
+Crie um util tipo:
+
+remove lixo: “Frete grátis”, “OFERTA”, “🔥”
+padroniza espaços
+extrai sinais: gênero (masc/fem), uso (corrida/caminhada/academia), cor básica (preto/branco)
+3.2 Marca sugerida (baseline)
+tabela brands com marcas iniciais (Nike, Adidas, Mizuno…)
+heurística: se o título contém “nike”, sugere brand_id
+guarda em processed_items.suggested_brand_id + confidence_score
+3.3 Deduplicação (MVP)
+Duas camadas: 1) hash: dedup_hash = sha1(normalized_title + brand + main_image_url?) 2) heurística: se normalized_title muito parecido + mesma marca → marca como duplicado
+
+No MVP, duplicado não é “apagado”; só entra com flag is_duplicate = true e prioridade maior para triagem.
+
+4) Curadoria (admin) — aproveitando seu front atual
+No Anexo 2, você já tem:
+
+src/pages/Triagem.tsx (ainda simples)
+roteamento Wouter (/triagem)
+React Query já plugado
+componentes de layout (Header, Footer)
+4.1 Ajuste de arquitetura de rotas (sem quebrar o público)
+Hoje:
+
+/triagem está misturado com site público
+Recomendado (como no Anexo 1):
+
+/admin/triagem
+e o público fica em /, /catalogo (ou /ofertas)
+No seu App.tsx (Wouter), criar rotas:
+
+/admin/triagem
+/admin/ofertas
+/admin/produtos
+4.2 Tela /admin/triagem (MVP funcional)
+Grid/Fila com:
+
+imagem
+título normalizado
+marketplace/origem
+preço
+marca sugerida
+categoria sugerida
+flags: duplicado / baixa confiança / suspeito
+Ações rápidas:
+
+✅ Aprovar (gera/atualiza products + cria offers + marca oferta is_published=true)
+❌ Rejeitar (pede motivo → grava em curation_actions + atualiza status)
+✏️ Corrigir marca/categoria antes de aprovar
+4.3 Como o React conversa com o banco
+Você já usa React Query; então faça hooks:
+
+useTriageQueue(status)
+useApproveItem()
+useRejectItem()
+Implementação recomendada:
+
+React chama sua API do server (/api/admin/triage/...)
+Motivo: aprovar/rejeitar envolve múltiplas tabelas e regras; é melhor transacionar no server.
+5) Publicação (catálogo público) — usando seus componentes existentes
+Você tem no Anexo 2:
+
+Catalog.tsx com FilterSidebar + ProductGrid
+ProductCard
+5.1 Trocar “mock” por offers publicados
+ProductGrid deve listar offers onde is_published = true e offer_status='active'
+Filtros iniciais do MVP:
+preço (min/max)
+marca
+categoria
+uso/gênero (se já estiver extraindo)
+5.2 Produto vs Oferta na UI (MVP simples)
+No MVP, você pode:
+
+listar ofertas direto (mais simples)
+ou listar produto com “melhor oferta” (mais bonito, um pouco mais trabalho)
+Sugestão pragmática:
+
+Catálogo lista ofertas (rápido)
+Página de produto (/produto/:slug) evolui depois para “produto com múltiplas ofertas”
+6) Tracking de clique afiliado (monetização mínima)
+Quando usuário clica em “Ver oferta”:
+
+bater em um endpoint seu: /api/click/:offerId
+endpoint grava em affiliate_clicks
+depois redireciona para affiliate_url (ou original_url)
+Isso fecha o loop de negócio do Anexo 1: SEO → navegação → clique → comissão.
+
+Backlog por sprint (para você sair do documento e entrar no “commit”)
+Sprint 1 — “Banco + fila aparecendo”
+[ ] Criar tabelas mínimas no Supabase
+[ ] Seed de brands, categories, marketplaces
+[ ] server conecta no Supabase
+[ ] Job de coleta grava em raw_collected_items
+[ ] Job de processamento cria processed_items e triage_queue
+[ ] Admin /admin/triagem lista fila (somente leitura)
+Sprint 2 — “Curadoria aprova e publica”
+[ ] Aprovar item cria/atualiza products e cria offers
+[ ] Rejeitar item grava curation_actions + motivo
+[ ] Catálogo público lista offers publicados
+[ ] Clique rastreado + redirect
+Sprint 3 — “Qualidade + filtros + dedup”
+[ ] Dedup hash + flag duplicado
+[ ] Filtros no catálogo (marca/preço/categoria)
+[ ] Estados e monitoramento básico (oferta expirada/pausada)
+Como isso casa com seu código atual (Anexo 2)
+Você já tem React Query: perfeito para buscar fila/itens/ofertas.
+Você já tem Wouter: fácil separar público de admin com rotas novas.
+Você já tem a página Triagem: ela vira o embrião do backoffice.
+Seu server/ já existe: ótimo lugar para rodar coleta/tratamento sem “gambiarras” no front.
+Resultado final (o que você vai ter ao final dessas fases)
+Um pipeline real: Coleta → Tratamento → Curadoria → Publicação
+Catálogo público abastecido por ofertas aprovadas
+Admin operacional que controla qualidade
+Tracking de clique para medir performance e provar o modelo afiliado
+A partir daqui, o próximo passo prático (codificação mesmo) é eu te passar um checklist de implementação por arquivo (client e server) e um SQL inicial do Supabase já com as tabelas mínimas e índices do MVP, alinhado com esses módulos.
+
+
+
+continue
+
+
+Pensou por 2 segundos
+
+Ocultar pensamentos
+Mostrar pensamentos
+
+
+Explaining document limitations
+In this context, I can provide a structured outline for the DOCX content, but since the user wants a file, I should acknowledge my limitations while offering ready-to-paste content. I can’t generate a file directly in chat, so I'll provide the complete text along with instructions on how to convert it into a DOCX. I'll expand on the SAD sections 1-20 and include appendices like DB schema and API endpoints. I’ll also share detailed workflows and mapping information.Delivering security and content details
+
+I need to provide admin authentication, RLS, and service role usage while also including mentions of scraping legality and ethical considerations. I should outline SEO programmatic generation rules and a caching strategy. Since the user wants a lengthy document of 150-200 pages, I can't do that all at once, but we can work in chunks. I plan to deliver Part 1 and Part 2 of the SAD in this volume, using explicit "=== PAGE BREAK ===" markers for easy pasting. I'll ensure to include sample code snippets from our docs, as the user presumably owns them.
+
+A seguir vai a continuação em formato de documento (SAD — Software Architecture Document), já pronto para colar num .docx mantendo todas as quebras de linha.
+Estou entregando em partes, porque o SAD completo (150–200 páginas) não cabe com segurança em uma única mensagem sem risco de truncar. Esta é a PARTE 1 (Seções 1 a 6).
+
+BeUpFree — Software Architecture Document (SAD)
+Versão: 1.0 (rascunho técnico detalhado)
+Data: 16/03/2026
+
+0. Controle do Documento
+0.1 Objetivo
+Este documento descreve a arquitetura completa do BeUpFree como um portal afiliado com curadoria, cobrindo visão de produto, requisitos, arquitetura de software, modelo de dados, fluxo operacional (coleta → tratamento → curadoria → publicação), SEO programático e rastreamento de cliques.
+
+0.2 Público-alvo
+
+Engenharia (frontend, backend, dados)
+Operação/Curadoria (backoffice)
+Produto/Negócio
+SEO/Growth
+0.3 Escopo do SAD
+Inclui:
+
+Arquitetura do frontend (React)
+Arquitetura do backend (Express/Node)
+Arquitetura de dados (Supabase/Postgres)
+Pipeline operacional (coleta/tratamento/curadoria/publicação)
+SEO programático e páginas
+Analytics e tracking de cliques
+Segurança (admin, RLS, service role, auditoria)
+Observabilidade e logs
+Roadmap técnico por fases
+Não inclui (no MVP):
+
+Carrinho, checkout, pedidos, pagamento, logística
+Conta “comprador” complexa
+0.4 Definições rápidas (glossário mínimo)
+
+Produto: entidade normalizada (sem preço).
+Oferta: ocorrência comercial (preço/link/marketplace) de um produto.
+Item bruto: dado capturado da fonte sem “limpar”.
+Item processado: item bruto após normalização/dedup/sugestões.
+Curadoria/Triagem: decisão humana para aprovar/rejeitar/corrigir/publicar.
+Publicação: tornar oferta visível no catálogo público.
+SEO programático: geração/manutenção de páginas por intenção (marca + categoria + faixa etc).
+=== QUEBRA DE PÁGINA ===
+
+1. Visão Executiva
+1.1 O que é o BeUpFree (definição oficial)
+O BeUpFree é uma plataforma afiliada de curadoria e publicação de ofertas esportivas, com foco inicial em tênis, que:
+
+coleta ofertas em marketplaces parceiros (ex.: Mercado Livre, Shopee, Amazon, Netshoes, Centauro)
+trata e normaliza dados (produto ≠ oferta)
+passa por curadoria (triagem humana)
+publica um catálogo útil e navegável
+monetiza via cliques em links de afiliado (não vende diretamente)
+1.2 Problema que resolve
+Marketplaces são ótimos para comprar e péssimos para “descobrir rápido o que vale a pena” quando você quer:
+
+navegar por intenção (tênis corrida barato, nike em promoção etc.)
+filtrar por critérios práticos
+ver ofertas reais (com menos ruído)
+1.3 Proposta de valor
+
+Menos ruído, mais intenção.
+Catálogo organizado (marca/categoria/uso/faixa de preço).
+Páginas SEO com recortes que fazem sentido.
+Curadoria como filtro de qualidade.
+1.4 Métrica norte (North Star Metric)
+Cliques qualificados em ofertas publicadas (affiliate clicks) por sessão/página, com CTR sustentável.
+
+=== QUEBRA DE PÁGINA ===
+
+2. Visão do Produto
+2.1 Modelo de negócio
+
+Receita: comissões de afiliado sobre compras concluídas no marketplace parceiro.
+O BeUpFree não processa pagamento, não emite nota, não entrega produto.
+2.2 Jornada do usuário (público)
+
+Usuário chega por SEO, redes ou acesso direto
+Navega por página de intenção (ex.: “tênis feminino até 250”)
+Filtra e encontra uma oferta boa
+Clica em “ver oferta”
+Vai para o marketplace pelo link afiliado
+Compra (fora do BeUpFree)
+2.3 Jornada do operador (admin/curador)
+
+Rodar/monitorar coleta
+Conferir itens processados e fila de triagem
+Aprovar/rejeitar/corrigir
+Publicar ofertas
+Acompanhar cliques/CTR e qualidade das páginas
+Ajustar regras de curadoria e SEO
+2.4 MVP (definição objetiva)
+Entra no MVP:
+
+Coleta de pelo menos 1 fonte
+Tratamento (normalização + dedup simples + sugestões)
+Curadoria (fila + aprovar/rejeitar + correções mínimas)
+Publicação de ofertas
+Catálogo público com filtros básicos
+Tracking de clique afiliado
+Rotas públicas e rotas admin separadas
+Não entra no MVP:
+
+Carrinho/checkout/pedidos/pagamentos
+Comparador avançado com histórico completo para o usuário (pode entrar depois)
+Conteúdo editorial pesado (blog completo)
+=== QUEBRA DE PÁGINA ===
+
+3. Requisitos
+3.1 Requisitos Funcionais (RF)
+RF-01 — Coletar ofertas
+O sistema deve coletar ofertas de marketplaces configurados e persistir os itens brutos com rastreabilidade.
+
+RF-02 — Armazenar item bruto (staging)
+Todo item coletado deve ser armazenado sem perda do payload original.
+
+RF-03 — Processar itens
+O sistema deve normalizar título, sugerir marca/categoria, detectar duplicidade e gerar item processado.
+
+RF-04 — Fila de triagem
+O sistema deve manter uma fila com status e prioridade para curadoria.
+
+RF-05 — Curadoria
+Operador deve aprovar/rejeitar e registrar justificativa/ação.
+
+RF-06 — Publicação
+Aprovação deve gerar/atualizar produto e criar/atualizar oferta publicada.
+
+RF-07 — Catálogo público
+Usuário deve listar ofertas publicadas com filtros (mínimo: marca, categoria, faixa de preço).
+
+RF-08 — Página de produto
+Usuário deve ver detalhes do produto e ofertas associadas (no mínimo: melhor oferta).
+
+RF-09 — Tracking de cliques
+Ao clicar numa oferta, registrar evento e redirecionar para URL destino (afiliada).
+
+RF-10 — SEO pages
+Sistema deve suportar páginas por intenção (marca/categoria/preço/uso), com slugs estáveis.
+
+3.2 Requisitos Não Funcionais (RNF)
+RNF-01 — Separação público/admin
+Rotas e permissões administrativas não podem se misturar com rotas públicas.
+
+RNF-02 — Segurança de dados
+Service Role Key do Supabase nunca pode ir ao frontend. Operações sensíveis devem acontecer no backend.
+
+RNF-03 — Observabilidade
+Coleta/processamento/publicação devem gerar logs auditáveis.
+
+RNF-04 — Desempenho
+Listagens públicas devem responder rápido e suportar cache/paginação.
+
+RNF-05 — Evolução
+Modelo deve permitir múltiplas ofertas por produto, várias fontes e expansão para novas categorias.
+
+=== QUEBRA DE PÁGINA ===
+
+4. Arquitetura Geral do Sistema
+4.1 Visão em camadas (macro)
+Camada Pública (React)
+
+Home, catálogo, páginas SEO, produto, busca
+Consome API do backend (preferencialmente) e/ou Supabase (quando seguro)
+Camada Operacional (Admin em React)
+
+Triagem, produtos, ofertas, SEO, coleta, analytics
+Consome API do backend (ações transacionais) e Supabase (consultas controladas)
+Camada Backend (Express/Node)
+
+API pública (listagens)
+API admin (curadoria/publicação)
+Jobs (coleta/tratamento) e integrações
+Comunicação com Supabase via service role (somente server)
+Camada Dados (Supabase/Postgres)
+
+Postgres + Auth + Storage
+RLS (Row Level Security) para acesso direto (quando aplicável)
+Tabelas de staging, pipeline, catálogo, SEO, analytics
+Fontes externas
+
+Marketplaces (Mercado Livre etc.)
+(Opcional) serviços de IA para classificação/enriquecimento
+4.2 Decisões arquiteturais (ADRs resumidos)
+ADR-001 — Produto ≠ Oferta
+Preço e link pertencem à oferta; produto é identidade normalizada.
+
+ADR-002 — Bruto ≠ Publicado
+Dados coletados entram em staging; publicação depende de curadoria.
+
+ADR-003 — Curadoria como “gate”
+Nada vai ao ar sem passar por fila/ação registrada.
+
+ADR-004 — Server como orquestrador
+Coleta/tratamento/publicação devem ocorrer no backend para segurança e controle.
+
+ADR-005 — SEO como entidade de domínio
+Páginas SEO não são “só rotas”; são conteúdo + regras persistidas.
+
+=== QUEBRA DE PÁGINA ===
+
+5. Arquitetura do Frontend (React)
+5.1 Stack (base atual)
+React + TypeScript
+Vite
+Tailwind
+React Query (@tanstack/react-query)
+Wouter (roteamento)
+5.2 Estrutura atual (conforme seu projeto)
+O app já possui base com:
+
+src/main.tsx inicializando o React
+src/App.tsx com rotas e providers (React Query + UI providers)
+src/pages/ com Home, Catalog, Triagem e NotFound
+src/components/ com Header, Footer, grid e filtros
+Código existente (referência fiel do que você mostrou):
+
+src/main.tsx
+importa App, injeta index.css, faz createRoot(...).render(<App />).
+
+src/App.tsx
+
+Rotas atuais:
+/ → Home
+/catalogo → Catalog
+/triagem → Triagem
+Providers: React Query + Tooltip + Toaster
+5.3 Ajuste recomendado: separar público vs admin
+Rotas públicas (exemplo)
+
+/
+/ofertas (pode substituir /catalogo no futuro)
+/produto/:slug
+/marca/:slug
+/tenis e /tenis/:sub (ou via seo_pages)
+Rotas admin (exemplo)
+
+/admin
+/admin/triagem
+/admin/produtos
+/admin/ofertas
+/admin/seo/paginas
+Regra de UI
+
+Header público não deve expor link de triagem/admin.
+Admin pode ter seu próprio layout (menu lateral simples).
+5.4 Padrões de consumo de dados
+Consultas
+
+React Query para cache, loading/error states e refetch controlado.
+Ações transacionais (aprovar/rejeitar/publicar)
+
+Devem chamar endpoints do backend Express para garantir regras e consistência.
+=== QUEBRA DE PÁGINA ===
+
+6. Arquitetura do Backend (Express/Node)
+6.1 Estrutura atual (conforme seu projeto)
+Você já tem server/ com arquivos e serviços, incluindo módulos para Mercado Livre e sincronização.
+
+Arquivos citados na sua base:
+
+server/app.ts (Express app)
+server/routes.ts (rotas /api)
+server/db.ts, storage.ts, index-dev.ts, index-prod.ts
+server/services/mercadolivre.ts, mlScraper.ts, productSync.ts, perplexity.ts
+6.2 Papéis do backend no BeUpFree
+API pública
+
+listar ofertas publicadas
+retornar filtros (marcas/categorias/faixas)
+página de produto (produto + ofertas)
+endpoint de clique afiliado (redirect com tracking)
+API admin
+
+listar fila de triagem
+aprovar/rejeitar item processado
+publicar oferta
+pausar/despublicar
+gerenciar marcas/categorias/SEO pages
+Jobs/Workers (via cron ou execução manual)
+
+coleta (cria lote + grava itens brutos)
+tratamento (processa pendentes + gera fila)
+verificação (revalidar ofertas ativas, opcional)
+6.3 Integração com Supabase
+No backend
+
+usar @supabase/supabase-js com SUPABASE_SERVICE_ROLE_KEY
+fazer inserts/updates transacionais (ideal com SQL functions ou transações controladas)
+No frontend
+
+usar anon key apenas para leituras públicas (e mesmo assim, preferível passar pelo backend no MVP para simplificar RLS)
+6.4 Endpoints mínimos (MVP)
+Público
+
+GET /api/offers (publicadas)
+GET /api/products/:slug
+GET /api/brands
+GET /api/categories
+GET /api/click/:offerId (registra + redirect)
+Admin
+
+GET /api/admin/triage?status=pending
+POST /api/admin/triage/:id/approve
+POST /api/admin/triage/:id/reject
+POST /api/admin/offers/:id/publish (se separar da aprovação)
+6.5 Observação prática (importante)
+Operações como “aprovar item” geralmente envolvem:
+
+criar/atualizar produto
+criar/atualizar oferta
+registrar ação de curadoria
+atualizar status da fila
+Isso é multi-tabela e deve rodar no backend para manter consistência e auditoria.
+
+FIM DA PARTE 1 (Seções 1 a 6).
+
+Na PARTE 2, eu continuo com:
+
+7. Arquitetura de Coleta (scrapers/coletores) e Tratamento (normalização/dedup)
+8. Pipeline de Dados (do bruto ao publicado) com estados e regras
+9. Modelo de Dados (tabelas essenciais + RLS + índices recomendados)
+10. DER + Dicionário de dados operacional
+Se você colar isso no Word agora, a formatação fica estável (títulos, blocos e quebras).
+
+
+
+continua
+
+
+Pensou por 2 segundos
+
+
+BeUpFree — SAD (continuação)
+PARTE 2 — Seções 7 a 12 (Coleta, Tratamento, Curadoria, Publicação, APIs e Segurança)
+
+=== QUEBRA DE PÁGINA ===
+
+7. Arquitetura da Coleta (ingestão)
+7.1 Objetivo
+Trazer ofertas de marketplaces/fontes para dentro do BeUpFree como dado bruto rastreável, sem contaminar o catálogo publicado.
+
+7.2 Princípios
+Nada vai direto para offers/products sem passar por staging + curadoria.
+Coleta é idempotente (rodar duas vezes não deve duplicar sem controle).
+Coleta salva payload original (para auditoria e reprocessamento).
+7.3 Componentes (camada server)
+No seu projeto já existe server/ com Express e serviços. A proposta é organizar a coleta em 3 blocos:
+
+(A) Collector (fonte)
+
+Ex.: server/services/mercadolivre.ts / mlScraper.ts
+Responsável por buscar itens e devolver uma lista de objetos normalizados “mínimos” (ainda brutos).
+(B) Batch runner
+
+Ex.: server/jobs/collectMercadoLivre.ts
+Cria lote, executa collector, grava raw_collected_items, fecha lote.
+(C) Persistência via Supabase
+
+server/lib/supabaseAdmin.ts (client com service role)
+Inserções em lote + logs.
+7.4 Contrato mínimo do item bruto (interface)
+Exemplo (TypeScript), para padronizar qualquer fonte:
+
+ts
+Copiar
+
+export type RawOfferInput = {
+  marketplaceSlug: string;      // "mercado-livre"
+  externalItemId?: string;      // id do marketplace, se houver
+  title?: string;
+  price?: number;
+  oldPrice?: number;
+  itemUrl?: string;
+  imageUrl?: string;
+  brandRaw?: string;
+  categoryRaw?: string;
+  ratingRaw?: number;
+  reviewsRaw?: number;
+  payload: unknown;             // JSON original (sempre)
+};
+7.5 Estados do lote e do item bruto
+collection_batches.batch_status: running | finished | failed
+raw_collected_items.processing_status: pending | processed | error
+7.6 Idempotência / dedup na coleta (MVP)
+Calcular dedup_hash no server usando dados disponíveis:
+sha1(marketplaceSlug + externalItemId) quando existir external id
+senão: sha1(normalize(title) + price + imageUrl)
+Criar índice em raw_collected_items(dedup_hash).
+=== QUEBRA DE PÁGINA ===
+
+8. Arquitetura do Tratamento (normalização + deduplicação + enriquecimento)
+8.1 Objetivo
+Transformar dado bruto em item avaliável, com sugestões e flags para curadoria.
+
+8.2 Entrada e saída
+Entrada: raw_collected_items com processing_status='pending'
+Saída: processed_items + criação/atualização de triage_queue
+8.3 Funções mínimas de tratamento (MVP)
+(1) Normalização de título
+
+remover ruído (“frete grátis”, “promoção”, emojis)
+padronizar caixa/espaços
+extrair tokens úteis (mas sem “viajar” no MVP)
+(2) Sugestão de marca
+
+matching simples por dicionário a partir de brands
+score de confiança:
+alta se bate como palavra inteira
+média se bate parcial
+baixa se só aparece no fim em formato “genérico”
+(3) Sugestão de categoria
+
+no MVP: regras fixas por palavras-chave (“corrida”, “caminhada”, “academia”)
+depois: modelo/IA (fase 2+)
+(4) Deduplicação
+
+por dedup_hash
+e heurística por similaridade de título (opcional no MVP)
+8.4 Saída do processamento (campos críticos)
+processed_items deve carregar:
+
+normalized_title
+suggested_brand_id, suggested_category_id
+confidence_score
+is_duplicate
+detected_issues (texto/JSON com flags)
+8.5 Regras de priorização na fila
+triage_queue.priority (exemplo):
+
++50 se is_duplicate=true
++30 se confidence_score < 0.5
++20 se price muito fora de faixa (ex.: 0, muito baixo, muito alto)
++10 se sem imagem
+=== QUEBRA DE PÁGINA ===
+
+9. Fluxo operacional completo da Curadoria (fila → decisão → publicação)
+9.1 Objetivo
+Garantir que o site público só mostre:
+
+ofertas relevantes
+com qualidade mínima (imagem/título)
+com vínculo correto a produto/marca/categoria
+com rastreio (auditoria) de quem aprovou e por quê
+9.2 Estados (operacionais)
+triage_queue.triage_status
+
+pending
+in_review
+approved
+rejected
+products.catalog_status
+
+draft
+published
+inactive
+offers.offer_status
+
+active
+paused
+expired
+invalid
+9.3 Ações mínimas na triagem (MVP)
+Na tela admin (e via API):
+
+Aprovar
+
+criar/atualizar products
+criar offers
+set offers.is_published=true
+marcar triage_queue=approved
+registrar em curation_actions
+Rejeitar
+
+set triage_queue=rejected
+registrar rejection_reason_id + notas em curation_actions
+Corrigir e aprovar
+
+ajustar marca/categoria/título antes de publicar
+9.4 Auditoria obrigatória
+Toda decisão gera registro em:
+
+curation_actions(target_type, target_id, action_type, admin_user_id, executed_at)
+=== QUEBRA DE PÁGINA ===
+
+10. Publicação (catálogo público) e separação Produto × Oferta
+10.1 Regra de ouro
+products: identidade e atributos (sem preço)
+offers: preço/link/status por marketplace
+10.2 Estratégia de exibição (MVP)
+Catálogo público lista offers onde:
+
+is_published=true
+offer_status='active'
+Depois (fase 2):
+
+página do produto mostra múltiplas ofertas por produto (rank por preço/score)
+10.3 Tracking afiliado (MVP real)
+Fluxo:
+
+User clica em “Ver oferta”
+Front chama GET /api/click/:offerId
+Server grava em affiliate_clicks
+Server responde com redirect para affiliate_url (ou original_url se não houver)
+=== QUEBRA DE PÁGINA ===
+
+11. APIs (contratos) — do plano ao código (Express + React)
+Você já tem server/routes.ts. Evolução sugerida:
+
+11.1 Rotas públicas
+GET /api/offers
+filtros: brand, category, minPrice, maxPrice, q, sort, page
+GET /api/products/:slug
+retorna produto + melhores ofertas
+GET /api/brands
+GET /api/categories
+GET /api/click/:offerId (tracking + redirect)
+11.2 Rotas admin
+GET /api/admin/triage?status=pending
+POST /api/admin/triage/:queueId/approve
+POST /api/admin/triage/:queueId/reject
+POST /api/admin/offers/:offerId/pause
+POST /api/admin/offers/:offerId/unpause
+11.3 Organização por arquivo (server)
+Sugestão direta para virar commits:
+
+server/lib/supabaseAdmin.ts
+server/routes/public.ts
+server/routes/admin.ts
+server/routes/index.ts (agrega)
+server/jobs/collect.ts
+server/jobs/process.ts
+server/usecases/approveTriageItem.ts (transação)
+server/usecases/rejectTriageItem.ts
+11.4 Organização por arquivo (client)
+Seu client já tem pages/ e components/. Para o admin:
+
+client/src/pages/admin/Triagem.tsx (migrar/duplicar o atual)
+client/src/lib/api.ts (fetch wrapper)
+client/src/hooks/useTriageQueue.ts
+client/src/hooks/useApproveItem.ts
+client/src/hooks/useRejectItem.ts
+E no client/src/App.tsx:
+
+adicionar rotas /admin/... e remover link público para triagem.
+=== QUEBRA DE PÁGINA ===
+
+12. Segurança (Supabase + server) — mínimo correto (sem “key vazando”)
+12.1 Regras inegociáveis
+SUPABASE_SERVICE_ROLE_KEY fica apenas no server
+Front usa apenas anon key (se usar Supabase direto)
+Ações transacionais de curadoria/publicação passam pelo server
+12.2 Auth para admin (MVP)
+Duas opções válidas:
+
+Opção A (recomendada): Supabase Auth
+
+Admin faz login
+Front recebe JWT
+Front chama API do server com Authorization: Bearer <token>
+Server valida token (Supabase) e autoriza por role
+Opção B (rápida, mas inferior): Basic auth/secret
+
+Só para ambiente interno de teste (não recomendo em produção)
+12.3 RLS (Row Level Security)
+Para MVP, você pode:
+
+bloquear acesso direto do front às tabelas operacionais (staging/curadoria)
+permitir leitura pública apenas via views/queries controladas (ou via server)
+Entrega prática (o que vem na PARTE 3)
+Na próxima parte eu continuo com o que normalmente destrava a codificação de vez:
+
+1) SQL inicial (Postgres/Supabase) do núcleo MVP (com índices e constraints)
+2) Transação de aprovação (pseudocódigo + estrutura)
+3) Especificação da tela Admin Triagem (componentes + estados + React Query)
+4) Plano de jobs (cron/manual) e padrões de log/observabilidade
+
+Se você confirmar se vai manter o Express como worker/orquestrador (minha recomendação para scraping/ETL) ou se quer migrar isso para Supabase Edge Functions, eu ajusto o desenho dos jobs e da autenticação admin para bater 100% com o seu caminho.
+
+
+
+Vou Manter
+
+
+
+Pensou por 2 segundos
+
+Ocultar pensamentos
+Mostrar pensamentos
+
+
+Planning SQL Schema
+I'm focusing on providing a minimal outline for the supabase schema using SQL. This will include create tables while avoiding any ending with opt-in questions—only one clarifying question at the start is permitted. I want to provide next steps as checklists. It sounds like I'll outline coding plans while keeping Express in mind, mentioning SQL and some gentle humor like “sem gambiarras no front” for a light touch. Let's make this efficient and clear!
+
+Perfeito — mantendo o Express (server/) como orquestrador da Coleta + Tratamento + Publicação, e usando Supabase (Postgres/Auth/Storage) como base de dados. Esse é o caminho mais “pé no chão” pra scraping/ETL (e evita fazer o React sofrer com tarefas que ele nunca pediu pra fazer).
+
+Abaixo vai o plano direto para virar código, com:
+
+✅ estrutura de pastas (server + client)
+✅ SQL MVP (Supabase/Postgres) para rodar o pipeline completo
+✅ endpoints Express (público + admin)
+✅ jobs: collect e process
+✅ usecases transacionais: aprovar/rejeitar (multi-tabela)
+✅ tela Admin Triagem aproveitando sua base (Wouter + React Query)
+1) Estrutura final de código (o “mapa do que criar”)
+📦 Backend (server/)
+Sugestão de organização mínima:
+
+server/
+  lib/
+    supabaseAdmin.ts
+    hash.ts
+    normalize.ts
+  routes/
+    public.ts
+    admin.ts
+    index.ts
+  jobs/
+    collect.ts
+    process.ts
+  usecases/
+    approveTriageItem.ts
+    rejectTriageItem.ts
+  app.ts
+  index-dev.ts
+  index-prod.ts
+🖥️ Frontend (client/src/)
+client/src/
+  lib/
+    api.ts
+  pages/
+    Home.tsx
+    Catalog.tsx
+    not-found.tsx
+    admin/
+      Triagem.tsx
+  hooks/
+    useTriageQueue.ts
+    useApproveItem.ts
+    useRejectItem.ts
+  App.tsx
+  main.tsx
+Você já tem src/main.tsx, src/App.tsx, pages e componentes. Vamos só separar admin e ligar com a API do server/.
+
+2) SQL MVP no Supabase (tabelas mínimas para Coleta → Tratamento → Curadoria → Publicação)
+Cole isso no Supabase SQL Editor (ajuste nomes se quiser). Mantive o mínimo pra rodar o pipeline sem travar.
+
+sql
+Copiar
+
+-- ================
+-- 2.1 Catálogo
+-- ================
+
+create table if not exists brands (
+  id bigserial primary key,
+  name varchar(120) not null unique,
+  slug varchar(160) not null unique,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists categories (
+  id bigserial primary key,
+  parent_id bigint references categories(id),
+  name varchar(120) not null,
+  slug varchar(160) not null unique,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists products (
+  id bigserial primary key,
+  brand_id bigint references brands(id),
+  main_category_id bigint references categories(id),
+  main_name varchar(255) not null,
+  slug varchar(255) not null unique,
+  main_image_url text,
+  catalog_status varchar(30) not null default 'draft', -- draft|published|inactive
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- ================
+-- 2.2 Comercial / Ofertas
+-- ================
+
+create table if not exists marketplaces (
+  id bigserial primary key,
+  name varchar(120) not null unique,
+  slug varchar(160) not null unique,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists offers (
+  id bigserial primary key,
+  product_id bigint not null references products(id),
+  marketplace_id bigint not null references marketplaces(id),
+  external_item_id varchar(255),
+  source_title text,
+  original_url text not null,
+  affiliate_url text,
+  current_price numeric(12,2) not null,
+  old_price numeric(12,2),
+  currency_code varchar(10) not null default 'BRL',
+  captured_at timestamptz not null default now(),
+  offer_status varchar(30) not null default 'active', -- active|paused|expired|invalid
+  is_published boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists offers_lookup_idx
+  on offers(product_id, marketplace_id, external_item_id);
+
+-- ================
+-- 2.3 Coleta (staging)
+-- ================
+
+create table if not exists collection_sources (
+  id bigserial primary key,
+  marketplace_id bigint references marketplaces(id),
+  source_type varchar(60) not null,         -- search|category|csv|manual
+  collection_method varchar(60),            -- scraper|api|import
+  description text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists collection_batches (
+  id bigserial primary key,
+  collection_source_id bigint not null references collection_sources(id),
+  execution_type varchar(60) not null,      -- search|refresh|import
+  search_term varchar(255),
+  batch_status varchar(30) not null default 'running', -- running|finished|failed
+  started_at timestamptz not null default now(),
+  finished_at timestamptz,
+  total_items int not null default 0,
+  total_valid_items int not null default 0,
+  total_invalid_items int not null default 0,
+  notes text
+);
+
+create table if not exists raw_collected_items (
+  id bigserial primary key,
+  collection_batch_id bigint not null references collection_batches(id),
+  marketplace_id bigint references marketplaces(id),
+  external_item_id varchar(255),
+  raw_title text,
+  raw_price numeric(12,2),
+  raw_old_price numeric(12,2),
+  item_url text,
+  image_url text,
+  payload_json jsonb not null,
+  dedup_hash varchar(255),
+  collected_at timestamptz not null default now(),
+  processing_status varchar(30) not null default 'pending' -- pending|processed|error
+);
+
+create index if not exists raw_dedup_hash_idx on raw_collected_items(dedup_hash);
+create index if not exists raw_status_idx on raw_collected_items(processing_status);
+
+-- ================
+-- 2.4 Tratamento + Curadoria
+-- ================
+
+create table if not exists processed_items (
+  id bigserial primary key,
+  raw_item_id bigint not null references raw_collected_items(id) on delete cascade,
+  normalized_title text,
+  suggested_brand_id bigint references brands(id),
+  suggested_category_id bigint references categories(id),
+  confidence_score numeric(5,2),
+  is_duplicate boolean not null default false,
+  detected_issues jsonb,
+  processed_at timestamptz not null default now()
+);
+
+create table if not exists triage_queue (
+  id bigserial primary key,
+  processed_item_id bigint not null references processed_items(id) on delete cascade,
+  triage_status varchar(30) not null default 'pending', -- pending|in_review|approved|rejected
+  priority int not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists triage_status_priority_idx on triage_queue(triage_status, priority desc);
+
+create table if not exists rejection_reasons (
+  id bigserial primary key,
+  code varchar(60) not null unique,
+  description text not null,
+  is_active boolean not null default true
+);
+
+create table if not exists curation_actions (
+  id bigserial primary key,
+  triage_queue_id bigint references triage_queue(id),
+  action_type varchar(60) not null, -- approve|reject|publish|pause|fix
+  notes text,
+  rejection_reason_id bigint references rejection_reasons(id),
+  executed_at timestamptz not null default now()
+);
+
+-- ================
+-- 2.5 Monetização
+-- ================
+
+create table if not exists affiliate_clicks (
+  id bigserial primary key,
+  offer_id bigint references offers(id),
+  destination_url text not null,
+  source_page text,
+  clicked_at timestamptz not null default now()
+);
+RLS: no MVP eu recomendo não expor essas tabelas diretamente pro client. O React consome tudo via Express, e o Express usa Service Role.
+
+3) Backend: Supabase Admin client (arquivo que destrava tudo)
+server/lib/supabaseAdmin.ts
+ts
+Copiar
+
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.SUPABASE_URL!;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+export const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+  auth: { persistSession: false },
+});
+.env do server (exemplo)
+
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+4) Coleta (Job) → grava raw_collected_items
+server/jobs/collect.ts (MVP: estrutura)
+ts
+Copiar
+
+import { supabaseAdmin } from "../lib/supabaseAdmin";
+import { sha1 } from "../lib/hash";
+
+type RawOfferInput = {
+  marketplaceId: number;
+  externalItemId?: string;
+  title?: string;
+  price?: number;
+  oldPrice?: number;
+  itemUrl?: string;
+  imageUrl?: string;
+  payload: any;
+};
+
+export async function runCollect(params: {
+  collectionSourceId: number;
+  executionType: "search" | "refresh" | "import";
+  searchTerm?: string;
+  items: RawOfferInput[]; // no MVP você injeta aqui o retorno do seu scraper/serviço
+}) {
+  const { data: batch, error: batchErr } = await supabaseAdmin
+    .from("collection_batches")
+    .insert({
+      collection_source_id: params.collectionSourceId,
+      execution_type: params.executionType,
+      search_term: params.searchTerm ?? null,
+      batch_status: "running",
+    })
+    .select("*")
+    .single();
+
+  if (batchErr) throw batchErr;
+
+  const rows = params.items.map((it) => {
+    const dedupHash = it.externalItemId
+      ? sha1(`${it.marketplaceId}:${it.externalItemId}`)
+      : sha1(`${it.marketplaceId}:${(it.title ?? "").toLowerCase()}:${it.price ?? ""}:${it.imageUrl ?? ""}`);
+
+    return {
+      collection_batch_id: batch.id,
+      marketplace_id: it.marketplaceId,
+      external_item_id: it.externalItemId ?? null,
+      raw_title: it.title ?? null,
+      raw_price: it.price ?? null,
+      raw_old_price: it.oldPrice ?? null,
+      item_url: it.itemUrl ?? null,
+      image_url: it.imageUrl ?? null,
+      payload_json: it.payload,
+      dedup_hash: dedupHash,
+      processing_status: "pending",
+    };
+  });
+
+  const { error: insertErr } = await supabaseAdmin
+    .from("raw_collected_items")
+    .insert(rows);
+
+  if (insertErr) throw insertErr;
+
+  await supabaseAdmin
+    .from("collection_batches")
+    .update({
+      batch_status: "finished",
+      finished_at: new Date().toISOString(),
+      total_items: rows.length,
+      total_valid_items: rows.length,
+      total_invalid_items: 0,
+    })
+    .eq("id", batch.id);
+
+  return { batchId: batch.id, inserted: rows.length };
+}
+server/lib/hash.ts
+ts
+Copiar
+
+import crypto from "crypto";
+export function sha1(input: string) {
+  return crypto.createHash("sha1").update(input).digest("hex");
+}
+5) Tratamento (Job) → gera processed_items + entra na triage_queue
+server/lib/normalize.ts
+ts
+Copiar
+
+export function normalizeTitle(title: string) {
+  return title
+    .toLowerCase()
+    .replace(/frete\s*gr[aá]tis/gi, "")
+    .replace(/[🔥⭐️✅]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+server/jobs/process.ts
+ts
+Copiar
+
+import { supabaseAdmin } from "../lib/supabaseAdmin";
+import { normalizeTitle } from "../lib/normalize";
+
+export async function runProcess(limit = 100) {
+  const { data: rawItems, error } = await supabaseAdmin
+    .from("raw_collected_items")
+    .select("*")
+    .eq("processing_status", "pending")
+    .limit(limit);
+
+  if (error) throw error;
+  if (!rawItems?.length) return { processed: 0 };
+
+  // carregar marcas para sugestão simples
+  const { data: brands } = await supabaseAdmin.from("brands").select("id, name, slug");
+  const brandRules = (brands ?? []).map((b) => ({
+    id: b.id,
+    token: b.name.toLowerCase(),
+  }));
+
+  let processedCount = 0;
+
+  for (const raw of rawItems) {
+    const normalized = normalizeTitle(raw.raw_title ?? "");
+
+    let suggestedBrandId: number | null = null;
+    let confidence = 0.3;
+
+    for (const br of brandRules) {
+      if (normalized.includes(br.token)) {
+        suggestedBrandId = br.id;
+        confidence = 0.8;
+        break;
+      }
+    }
+
+    const detectedIssues: any = {};
+    if (!raw.image_url) detectedIssues.no_image = true;
+    if (!raw.item_url) detectedIssues.no_url = true;
+    if (!raw.raw_price || raw.raw_price <= 0) detectedIssues.bad_price = true;
+
+    // duplicidade MVP: mesmo dedup_hash já processado?
+    const { data: dup } = await supabaseAdmin
+      .from("raw_collected_items")
+      .select("id")
+      .eq("dedup_hash", raw.dedup_hash)
+      .neq("id", raw.id)
+      .limit(1);
+
+    const isDuplicate = !!(dup && dup.length);
+
+    // grava processed
+    const { data: processed, error: pErr } = await supabaseAdmin
+      .from("processed_items")
+      .insert({
+        raw_item_id: raw.id,
+        normalized_title: normalized || null,
+        suggested_brand_id: suggestedBrandId,
+        confidence_score: confidence,
+        is_duplicate: isDuplicate,
+        detected_issues: detectedIssues,
+      })
+      .select("*")
+      .single();
+
+    if (pErr) {
+      await supabaseAdmin.from("raw_collected_items").update({ processing_status: "error" }).eq("id", raw.id);
+      continue;
+    }
+
+    // prioridade
+    let priority = 0;
+    if (isDuplicate) priority += 50;
+    if (confidence < 0.5) priority += 30;
+    if (detectedIssues.no_image) priority += 10;
+
+    await supabaseAdmin.from("triage_queue").insert({
+      processed_item_id: processed.id,
+      triage_status: "pending",
+      priority,
+    });
+
+    await supabaseAdmin.from("raw_collected_items").update({ processing_status: "processed" }).eq("id", raw.id);
+
+    processedCount++;
+  }
+
+  return { processed: processedCount };
+}
+6) Curadoria (Admin) no Express: endpoints que fazem “aprovar/rejeitar” direito
+6.1 Rotas
+server/routes/admin.ts
+
+ts
+Copiar
+
+import { Router } from "express";
+import { approveTriageItem } from "../usecases/approveTriageItem";
+import { rejectTriageItem } from "../usecases/rejectTriageItem";
+import { supabaseAdmin } from "../lib/supabaseAdmin";
+
+const router = Router();
+
+router.get("/triage", async (req, res) => {
+  const status = (req.query.status as string) ?? "pending";
+
+  const { data, error } = await supabaseAdmin
+    .from("triage_queue")
+    .select(`
+      id, triage_status, priority, created_at,
+      processed_items:processed_item_id (
+        id, normalized_title, confidence_score, is_duplicate, detected_issues,
+        raw_collected_items:raw_item_id (
+          id, raw_title, raw_price, item_url, image_url, marketplace_id
+        )
+      )
+    `)
+    .eq("triage_status", status)
+    .order("priority", { ascending: false })
+    .limit(200);
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.post("/triage/:id/approve", async (req, res) => {
+  try {
+    const triageQueueId = Number(req.params.id);
+    const payload = req.body as {
+      product?: { main_name?: string; slug?: string; brand_id?: number; main_category_id?: number; main_image_url?: string };
+      offer?: { affiliate_url?: string };
+      notes?: string;
+    };
+    const result = await approveTriageItem({ triageQueueId, ...payload });
+    res.json(result);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? "approve failed" });
+  }
+});
+
+router.post("/triage/:id/reject", async (req, res) => {
+  try {
+    const triageQueueId = Number(req.params.id);
+    const payload = req.body as { rejection_reason_id?: number; notes?: string };
+    const result = await rejectTriageItem({ triageQueueId, ...payload });
+    res.json(result);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? "reject failed" });
+  }
+});
+
+export default router;
+server/routes/public.ts
+
+ts
+Copiar
+
+import { Router } from "express";
+import { supabaseAdmin } from "../lib/supabaseAdmin";
+
+const router = Router();
+
+router.get("/offers", async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from("offers")
+    .select("id, current_price, old_price, affiliate_url, original_url, captured_at, product_id")
+    .eq("is_published", true)
+    .eq("offer_status", "active")
+    .order("captured_at", { ascending: false })
+    .limit(60);
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.get("/click/:offerId", async (req, res) => {
+  const offerId = Number(req.params.offerId);
+
+  const { data: offer, error } = await supabaseAdmin
+    .from("offers")
+    .select("id, affiliate_url, original_url")
+    .eq("id", offerId)
+    .single();
+
+  if (error || !offer) return res.status(404).send("Offer not found");
+
+  const destinationUrl = offer.affiliate_url ?? offer.original_url;
+
+  await supabaseAdmin.from("affiliate_clicks").insert({
+    offer_id: offer.id,
+    destination_url: destinationUrl,
+    source_page: req.get("referer") ?? null,
+  });
+
+  res.redirect(destinationUrl);
+});
+
+export default router;
+server/routes/index.ts
+
+ts
+Copiar
+
+import { Router } from "express";
+import publicRoutes from "./public";
+import adminRoutes from "./admin";
+
+const router = Router();
+router.use("/", publicRoutes);
+router.use("/admin", adminRoutes);
+
+export default router;
+E no seu server/app.ts, manter:
+
+ts
+Copiar
+
+app.use("/api", routes);
+7) Usecase de Aprovação (transacional “na prática”)
+No MVP, dá pra fazer em passos sequenciais; em seguida você evolui para SQL function no Postgres com transação real.
+
+server/usecases/approveTriageItem.ts
+ts
+Copiar
+
+import { supabaseAdmin } from "../lib/supabaseAdmin";
+
+export async function approveTriageItem(params: {
+  triageQueueId: number;
+  product?: { main_name?: string; slug?: string; brand_id?: number; main_category_id?: number; main_image_url?: string };
+  offer?: { affiliate_url?: string };
+  notes?: string;
+}) {
+  // 1) carregar triage + processed + raw
+  const { data: tq, error: tqErr } = await supabaseAdmin
+    .from("triage_queue")
+    .select(`
+      id, triage_status,
+      processed_items:processed_item_id (
+        id, normalized_title, suggested_brand_id,
+        raw_collected_items:raw_item_id (
+          marketplace_id, external_item_id, raw_title, raw_price, raw_old_price, item_url, image_url
+        )
+      )
+    `)
+    .eq("id", params.triageQueueId)
+    .single();
+
+  if (tqErr) throw tqErr;
+  if (!tq) throw new Error("triage item not found");
+
+  const processed = (tq as any).processed_items;
+  const raw = processed.raw_collected_items;
+
+  // 2) upsert product (MVP: sempre cria)
+  const mainName = params.product?.main_name ?? processed.normalized_title ?? raw.raw_title ?? "Produto";
+  const slug = params.product?.slug ?? slugify(mainName);
+
+  const { data: product, error: pErr } = await supabaseAdmin
+    .from("products")
+    .insert({
+      main_name: mainName,
+      slug,
+      brand_id: params.product?.brand_id ?? processed.suggested_brand_id ?? null,
+      main_category_id: params.product?.main_category_id ?? null,
+      main_image_url: params.product?.main_image_url ?? raw.image_url ?? null,
+      catalog_status: "published",
+      updated_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (pErr) throw pErr;
+
+  // 3) criar offer
+  const { data: offer, error: oErr } = await supabaseAdmin
+    .from("offers")
+    .insert({
+      product_id: product.id,
+      marketplace_id: raw.marketplace_id,
+      external_item_id: raw.external_item_id,
+      source_title: raw.raw_title,
+      original_url: raw.item_url,
+      affiliate_url: params.offer?.affiliate_url ?? null,
+      current_price: raw.raw_price ?? 0,
+      old_price: raw.raw_old_price ?? null,
+      is_published: true,
+      offer_status: "active",
+      captured_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (oErr) throw oErr;
+
+  // 4) atualizar fila + registrar ação
+  await supabaseAdmin
+    .from("triage_queue")
+    .update({ triage_status: "approved", updated_at: new Date().toISOString() })
+    .eq("id", tq.id);
+
+  await supabaseAdmin.from("curation_actions").insert({
+    triage_queue_id: tq.id,
+    action_type: "approve",
+    notes: params.notes ?? null,
+  });
+
+  return { product, offer };
+}
+
+function slugify(input: string) {
+  return input
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+server/usecases/rejectTriageItem.ts
+ts
+Copiar
+
+import { supabaseAdmin } from "../lib/supabaseAdmin";
+
+export async function rejectTriageItem(params: {
+  triageQueueId: number;
+  rejection_reason_id?: number;
+  notes?: string;
+}) {
+  await supabaseAdmin
+    .from("triage_queue")
+    .update({ triage_status: "rejected", updated_at: new Date().toISOString() })
+    .eq("id", params.triageQueueId);
+
+  await supabaseAdmin.from("curation_actions").insert({
+    triage_queue_id: params.triageQueueId,
+    action_type: "reject",
+    rejection_reason_id: params.rejection_reason_id ?? null,
+    notes: params.notes ?? null,
+  });
+
+  return { ok: true };
+}
+8) Frontend: separar Admin e implementar Triagem de verdade
+Você hoje tem /triagem. Vamos mover para /admin/triagem.
+
+8.1 Atualizar client/src/App.tsx (rotas)
+Você já usa Wouter. Exemplo:
+
+tsx
+Copiar
+
+import { Switch, Route } from "wouter";
+import Home from "@/pages/Home";
+import Catalog from "@/pages/Catalog";
+import NotFound from "@/pages/not-found";
+import AdminTriagem from "@/pages/admin/Triagem";
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/catalogo" component={Catalog} />
+      <Route path="/admin/triagem" component={AdminTriagem} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+export default Router;
+E no Header.tsx, tirar o link “Triagem” do menu público (admin não é vitrine).
+
+8.2 client/src/lib/api.ts (fetch wrapper)
+ts
+Copiar
+
+export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`/api${path}`, {
+    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+    ...init,
+  });
+
+  if (!res.ok) {
+    const msg = await res.text();
+    throw new Error(msg || `HTTP ${res.status}`);
+  }
+
+  // para endpoints que redirecionam (click), não usar este wrapper
+  return res.json() as Promise<T>;
+}
+8.3 React Query hooks
+client/src/hooks/useTriageQueue.ts
+
+ts
+Copiar
+
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+
+export function useTriageQueue(status: string = "pending") {
+  return useQuery({
+    queryKey: ["triage", status],
+    queryFn: () => api<any[]>(`/admin/triage?status=${status}`),
+    refetchOnWindowFocus: false,
+  });
+}
+client/src/hooks/useApproveItem.ts
+
+ts
+Copiar
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+
+export function useApproveItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { id: number; notes?: string }) =>
+      api(`/admin/triage/${args.id}/approve`, {
+        method: "POST",
+        body: JSON.stringify({ notes: args.notes }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["triage"] }),
+  });
+}
+client/src/hooks/useRejectItem.ts
+
+ts
+Copiar
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+
+export function useRejectItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { id: number; notes?: string; rejection_reason_id?: number }) =>
+      api(`/admin/triage/${args.id}/reject`, {
+        method: "POST",
+        body: JSON.stringify(args),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["triage"] }),
+  });
+}
+8.4 Tela Admin Triagem
+client/src/pages/admin/Triagem.tsx (MVP útil)
+
+tsx
+Copiar
+
+import { useTriageQueue } from "@/hooks/useTriageQueue";
+import { useApproveItem } from "@/hooks/useApproveItem";
+import { useRejectItem } from "@/hooks/useRejectItem";
+
+export default function AdminTriagem() {
+  const { data, isLoading, error } = useTriageQueue("pending");
+  const approve = useApproveItem();
+  const reject = useRejectItem();
+
+  if (isLoading) return <div style={{ padding: 24 }}>Carregando fila…</div>;
+  if (error) return <div style={{ padding: 24 }}>Erro: {(error as Error).message}</div>;
+
+  return (
+    <div style={{ padding: 24 }}>
+      <h1>Admin • Triagem</h1>
+
+      <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+        {(data ?? []).map((row: any) => {
+          const p = row.processed_items;
+          const raw = p?.raw_collected_items;
+
+          return (
+            <div key={row.id} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
+              <div style={{ display: "flex", gap: 12 }}>
+                {raw?.image_url ? (
+                  <img src={raw.image_url} alt="" style={{ width: 84, height: 84, objectFit: "cover", borderRadius: 6 }} />
+                ) : (
+                  <div style={{ width: 84, height: 84, background: "#eee", borderRadius: 6 }} />
+                )}
+
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700 }}>{p?.normalized_title ?? raw?.raw_title ?? "(sem título)"}</div>
+                  <div>Preço: {raw?.raw_price ?? "-"}</div>
+                  <div>Confiança: {p?.confidence_score ?? "-"}</div>
+                  {p?.is_duplicate ? <div style={{ color: "#b00" }}>Duplicado</div> : null}
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <button
+                    onClick={() => approve.mutate({ id: row.id })}
+                    disabled={approve.isPending}
+                  >
+                    Aprovar
+                  </button>
+                  <button
+                    onClick={() => reject.mutate({ id: row.id, notes: "Rejeitado na triagem" })}
+                    disabled={reject.isPending}
+                  >
+                    Rejeitar
+                  </button>
+                  {raw?.item_url ? (
+                    <a href={raw.item_url} target="_blank" rel="noreferrer">Ver origem</a>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+9) Roadmap de commits (pra você executar sem travar)
+✅ Commit 1 — Banco no Supabase
+Criar tabelas SQL do MVP
+Seed de marketplaces, brands, categories
+✅ Commit 2 — Server conectado ao Supabase
+supabaseAdmin.ts
+routes/public.ts (/offers e /click/:offerId)
+✅ Commit 3 — Pipeline base (jobs)
+jobs/collect.ts (grava staging)
+jobs/process.ts (gera fila)
+Um script/rota “manual” pra rodar job em dev (tipo /api/admin/run/process só local)
+✅ Commit 4 — Admin Triagem funcional
+Rotas /api/admin/triage
+Usecases approve/reject
+Tela /admin/triagem no React
+✅ Commit 5 — Catálogo consumindo publicado
+Catalog passa a consumir GET /api/offers (publicadas)
+ProductCard redireciona para /api/click/:offerId
