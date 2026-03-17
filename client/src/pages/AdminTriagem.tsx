@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, RefreshCw, Check, X, Loader2, Package, TrendingDown, Truck } from "lucide-react";
+import { ArrowLeft, RefreshCw, Check, X, Loader2, Package, TrendingDown, Truck, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -85,7 +85,7 @@ function TriageCard({ item, onApprove, onReject, isApproving, isRejecting }: {
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
             <span className="font-bold text-base" data-testid={`text-price-${item.id}`}>
               {formatBRL(p.price)}
             </span>
@@ -101,6 +101,19 @@ function TriageCard({ item, onApprove, onReject, isApproving, isRejecting }: {
               </Badge>
             )}
           </div>
+          {(p.affiliateUrl || p.sourceUrl) && (
+            <div className="mt-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => window.open(p.affiliateUrl || p.sourceUrl || "", '_blank')}
+                data-testid={`button-ml-link-${item.id}`}
+              >
+                <ExternalLink className="w-3 h-3 mr-1" />
+                Ver no Mercado Livre
+              </Button>
+            </div>
+          )}
         </div>
         <div className="flex flex-col gap-2 flex-shrink-0">
           <Button
