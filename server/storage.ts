@@ -7,6 +7,7 @@ import {
   offers, type Offer, type InsertOffer,
   collectionSources, type CollectionSource, type InsertCollectionSource,
   collectionBatches, type CollectionBatch, type InsertCollectionBatch,
+  collectionMemberships, type CollectionMembership, type InsertCollectionMembership,
   rawCollectedItems, type RawCollectedItem, type InsertRawCollectedItem,
   processedItems, type ProcessedItem, type InsertProcessedItem,
   triageQueue, type TriageQueueItem, type InsertTriageQueue,
@@ -17,7 +18,7 @@ import {
   systemSettings, type SystemSetting, type InsertSystemSetting
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc, sql, like } from "drizzle-orm";
+import { eq, and, desc, asc, sql, like, count } from "drizzle-orm";
 
 export interface IStorage {
   getCategories(): Promise<Category[]>;
@@ -56,10 +57,16 @@ export interface IStorage {
   updateOffer(id: string, data: Partial<InsertOffer>): Promise<Offer | undefined>;
 
   getCollectionSources(): Promise<CollectionSource[]>;
+  getCollectionSource(id: string): Promise<CollectionSource | undefined>;
   createCollectionSource(source: InsertCollectionSource): Promise<CollectionSource>;
+  updateCollectionSource(id: string, data: Partial<InsertCollectionSource>): Promise<CollectionSource | undefined>;
 
   createCollectionBatch(batch: InsertCollectionBatch): Promise<CollectionBatch>;
   updateCollectionBatch(id: string, data: Partial<InsertCollectionBatch>): Promise<CollectionBatch | undefined>;
+  getCollectionBatches(sourceId: string, limit?: number): Promise<CollectionBatch[]>;
+
+  getMembershipStats(sourceId: string): Promise<{ total: number; active: number; inactive: number }>;
+  getTriageItemByContentHash(contentHash: string): Promise<TriageQueueItem | undefined>;
 
   createRawCollectedItem(item: InsertRawCollectedItem): Promise<RawCollectedItem>;
   getRawCollectedItemByHash(hash: string): Promise<RawCollectedItem | undefined>;
@@ -266,12 +273,22 @@ export class DatabaseStorage implements IStorage {
 
   // ============ COLLECTION SOURCES ============
   async getCollectionSources(): Promise<CollectionSource[]> {
-    return db.select().from(collectionSources);
+    return db.select().from(collectionSources).orderBy(asc(collectionSources.createdAt));
+  }
+
+  async getCollectionSource(id: string): Promise<CollectionSource | undefined> {
+    const [source] = await db.select().from(collectionSources).where(eq(collectionSources.id, id));
+    return source || undefined;
   }
 
   async createCollectionSource(source: InsertCollectionSource): Promise<CollectionSource> {
     const [created] = await db.insert(collectionSources).values(source).returning();
     return created;
+  }
+
+  async updateCollectionSource(id: string, data: Partial<InsertCollectionSource>): Promise<CollectionSource | undefined> {
+    const [updated] = await db.update(collectionSources).set(data).where(eq(collectionSources.id, id)).returning();
+    return updated || undefined;
   }
 
   // ============ COLLECTION BATCHES ============
@@ -283,6 +300,48 @@ export class DatabaseStorage implements IStorage {
   async updateCollectionBatch(id: string, data: Partial<InsertCollectionBatch>): Promise<CollectionBatch | undefined> {
     const [updated] = await db.update(collectionBatches).set(data).where(eq(collectionBatches.id, id)).returning();
     return updated || undefined;
+  }
+
+  async getCollectionBatches(sourceId: string, limit: number = 10): Promise<CollectionBatch[]> {
+    return db.select().from(collectionBatches)
+      .where(eq(collectionBatches.sourceId, sourceId))
+      .orderBy(desc(collectionBatches.startedAt))
+      .limit(limit);
+  }
+
+  // ============ COLLECTION MEMBERSHIPS ============
+  async getMembershipStats(sourceId: string): Promise<{ total: number; active: number; inactive: number }> {
+    const [totalRow] = await db
+      .select({ count: count() })
+      .from(collectionMemberships)
+      .where(eq(collectionMemberships.collectionSourceId, sourceId));
+
+    const [activeRow] = await db
+      .select({ count: count() })
+      .from(collectionMemberships)
+      .where(and(
+        eq(collectionMemberships.collectionSourceId, sourceId),
+        eq(collectionMemberships.isActive, true)
+      ));
+
+    const total = totalRow?.count ?? 0;
+    const active = activeRow?.count ?? 0;
+
+    return { total, active, inactive: total - active };
+  }
+
+  // ============ TRIAGE — lookup by hash ============
+  async getTriageItemByContentHash(contentHash: string): Promise<TriageQueueItem | undefined> {
+    const [item] = await db
+      .select({ triage: triageQueue })
+      .from(triageQueue)
+      .innerJoin(processedItems, eq(triageQueue.processedItemId, processedItems.id))
+      .where(and(
+        eq(processedItems.contentHash, contentHash),
+        eq(triageQueue.status, "pending")
+      ))
+      .limit(1);
+    return item?.triage || undefined;
   }
 
   // ============ RAW COLLECTED ITEMS ============

@@ -246,9 +246,35 @@ export const collectionSources = pgTable("collection_sources", {
   marketplaceId: varchar("marketplace_id", { length: 36 }).references(() => marketplaces.id),
   config: jsonb("config").$type<Record<string, unknown>>().default({}),
   isActive: boolean("is_active").default(true),
+  collectFrequencyMinutes: integer("collect_frequency_minutes").default(120),
   lastRunAt: timestamp("last_run_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// ============================================
+// MEMBERSHIPS DE COLEÇÃO (rastreia itens por fonte)
+// ============================================
+
+export const collectionMemberships = pgTable("collection_memberships", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  collectionSourceId: varchar("collection_source_id", { length: 36 }).notNull().references(() => collectionSources.id),
+  externalItemId: varchar("external_item_id", { length: 100 }),
+  contentHash: varchar("content_hash", { length: 64 }),
+  lastBatchId: varchar("last_batch_id", { length: 36 }),
+  rawTitle: text("raw_title"),
+  rawPrice: decimal("raw_price", { precision: 10, scale: 2 }),
+  rawUrl: text("raw_url"),
+  isActive: boolean("is_active").default(true),
+  firstSeenAt: timestamp("first_seen_at").defaultNow(),
+  lastSeenAt: timestamp("last_seen_at").defaultNow(),
+  missedRunsCount: integer("missed_runs_count").default(0),
+}, (table) => [
+  index("idx_memberships_source").on(table.collectionSourceId),
+  index("idx_memberships_active").on(table.collectionSourceId, table.isActive),
+  index("idx_memberships_seen").on(table.lastSeenAt),
+  index("idx_memberships_external").on(table.externalItemId),
+  index("idx_memberships_hash").on(table.collectionSourceId, table.contentHash),
+]);
 
 // ============================================
 // LOTES DE COLETA
@@ -473,6 +499,10 @@ export type Offer = typeof offers.$inferSelect;
 export const insertCollectionSourceSchema = createInsertSchema(collectionSources).omit({ id: true, createdAt: true });
 export type InsertCollectionSource = z.infer<typeof insertCollectionSourceSchema>;
 export type CollectionSource = typeof collectionSources.$inferSelect;
+
+export const insertCollectionMembershipSchema = createInsertSchema(collectionMemberships).omit({ id: true, firstSeenAt: true, lastSeenAt: true });
+export type InsertCollectionMembership = z.infer<typeof insertCollectionMembershipSchema>;
+export type CollectionMembership = typeof collectionMemberships.$inferSelect;
 
 export const insertCollectionBatchSchema = createInsertSchema(collectionBatches).omit({ id: true });
 export type InsertCollectionBatch = z.infer<typeof insertCollectionBatchSchema>;

@@ -14,6 +14,8 @@ import {
 } from "./services/productSync";
 import { scrapeAllSources } from "./services/mlScraper";
 import { runCollectJob } from "./jobs/collect";
+import { registerAdminCollectionsRoutes } from "./routes/adminCollections";
+import { startScheduler } from "./jobs/scheduler";
 
 const ML_CLIENT_ID = process.env.ML_CLIENT_ID;
 const ML_CLIENT_SECRET = process.env.ML_CLIENT_SECRET;
@@ -462,6 +464,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  registerAdminCollectionsRoutes(app);
+
   const httpServer = createServer(app);
+
+  setTimeout(async () => {
+    try {
+      await startScheduler();
+    } catch (err: any) {
+      console.error("[Scheduler] Erro ao iniciar:", err.message);
+    }
+  }, 5000);
+
   return httpServer;
 }

@@ -11,10 +11,21 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Core Pipeline: Collect → Process → Triage → Publish
-1. **Collect**: `server/jobs/collect.ts` scrapes ML public offer pages via `server/services/mlScraper.ts`, saves raw data to `raw_collected_items`
+1. **Collect**: `server/jobs/collectCollections.ts` scrapes ML public offer pages via `server/services/mlCollectionsCollector.ts`, saves raw data to `raw_collected_items` + upserts `collection_memberships`
 2. **Process**: Auto-detects brand, category, generates affiliate URL; saves to `processed_items`
 3. **Triage**: Items enter `triage_queue` for admin approval/rejection at `/admin/triagem`
 4. **Publish**: Approved items create a `product` + `offer` + `product_image` in the public catalog
+
+### Scheduler
+- `server/jobs/scheduler.ts` starts automatically at server boot (5s delay)
+- Runs each active source at its configured interval (`collectFrequencyMinutes`)
+- 4 default sources: Calçados (120min), Tênis (30min), Masculino (90min), Feminino (360min)
+
+### Membership Tracking + Anti-Flapping
+- `collection_memberships` table: tracks `external_item_id`, `first_seen_at`, `last_seen_at`, `is_active`, `missed_runs_count`
+- External ID extracted from ML URLs via regex: `/MLB-?\d+/`
+- Anti-flapping: item is deactivated only if absent for `2 × collectFrequencyMinutes` minutes
+- `server/usecases/upsertMembership.ts`: upsert + `deactivateStaleMemberships()`
 
 ### Key Principle: Produto ≠ Oferta
 - A **Product** is a catalog entry (name, brand, category, images, slug)
@@ -63,7 +74,10 @@ Schema tables:
 - `/api/products` — Public product catalog (includes bestOffer with price/affiliate URL)
 - `/api/brands`, `/api/categories` — Reference data
 - `/api/ml/scrape-ofertas` — Direct ML scraper endpoint
-- `/api/admin/collect` — POST: trigger collection pipeline
+- `/api/admin/collect` — POST: trigger collection pipeline (legado)
+- `/api/admin/collections/run` — POST: dispara coleta (todas ou `{ sourceId }`)
+- `/api/admin/collections/status` — GET: lista fontes com stats de membership e últimos batches
+- `/api/admin/collections/:id` — PATCH: atualiza nome/url/frequência/ativo de uma fonte
 - `/api/admin/triage` — GET: pending triage items
 - `/api/admin/triage/:id/approve` — POST: approve and publish
 - `/api/admin/triage/:id/reject` — POST: reject item
@@ -73,8 +87,13 @@ Schema tables:
 - `shared/schema.ts` — All Drizzle tables, enums, Zod schemas, types
 - `server/storage.ts` — DatabaseStorage class with all CRUD operations
 - `server/routes.ts` — Express route definitions
-- `server/jobs/collect.ts` — Collection pipeline job
-- `server/services/mlScraper.ts` — Mercado Livre HTML scraper
+- `server/jobs/collect.ts` — Collection pipeline job (legado, mantido)
+- `server/jobs/collectCollections.ts` — Novo job multi-fonte com membership tracking
+- `server/jobs/scheduler.ts` — Auto-scheduler por fonte com setInterval
+- `server/services/mlScraper.ts` — Mercado Livre HTML scraper (legado)
+- `server/services/mlCollectionsCollector.ts` — Scraper por URL com extração de MLB ID
+- `server/usecases/upsertMembership.ts` — Upsert de membership + anti-flapping
+- `server/routes/adminCollections.ts` — Endpoints /api/admin/collections/*
 - `server/services/productSync.ts` — Product sync utilities, affiliate link generator
 - `server/services/perplexityService.ts` — AI classification via Perplexity
 
