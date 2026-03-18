@@ -1,0 +1,158 @@
+Prompt (para colar no Replit)
+Você é um engenheiro full-stack sênior. Atualize o projeto BeUpFree (React + Express + Supabase/Postgres) para suportar coleta recorrente de “listas prontas” do Mercado Livre e manter essas listas atualizadas ao longo do dia, com rastreabilidade e sem expor scraping no front.
+
+1) Contexto do projeto (estado atual)
+Frontend: React + TypeScript + Vite + Tailwind + Wouter + React Query.
+Backend: Express em server/ com rotas em /api.
+Já existe (ou será usado) Admin Triagem com endpoints:
+GET /api/admin/triage
+POST /api/admin/triage/:id/approve
+POST /api/admin/triage/:id/reject
+POST /api/admin/collect (gatilho manual de coleta)
+Objetivo do produto: portal afiliado com curadoria
+produto ≠ oferta
+bruto/processado ≠ publicado
+admin ≠ público
+2) Objetivo desta entrega
+Implementar no backend um módulo de coleta por coleções (listas) do Mercado Livre e uma estratégia de atualização:
+
+Coletar itens individualmente das listas iniciais (tênis: categoria MLB3900):
+Ofertas do dia: link
+Ofertas relâmpago: link
+Preços imbatíveis: link
+Outlet: link
+Atualização contínua:
+
+As listas mudam durante o dia. Precisamos registrar:
+o que apareceu agora (snapshot)
+o que continua aparecendo
+o que sumiu (com anti-flapping)
+O site público vai filtrar somente do banco (não fazer scraping no front).
+3) Requisitos de dados (MVP: só o que ajuda filtragem)
+Para cada item coletado, persistir no banco:
+
+external_item_id (ex.: MLB-xxxxx) quando possível
+title (raw e normalizado)
+current_price, old_price, discount_percent
+image_url
+item_url (original)
+shipping (ex.: freeShipping boolean)
+rating_avg e reviews_count (somente números; não coletar páginas/comentários)
+payload_json como jsonb com dados brutos de auditoria (mas não precisa salvar HTML inteiro se não quiser)
+Dedup: dedup_hash para idempotência
+4) Mudanças no banco (Supabase/Postgres)
+Crie/garanta as tabelas mínimas (se não existirem) e adicione UMA tabela nova para manter “membership” da coleção:
+
+4.1 Tabelas já existentes/esperadas
+marketplaces
+collection_sources
+collection_batches
+raw_collected_items
+processed_items
+triage_queue
+products
+offers
+affiliate_clicks
+4.2 Nova tabela obrigatória: collection_memberships
+Finalidade: representar “este item apareceu nesta coleção” com timestamps e estado ativo. Campos:
+
+id bigserial pk
+collection_source_id bigint not null fk -> collection_sources.id
+marketplace_id bigint not null fk -> marketplaces.id
+external_item_id varchar(255) (ou usar dedup_hash quando não houver)
+dedup_hash varchar(255)
+first_seen_at timestamptz default now()
+last_seen_at timestamptz default now()
+last_batch_id bigint fk -> collection_batches.id
+is_active boolean default true Índices:
+unique (collection_source_id, external_item_id) quando external id existir
+index (collection_source_id, is_active)
+index (last_seen_at)
+Observação: garanta que raw_collected_items.payload_json seja jsonb (não text), e adicione índices em external_item_id e dedup_hash.
+
+5) Regras de atualização (algoritmo)
+Para cada execução de coleta de uma coleção:
+
+Criar um collection_batch com status running.
+Fazer fetch da URL da coleção e extrair os itens atuais.
+Para cada item:
+gerar dedup_hash
+inserir em raw_collected_items (staging) com processing_status='pending'
+upsert em collection_memberships (set last_seen_at=now(), is_active=true, last_batch_id=batch.id)
+Anti-flapping (itens que sumiram):
+não desativar imediatamente se o item não apareceu em um snapshot
+regra MVP: desativar collection_memberships.is_active=false apenas se last_seen_at estiver atrasado por um limiar (ex.: 2 execuções ou X minutos)
+Fechar collection_batch (finished) com contagens (total coletado, válido, inválido).
+Disparar processamento (criar/atualizar processed_items e triage_queue) para os raw_collected_items novos.
+6) Frequência recomendada (configurável)
+Implementar agendamento no Express (em dev pode ser setInterval; em prod ideal é cron externo):
+
+Relâmpago: 15–30 minutos
+Ofertas do dia / Preços imbatíveis: 60–180 minutos
+Outlet: 6–12 horas Permitir configurar isso via system_settings ou env vars.
+7) Endpoints admin (Express)
+Criar endpoints admin (protegidos posteriormente; por enquanto pode ser simples):
+
+POST /api/admin/collections/run
+Body: { sourceType?: string }
+Executa a coleta para uma coleção específica ou para todas ativas.
+GET /api/admin/collections/status
+Lista coleções, último batch, contagens, erros recentes.
+Manter POST /api/admin/collect se já existir, mas alinhar: ele deve chamar collections/run para todas coleções do ML (ou ser substituído).
+8) Parser do Mercado Livre (coleta)
+Implementar um “collector” para as páginas de ofertas do ML:
+
+Extraia o máximo possível dos cards da lista:
+external item id (se presente em links ou atributos)
+título
+preço atual e antigo
+desconto
+imagem
+url do item
+rating avg e reviews count (se visível)
+frete grátis (se badge visível)
+Importante: o coletor deve ser tolerante a mudanças (try/catch, fallback, logs).
+Usar headers adequados e rate limiting básico para evitar bloqueios.
+9) Integração com Triagem
+Depois de coletar:
+
+Rodar processamento para popular processed_items e triage_queue (status pending).
+Admin Triagem (/admin/triagem) deve mostrar itens pendentes.
+Ao aprovar: criar products e offers publicadas.
+O catálogo público (/ofertas ou /catalogo) deve listar somente offers publicadas.
+10) Organização de código (sugestão)
+Crie arquivos:
+
+server/jobs/collectCollections.ts
+server/services/mlCollectionsCollector.ts
+server/usecases/upsertMembership.ts
+server/jobs/processRawItems.ts
+server/routes/adminCollections.ts (montado em /api/admin)
+server/lib/supabaseAdmin.ts
+11) Logs e erros
+Salvar logs de falhas (pode ser tabela processing_logs ou console em MVP), incluindo:
+
+sourceType
+batchId
+url
+mensagem de erro
+contagem parcial
+12) Critérios de aceite
+Rodar POST /api/admin/collections/run e gerar collection_batch + itens brutos.
+collection_memberships reflete first_seen_at e last_seen_at.
+Se um item some e passa do limiar, is_active=false.
+processed_items e triage_queue são populados.
+Admin Triagem lista e aprova/rejeita.
+Catálogo público mostra somente ofertas publicadas.
+Implemente tudo com TypeScript, seguindo o padrão do projeto, e forneça também as migrations SQL (ou um script SQL) para criar/alterar as tabelas necessárias.
+
+Não implemente coleta no frontend. Toda coleta deve acontecer no backend.
+Observação importante (pra não cair em armadilha)
+No conteúdo que você me mandou, apareceu a ideia de “gerar DOCX completo e links de download” — ignore isso. O foco aqui é código no repositório.
+
+Dica rápida (para você usar esse prompt melhor)
+Cole esse prompt e, junto, inclua no Replit:
+
+o .env do backend (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+quais libs você permite instalar (ex.: cheerio, node-cron, p-limit)
+Esse prompt vai orientar a geração do módulo de atualização das listas do ML com membership + anti-flapping + staging + triagem, exatamente como combinamos.
