@@ -9,6 +9,7 @@ interface BestOffer {
   discountPercent: number | null;
   affiliateUrl: string;
   freeShipping: boolean;
+  lastSeenAt?: Date | string;
 }
 
 interface ProductFromAPI {
@@ -84,6 +85,7 @@ export default function ProductGrid() {
               category={product.category?.name || ""}
               affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
               freeShipping={product.bestOffer?.freeShipping || false}
+              lastSeenAt={product.bestOffer?.lastSeenAt}
             />
           ))}
         </div>

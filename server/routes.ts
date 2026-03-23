@@ -256,6 +256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               discountPercent: bestOffer.discountPercent,
               affiliateUrl: bestOffer.affiliateUrl,
               freeShipping: bestOffer.freeShipping,
+              lastSeenAt: bestOffer.lastSeenAt,
               formattedPrice: `R$ ${parseFloat(bestOffer.currentPrice).toFixed(2).replace(".", ",")}`,
               formattedOriginalPrice: bestOffer.originalPrice ? `R$ ${parseFloat(bestOffer.originalPrice).toFixed(2).replace(".", ",")}` : null,
             } : null,

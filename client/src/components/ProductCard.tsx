@@ -14,6 +14,7 @@ interface ProductCardProps {
   category: string;
   affiliateUrl: string;
   freeShipping?: boolean;
+  lastSeenAt?: Date | string;
 }
 
 export default function ProductCard({
@@ -27,8 +28,21 @@ export default function ProductCard({
   category,
   affiliateUrl,
   freeShipping,
+  lastSeenAt,
 }: ProductCardProps) {
   const computedDiscount = discount || (oldPrice ? Math.round(((oldPrice - price) / oldPrice) * 100) : 0);
+
+  const getTimeAgoText = (date: Date | string | undefined) => {
+    if (!date) return "";
+    const d = new Date(date);
+    const now = new Date();
+    const minAgo = Math.floor((now.getTime() - d.getTime()) / 60000);
+    if (minAgo < 1) return "agora";
+    if (minAgo < 60) return `${minAgo}min atrás`;
+    const hoursAgo = Math.floor(minAgo / 60);
+    if (hoursAgo < 24) return `${hoursAgo}h atrás`;
+    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <Card 
@@ -95,6 +109,10 @@ export default function ProductCard({
             <ExternalLink className="h-4 w-4" />
             Ver no Mercado Livre
           </Button>
+
+          <p className="text-xs text-center text-muted-foreground" data-testid={`text-updated-${id}`}>
+            Atualizado {getTimeAgoText(lastSeenAt)}
+          </p>
           
           <p className="text-xs text-center text-muted-foreground" data-testid={`text-ml-badge-${id}`}>
             Parceiro Oficial Mercado Livre

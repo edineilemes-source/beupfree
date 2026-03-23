@@ -13,6 +13,7 @@ interface BestOffer {
   discountPercent: number | null;
   affiliateUrl: string;
   freeShipping: boolean;
+  lastSeenAt?: Date | string;
 }
 
 interface ProductFromAPI {
@@ -37,6 +38,18 @@ function PromotionCard({ product }: { product: ProductFromAPI }) {
   const price = parseFloat(offer.currentPrice);
   const originalPrice = offer.originalPrice ? parseFloat(offer.originalPrice) : null;
   const imageUrl = product.mainImageUrl || "";
+
+  const getTimeAgoText = (date: Date | string | undefined) => {
+    if (!date) return "";
+    const d = new Date(date);
+    const now = new Date();
+    const minAgo = Math.floor((now.getTime() - d.getTime()) / 60000);
+    if (minAgo < 1) return "agora";
+    if (minAgo < 60) return `${minAgo}min atrás`;
+    const hoursAgo = Math.floor(minAgo / 60);
+    if (hoursAgo < 24) return `${hoursAgo}h atrás`;
+    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <Card className="flex-shrink-0 w-[200px] md:w-[240px] overflow-hidden hover-elevate" data-testid={`promo-card-${product.id}`}>
@@ -67,6 +80,7 @@ function PromotionCard({ product }: { product: ProductFromAPI }) {
             R$ {price.toFixed(2).replace('.', ',')}
           </span>
         </div>
+        <p className="text-xs text-muted-foreground mb-2">Atualizado {getTimeAgoText(offer.lastSeenAt)}</p>
         <div className="flex items-center justify-end">
           <Button 
             size="sm" 
