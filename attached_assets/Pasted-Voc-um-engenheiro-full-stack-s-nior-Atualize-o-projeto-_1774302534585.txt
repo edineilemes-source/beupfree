@@ -1,0 +1,207 @@
+Você é um engenheiro full-stack sênior. Atualize o projeto BeUpFree (React+TS+Vite no client, Express+TS no server, Supabase/Postgres) para:
+
+1) ATUALIZAR AUTOMATICAMENTE duas listas do Mercado Livre (ML) da categoria Tênis (MLB3900):
+   A) Seção "OFERTA DO DIA" (promotion_type=deal_of_the_day) -> atualizar a cada 1 hora
+   B) Seção "OFERTA RELÂMPAGO" (promotion_type=lightning) -> atualizar a cada 5 minutos
+
+2) Exibir no FRONTEND duas seções (OFERTA DO DIA e OFERTA RELÂMPAGO), removendo a seção "PROMOÇÕES DE ONTEM" e mantendo "PROMOÇÕES ANTERIORES".
+
+3) Regras de exibição:
+   - Em cada seção, mostrar "Última atualização: HH:MM" (timestamp do último batch finalizado daquela coleção).
+   - Ordenar os produtos por percentual de desconto DESC (maior desconto primeiro).
+   - Se um produto NÃO estiver mais na lista na execução mais recente, marcar no card como "ESGOTADO".
+     (Não remover o item da lista imediatamente; ele pode ficar visível como esgotado por um período/histórico.)
+   - "PROMOÇÕES ANTERIORES" deve listar itens que já apareceram em alguma dessas coleções mas NÃO estão ativos agora (ou seja, membership inativo), ordenados por desconto DESC e com a data/hora do último avistamento (last_seen_at).
+
+4) Backend deve ser o worker/orquestrador (Express). Nada de scraping no frontend.
+
+========================
+A) CONFIGURAÇÕES (server)
+========================
+
+Crie/ajuste um arquivo de config com as URLs NORMALIZADAS (sem hash #... e sem parâmetros de tracking). Use estas:
+
+const COLLECTIONS = [
+  {
+    slug: "oferta-do-dia-tenis-mlb3900",
+    name: "OFERTA DO DIA",
+    marketplace: "mercadolivre",
+    category: "MLB3900",
+    promotion_type: "deal_of_the_day",
+    base_url: "https://www.mercadolivre.com.br/ofertas?category=MLB3900&promotion_type=deal_of_the_day",
+    refresh_interval_ms: 60 * 60 * 1000
+  },
+  {
+    slug: "oferta-relampago-tenis-mlb3900",
+    name: "OFERTA RELÂMPAGO",
+    marketplace: "mercadolivre",
+    category: "MLB3900",
+    promotion_type: "lightning",
+    base_url: "https://www.mercadolivre.com.br/ofertas?category=MLB3900&promotion_type=lightning",
+    refresh_interval_ms: 5 * 60 * 1000
+  }
+];
+
+IMPORTANTE:
+- O job deve coletar todos os itens da página (lidar com scroll/paginação/requests) para não marcar como esgotado por engano.
+- Implementar rate limiting básico e retries.
+- Salvar payload estruturado como jsonb para auditoria.
+
+========================
+B) BANCO (Supabase/Postgres)
+========================
+
+Garanta (crie migrations SQL) para:
+
+1) raw_collected_items.payload_json ser JSONB (não text).
+2) Criar/garantir tabelas essenciais de coleções e membership:
+
+- collection_sources (id, slug, name, marketplace_id, base_url, is_active, refresh_interval_ms, last_run_at, last_success_at, created_at)
+- collection_batches (id, collection_source_id, started_at, finished_at, status, total_collected, total_valid, total_invalid, error_message)
+- raw_collected_items (id, collection_batch_id, collection_source_id, marketplace_id, external_item_id, dedup_hash, title, item_url, image_url, current_price, old_price, discount_percent, rating_avg, reviews_count, shipping_json, payload_json jsonb, processing_status, captured_at)
+- processed_items (id, raw_item_id, normalized_title, brand_raw, brand_normalized, brand_confidence, issues jsonb, processed_at)
+- triage_queue (id, processed_item_id, triage_status, issues jsonb, created_at, updated_at, approved_by, auto_approved boolean, auto_approved_reason jsonb)
+
+NOVA TABELA OBRIGATÓRIA:
+- collection_memberships:
+  - id
+  - collection_source_id (fk)
+  - marketplace_id (fk)
+  - external_item_id (text, quando houver)
+  - dedup_hash (text, fallback)
+  - first_seen_at timestamptz
+  - last_seen_at timestamptz
+  - last_batch_id (fk)
+  - is_active boolean
+
+Índices:
+- unique (collection_source_id, external_item_id) quando external_item_id não for null
+- index (collection_source_id, is_active)
+- index (last_seen_at)
+
+========================
+C) COLETOR / PARSER DO ML
+========================
+
+Implemente server/services/mlOffersCollector.ts que:
+- Faz fetch da base_url
+- Extrai a lista de itens (cada card) com:
+  - external_item_id (ideal: MLBxxxx; se não der, dedup_hash baseado em item_url normalizada)
+  - title
+  - item_url
+  - image_url
+  - current_price
+  - old_price
+  - discount_percent
+  - rating_avg (número)
+  - reviews_count (número)
+  - shipping info (ex.: free_shipping)
+  - payload_json com os dados brutos (sem salvar HTML inteiro se não quiser)
+
+Observação importante: as páginas podem mostrar preço "no Pix" vs "outros meios". Para MVP:
+- Salvar current_price como o preço principal exibido no card.
+- Se houver dois preços (pix/outros), salve também no payload_json para futura evolução.
+
+========================
+D) JOBS DE ATUALIZAÇÃO
+========================
+
+Crie server/jobs/scheduler.ts para disparar:
+- Oferta do Dia: a cada 1 hora
+- Relâmpago: a cada 5 minutos
+
+Pode usar node-cron (recomendado) ou setInterval (MVP).
+Precisa ter lock simples para não rodar duas execuções em paralelo para a mesma coleção (ex.: lock em memória ou flag no banco).
+
+Algoritmo por execução da coleção:
+1) Criar collection_batch (running, started_at=now)
+2) Coletar todos os itens do snapshot atual
+3) Inserir raw_collected_items (staging)
+4) Atualizar membership:
+   - Para cada item do snapshot:
+     upsert membership set last_seen_at=now, is_active=true, last_batch_id=batch.id
+   - Para itens dessa coleção que NÃO apareceram no snapshot atual:
+     set is_active=false (imediato, conforme requisito do "ESGOTADO")
+5) Finalizar batch (finished_at=now, status=success, contagens)
+6) Disparar processamento dos raw items novos -> processed_items
+7) Regras de triagem/publicação:
+   - Se o card estiver completo E a marca estiver em whitelist (Nike, Adidas, Olympikus, Mizuno, Puma, Fila, Jordan, New Balance) => auto-aprovar e publicar offer
+   - Caso contrário => triage_queue pending
+
+Card completo mínimo:
+- title (>=10)
+- item_url válida
+- image_url válida
+- current_price > 0
+- discount_percent entre 0 e 90 (se existir)
+
+========================
+E) ENDPOINTS (Express)
+========================
+
+Crie endpoints públicos para o front:
+
+1) GET /api/sections/oferta-do-dia
+   Retorna:
+   - lastUpdatedAt (finished_at do último batch com sucesso daquela coleção)
+   - items: lista de offers/cards (incluindo field "isEsgotado" com base em membership.is_active=false)
+   Ordenação: discount_percent DESC
+
+2) GET /api/sections/oferta-relampago
+   Mesmo formato, ordenação discount_percent DESC
+
+3) GET /api/sections/promocoes-anteriores
+   Retorna itens com membership.is_active=false (de ambas coleções),
+   com last_seen_at e ordenação por discount_percent DESC.
+
+Obs.: Para construir a lista, você pode:
+- usar a tabela offers (publicadas) + join com collection_memberships
+OU
+- usar processed_items/raw_collected_items mais recentes + membership
+Decida a abordagem mais consistente para o MVP e documente.
+
+========================
+F) FRONTEND (React)
+========================
+
+Reestruture a home (ou página principal de catálogo) para ter:
+
+- Seção 1: "OFERTA DO DIA"
+  - Exibir "Última atualização: {lastUpdatedAt em locale pt-BR}"
+  - Grid de cards ordenados por desconto desc
+  - Se isEsgotado true => badge "ESGOTADO" e desabilitar botão principal (ou manter clique mas com aviso)
+- Seção 2: "OFERTA RELÂMPAGO"
+  - Mesma regra (refresh visual)
+- Remover seção "PROMOÇÕES DE ONTEM"
+- Manter/ajustar seção "PROMOÇÕES ANTERIORES"
+  - Listar cards esgotados (ou inativos) com "Visto pela última vez: {last_seen_at}"
+
+Detalhes:
+- Usar React Query para consumir os endpoints:
+  - /api/sections/oferta-do-dia
+  - /api/sections/oferta-relampago
+  - /api/sections/promocoes-anteriores
+- Ajustar staleTime coerente:
+  - Oferta do Dia: 5 a 10 minutos (front) é ok, já que backend atualiza de hora em hora
+  - Relâmpago: 1 minuto (front) ou refetchOnWindowFocus
+- Manter a rota pública separada do admin.
+
+========================
+G) CRITÉRIOS DE ACEITE
+========================
+
+1) Backend:
+- Após rodar o scheduler, existem batches para cada coleção no banco.
+- Membership muda is_active conforme o item entra/sai do snapshot.
+
+2) Front:
+- "OFERTA DO DIA" mostra lastUpdatedAt e ordenação por desconto desc.
+- "OFERTA RELÂMPAGO" atualiza e ordena por desconto desc.
+- Itens fora do snapshot mais recente aparecem com badge "ESGOTADO".
+- "PROMOÇÕES DE ONTEM" não existe mais no UI.
+- "PROMOÇÕES ANTERIORES" lista itens inativos (esgotados) com last_seen_at.
+
+Entregue:
+- Código completo (server + client) em TypeScript
+- migrations SQL
+- notas de execução (env vars SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY).
