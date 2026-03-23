@@ -1,5 +1,6 @@
 import { storage } from "../storage";
 import { scrapeCollectionUrl } from "../services/mlCollectionsCollector";
+import { scrapeBrandShopUrl } from "../services/mlBrandCollector";
 import { upsertMembership, deactivateStaleMemberships } from "../usecases/upsertMembership";
 import { detectBrand, detectCategory, ensureDefaultMarketplace } from "../services/productSync";
 import crypto from "crypto";
@@ -59,10 +60,13 @@ export async function runCollectionsJob(
     });
 
     try {
-      const { items, errors: scrapeErrors } = await scrapeCollectionUrl(
-        source.url!,
-        source.name
-      );
+      // Use brand collector for brand-specific pages, generic collector for others
+      const isBrandSource = source.sourceType === "ml_brand_offers";
+      const scrapeResult = isBrandSource
+        ? await scrapeBrandShopUrl(source.url!, source.name)
+        : await scrapeCollectionUrl(source.url!, source.name);
+      
+      const { items, errors: scrapeErrors } = scrapeResult;
 
       if (scrapeErrors.length > 0) {
         result.errors.push(...scrapeErrors.map((e) => `[${source.name}] ${e}`));
@@ -74,8 +78,13 @@ export async function runCollectionsJob(
       for (const item of items) {
         if (!item.nome || item.preco_atual <= 0) continue;
 
+        // For brand sources, filter by discount >= 40%
+        if (isBrandSource && item.desconto_percent && item.desconto_percent < 40) {
+          continue;
+        }
+
         try {
-          const contentHash = sha256(`${item.nome}::${item.preco_atual}`);
+          const contentHash = item.contentHash || sha256(`${item.nome}::${item.preco_atual}`);
 
           await upsertMembership({
             collectionSourceId: source.id,

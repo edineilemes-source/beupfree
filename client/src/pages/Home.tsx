@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import HeroCarousel from "@/components/HeroCarousel";
 import TodayPromotions from "@/components/TodayPromotions";
+import BrandPromotions from "@/components/BrandPromotions";
 import PreviousPromotions from "@/components/PreviousPromotions";
 import CategoryGrid from "@/components/CategoryGrid";
 import ProductGrid from "@/components/ProductGrid";
@@ -16,6 +17,7 @@ export default function Home() {
       <main>
         <HeroCarousel />
         <TodayPromotions />
+        <BrandPromotions />
         <PreviousPromotions />
         <CategoryGrid />
         <ProductGrid />

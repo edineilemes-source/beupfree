@@ -19,7 +19,7 @@ Preferred communication style: Simple, everyday language.
 ### Scheduler
 - `server/jobs/scheduler.ts` starts automatically at server boot (5s delay)
 - Runs each active source at its configured interval (`collectFrequencyMinutes`)
-- 4 default sources: Calçados (120min), Tênis (30min), Masculino (90min), Feminino (360min)
+- 6 default sources: Calçados (120min), Tênis (30min), Masculino (90min), Feminino (360min), Nike 40%+ (60min), Adidas 40%+ (60min)
 
 ### Membership Tracking + Anti-Flapping
 - `collection_memberships` table: tracks `external_item_id`, `first_seen_at`, `last_seen_at`, `is_active`, `missed_runs_count`
@@ -41,13 +41,14 @@ Preferred communication style: Simple, everyday language.
 - **Build Tool**: Vite with React plugin
 
 Pages:
-- `/` — Home (landing page with hero, categories, featured products)
+- `/` — Home (landing page with hero, categories, featured products, brand promotions)
 - `/catalogo` — Catalog (real products from API with offers)
 - `/admin/triagem` — Admin triage page (approve/reject collected items)
 
 Key components:
 - `client/src/components/ProductCard.tsx` — Product card with affiliate link, price, discount badge
 - `client/src/components/Header.tsx` — Public header with nav and admin settings link
+- `client/src/components/BrandPromotions.tsx` — Brand-specific promotions (Nike/Adidas 40%+ discounts)
 - `client/src/pages/AdminTriagem.tsx` — Triage queue with collect, approve, reject actions
 
 ### Backend Architecture
@@ -73,6 +74,7 @@ Schema tables:
 ### API Structure
 - `/api/products` — Public product catalog (includes bestOffer with price/affiliate URL)
 - `/api/brands`, `/api/categories` — Reference data
+- `/api/sections/grandes-marcas-hoje` — Brand promotions (Nike/Adidas 40%+ discounts)
 - `/api/ml/scrape-ofertas` — Direct ML scraper endpoint
 - `/api/admin/collect` — POST: trigger collection pipeline (legado)
 - `/api/admin/collections/run` — POST: dispara coleta (todas ou `{ sourceId }`)
@@ -86,14 +88,16 @@ Schema tables:
 ### Key Files
 - `shared/schema.ts` — All Drizzle tables, enums, Zod schemas, types
 - `server/storage.ts` — DatabaseStorage class with all CRUD operations
-- `server/routes.ts` — Express route definitions
+- `server/routes.ts` — Express route definitions + brand sections router
 - `server/jobs/collect.ts` — Collection pipeline job (legado, mantido)
 - `server/jobs/collectCollections.ts` — Novo job multi-fonte com membership tracking
 - `server/jobs/scheduler.ts` — Auto-scheduler por fonte com setInterval
 - `server/services/mlScraper.ts` — Mercado Livre HTML scraper (legado)
 - `server/services/mlCollectionsCollector.ts` — Scraper por URL com extração de MLB ID
+- `server/services/mlBrandCollector.ts` — Brand-specific store page scraper (HTML parsing)
 - `server/usecases/upsertMembership.ts` — Upsert de membership + anti-flapping
 - `server/routes/adminCollections.ts` — Endpoints /api/admin/collections/*
+- `server/routes/brandSections.ts` — Endpoint /api/sections/grandes-marcas-hoje
 - `server/services/productSync.ts` — Product sync utilities, affiliate link generator
 - `server/services/perplexityService.ts` — AI classification via Perplexity
 

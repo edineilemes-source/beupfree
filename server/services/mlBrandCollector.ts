@@ -49,14 +49,19 @@ export async function scrapeBrandShopUrl(
 
   let html: string;
   try {
+    // Add timeout and multiple retry headers
     const response = await fetch(sourceUrl, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
       },
+      timeout: 20000,
     });
 
     if (!response.ok) {
@@ -64,25 +69,83 @@ export async function scrapeBrandShopUrl(
     }
     html = await response.text();
   } catch (err: any) {
-    errors.push(err.message);
+    errors.push(`[Fetch] ${err.message || String(err)}`);
+    // Don't return yet - log to help debugging
+    console.log(`[mlBrandCollector] Erro ao acessar ${sourceName}: ${err.message}`);
+    console.log(`[mlBrandCollector] URL: ${sourceUrl}`);
     return { items: [], errors };
   }
 
-  const $ = cheerio.load(html);
   const items: BrandCollectedItem[] = [];
   const seen = new Set<string>();
 
-  // Try multiple selectors to find product cards (ML changes layout often)
+  console.log(`[mlBrandCollector] HTML length for ${sourceName}: ${html.length} bytes`);
+
+  // Try to extract JSON data from window.__PRELOADED_STATE__ (common in modern SPAs)
+  const jsonMatch = html.match(/window\.__PRELOADED_STATE__\s*=\s*(\{[\s\S]*?\});/);
+  if (jsonMatch && jsonMatch[1]) {
+    try {
+      const preloadedState = JSON.parse(jsonMatch[1]);
+      console.log(`[mlBrandCollector] Found __PRELOADED_STATE__ for ${sourceName}`);
+      // Try to extract items from preloaded state
+      // (ML structure varies, so we look for common patterns)
+      const searchItems = preloadedState?.searchState?.itemsResponse?.results?.filter(
+        (item: any) => item.id && item.title
+      ) || [];
+      if (searchItems.length > 0) {
+        console.log(`[mlBrandCollector] Extracted ${searchItems.length} items from preloaded state`);
+        for (const item of searchItems) {
+          if (!item.title || !item.prices || item.prices.id < 0) continue;
+          const currentPrice = parseFloat(item.prices.prices?.currentPrice || "0");
+          if (currentPrice <= 0) continue;
+
+          const contentHash = makeContentHash(item.title, currentPrice);
+          if (seen.has(contentHash)) continue;
+          seen.add(contentHash);
+
+          items.push({
+            externalItemId: item.id || null,
+            nome: item.title,
+            preco_atual: currentPrice,
+            preco_original: parseFloat(item.prices?.prices?.originalPrice || currentPrice),
+            desconto_percent: item.prices?.prices?.discountPercent || null,
+            link_afiliado: addAffiliateCode(item.url || ""),
+            url: item.url || "",
+            imagens: item.images?.map((img: any) => img.url) || [],
+            avaliacao_media: item.rating?.average || null,
+            qtd_avaliacoes: item.rating?.count || null,
+            frete_gratis: item.freeShipping || false,
+            fonte: sourceName,
+            contentHash,
+          });
+        }
+      }
+      if (items.length > 0) {
+        return { items, errors };
+      }
+    } catch (e: any) {
+      console.log(`[mlBrandCollector] Failed to parse __PRELOADED_STATE__: ${e.message}`);
+    }
+  }
+
+  // Fallback to CSS selector approach
+  const $ = cheerio.load(html);
   const selectors = [
     "div.poly-card--grid-card",
     "a[data-component-type='product-card']",
+    "div[data-test='productGrid'] article",
     "article.ui-search-result",
     "li.ui-search-layout__item",
     "div.item",
+    "div.s-result-item",
+    "div[class*='product-card']",
   ];
 
   for (const selector of selectors) {
     const elements = $(selector);
+    if (elements.length > 0) {
+      console.log(`[mlBrandCollector] Found ${elements.length} elements with selector: ${selector}`);
+    }
     if (elements.length === 0) continue;
 
     elements.each((_i, el) => {
