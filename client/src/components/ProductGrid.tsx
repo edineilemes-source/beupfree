@@ -31,7 +31,8 @@ export default function ProductGrid() {
     queryKey: ['/api/products'],
   });
 
-  const products = data?.products || [];
+  const products = (data?.products || [])
+    .sort((a, b) => (b.bestOffer?.discountPercent || 0) - (a.bestOffer?.discountPercent || 0));
 
   if (isLoading) {
     return (

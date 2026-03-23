@@ -95,7 +95,9 @@ export default function TodayPromotions() {
     queryKey: ['/api/products'],
   });
 
-  const products = data?.products?.filter(p => p.bestOffer && p.bestOffer.discountPercent && p.bestOffer.discountPercent > 0) || [];
+  const products = (data?.products || [])
+    .filter(p => p.bestOffer && p.bestOffer.discountPercent && p.bestOffer.discountPercent > 0)
+    .sort((a, b) => (b.bestOffer?.discountPercent || 0) - (a.bestOffer?.discountPercent || 0));
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {

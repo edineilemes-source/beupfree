@@ -1,0 +1,136 @@
+A mudança principal no Replit é parar de tratar essas URLs do Mercado Livre como “lista fixa” e passar a tratá-las como coleções dinâmicas (fontes), atualizadas por jobs no Express, com rastreabilidade no banco (membership + batches). Isso mexe em 3 camadas: banco, backend e frontend.
+
+Abaixo está o checklist arquivo-por-arquivo do que você precisa mudar/adicionar (planejamento — sem implementar agora).
+
+1) Banco (Supabase/Postgres) — mudanças necessárias
+✅ 1.1 Normalizar payload_json para jsonb
+Nos seus textos antigos aparece payload_json text. Para esse projeto, o certo é:
+
+raw_collected_items.payload_json → jsonb
+Por quê: você vai reprocessar, auditar e extrair campos (rating, atributos filtráveis etc.). jsonb é feito pra isso.
+
+✅ 1.2 Criar a tabela collection_memberships (obrigatória)
+Essa é a peça que resolve “a lista muda o tempo todo”.
+
+Ela guarda:
+
+quando um item apareceu primeira vez na coleção
+quando apareceu por último (last_seen)
+se está ativo na coleção (is_active)
+Sem isso, você só tem “snapshots soltos” e não consegue manter a coleção atualizada com anti-flapping.
+
+✅ 1.3 Garantir índices para idempotência
+índice em raw_collected_items(dedup_hash)
+índice/controle em raw_collected_items(external_item_id) se você extrair o ID (ideal)
+2) Backend (Express server/) — onde está a maior mudança
+Hoje, pelo que você mostrou no doc de código, o backend está com rotas muito básicas (/api/products retornando []). Você vai evoluir o server para ter módulos (coleta por coleções + pipeline + APIs).
+
+✅ 2.1 Criar um client Supabase “admin” (service role)
+Adicionar:
+
+server/lib/supabaseAdmin.ts
+Objetivo: todos inserts/updates do pipeline rodam no server com service role.
+
+✅ 2.2 Criar o módulo Coleções do Mercado Livre
+Você vai transformar cada URL (Ofertas do Dia/Relâmpago/Outlet/Imbatíveis) em um registro em:
+
+collection_sources
+E criar o job:
+
+server/jobs/collectCollections.ts
+Responsável por: 1) criar collection_batch 2) buscar o snapshot da URL 3) gravar raw_collected_items 4) fazer upsert em collection_memberships 5) anti-flapping: desativar membership só depois do limiar
+Importante: a URL que você salva no banco deve estar normalizada (sem #..., sem parâmetros de tracking). Isso evita duplicar fontes por bobagem.
+
+✅ 2.3 Criar o collector específico das páginas /ofertas
+Adicionar algo como:
+
+server/services/mlCollectionsCollector.ts
+Ele deve extrair apenas o que você quer para filtragem:
+
+external_item_id (se conseguir)
+title
+price, old_price, discount_percent
+image_url
+item_url
+free_shipping
+rating_avg e reviews_count (somente números, sem comentários)
+E salvar o resto em payload_json (auditoria).
+
+✅ 2.4 Criar endpoints admin para rodar e monitorar coleções
+Adicionar rotas novas (admin):
+
+POST /api/admin/collections/run
+roda todas as coleções ativas, ou uma específica
+GET /api/admin/collections/status
+mostra última execução, contagens, erros, etc.
+E substituir/alinhar seu endpoint atual:
+
+POST /api/admin/collect
+para ele virar um “atalho” que chama collections/run.
+✅ 2.5 Pipeline para alimentar a triagem
+Depois de coletar (raw), precisa rodar tratamento para cair em triagem:
+
+server/jobs/processRawItems.ts
+lê raw_collected_items pendentes
+cria processed_items
+cria triage_queue
+Sem isso, o admin triagem fica “seco”.
+
+✅ 2.6 API pública do catálogo (para o /catalogo parar de ser mock)
+Adicionar rotas públicas:
+
+GET /api/offers (somente publicadas/ativas)
+GET /api/products/:slug
+GET /api/click/:offerId (tracking + redirect)
+E parar de expor scraping para o público (evitar /api/ml/scrape-ofertas aberto).
+
+3) Frontend (React client/src/) — ajustes para ficar coerente
+Pelo doc de código, hoje você tem:
+
+rotas públicas: /, /catalogo, /triagem
+Header tem link “Triagem” público
+✅ 3.1 Separar Admin do Público (rota e menu)
+Mudar:
+
+Remover /triagem do público
+Criar /admin/triagem
+Remover link “Triagem” do Header público
+Arquivos:
+
+client/src/App.tsx
+client/src/components/Header.tsx
+✅ 3.2 Ajustar o AdminTriagem para chamar as rotas corretas
+Você já tem um AdminTriagem.tsx mais completo (com approve/reject/collect). Planejamento de ajustes:
+
+Botão “Coletar do ML” deve chamar:
+POST /api/admin/collections/run (em vez de endpoint antigo/solto)
+useQuery deve ter queryFn explícita para:
+GET /api/admin/triage
+E o catálogo público deve consumir:
+
+GET /api/offers
+✅ 3.3 (Opcional, mas recomendado) Tela admin de status das coleções
+Criar uma page simples:
+
+/admin/coleta/fontes ou /admin/colecoes que chama:
+GET /api/admin/collections/status
+Isso te dá visão operacional (último batch, quantos itens ativos, erros).
+
+4) O que NÃO mudar agora (para não estourar o escopo)
+Não armazenar comentários/reviews em texto (você já decidiu isso)
+Não criar e-commerce (checkout, pedidos etc.)
+Não tentar “congelar” a lista do ML: você vai trabalhar por snapshots + membership
+5) Ordem de execução (para não travar)
+1) SQL/migrations: jsonb + collection_memberships + índices
+2) Backend: collections/run criando batches + raw + memberships
+3) Backend: processRawItems alimentando triage_queue
+4) Frontend: /admin/triagem funcionando + botão “Coletar” chamando collections/run
+5) Público: /catalogo consumindo /api/offers (publicadas)
+
+Extra (detalhe importante sobre o seu caso “links diferentes, produtos diferentes”)
+Isso vai continuar acontecendo “no mundo real” porque o ML muda e personaliza vitrine. A forma correta de você lidar com isso é exatamente:
+
+collection_batches (snapshot por execução)
+collection_memberships (quem está ativo agora)
+anti-flapping (sumiu 1 vez não significa “acabou”)
+Isso faz o sistema ficar estável mesmo quando a fonte é instável.
