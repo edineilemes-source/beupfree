@@ -98,10 +98,7 @@ export async function runCollectionsJob(
           if (!titleLower.includes(brandFilter) && !marcaLower.includes(brandFilter)) {
             continue;
           }
-          // Also require at least 30% discount for brand-specific sources
-          if (!item.desconto_percent || item.desconto_percent < 30) {
-            continue;
-          }
+          // No discount minimum — let the admin approve/reject in triage
         }
 
         try {

@@ -80,7 +80,7 @@ Schema tables:
 - `/api/admin/collections/run` — POST: dispara coleta (todas ou `{ sourceId }`)
 - `/api/admin/collections/status` — GET: lista fontes com stats de membership e últimos batches
 - `/api/admin/collections/:id` — PATCH: atualiza nome/url/frequência/ativo de uma fonte
-- `/api/admin/triage` — GET: pending triage items
+- `/api/admin/triage` — GET: pending triage items (supports `?brand=nike|adidas|puma|...` filter, `?limit`, `?offset`)
 - `/api/admin/triage/:id/approve` — POST: approve and publish
 - `/api/admin/triage/:id/reject` — POST: reject item
 - `/api/init` — Seed brands, categories, marketplace

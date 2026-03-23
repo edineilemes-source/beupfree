@@ -109,11 +109,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/triage", async (req, res) => {
     try {
-      const { status, limit, offset } = req.query;
+      const { status, limit, offset, brand } = req.query;
+      // Normalize brand param: hyphens to spaces (e.g. "new-balance" -> "new balance")
+      const brandParam = brand ? String(brand).replace(/-/g, ' ') : undefined;
       const items = await storage.getTriageQueue({
         status: status ? String(status) : 'pending',
         limit: limit ? parseInt(String(limit)) : 50,
         offset: offset ? parseInt(String(offset)) : 0,
+        brand: brandParam,
       });
 
       const enriched = await Promise.all(

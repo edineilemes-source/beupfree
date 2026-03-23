@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, RefreshCw, Check, X, Loader2, Package, TrendingDown, Truck, ExternalLink } from "lucide-react";
+import { ArrowLeft, RefreshCw, Check, X, Loader2, Package, TrendingDown, Truck, ExternalLink, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -37,6 +37,15 @@ interface TriageResponse {
   total: number;
   items: TriageItem[];
 }
+
+const BRAND_FILTERS = [
+  { label: "Todas", value: "all" },
+  { label: "Nike", value: "nike" },
+  { label: "Adidas", value: "adidas" },
+  { label: "Puma", value: "puma" },
+  { label: "Asics", value: "asics" },
+  { label: "New Balance", value: "new-balance" },
+];
 
 function formatBRL(value: string | number | null | undefined): string {
   if (!value) return "\u2014";
@@ -94,10 +103,14 @@ function TriageCard({ item, onApprove, onReject, isApproving, isRejecting }: {
                 {formatBRL(p.originalPrice)}
               </span>
             )}
-            {p.discountPercent && p.discountPercent > 0 && (
+            {p.discountPercent && p.discountPercent > 0 ? (
               <Badge variant="destructive" data-testid={`badge-discount-${item.id}`}>
                 <TrendingDown className="w-3 h-3 mr-1" />
                 {p.discountPercent}% OFF
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-muted-foreground" data-testid={`badge-discount-${item.id}`}>
+                Desconto não informado
               </Badge>
             )}
           </div>
@@ -143,16 +156,27 @@ export default function AdminTriagem() {
   const { toast } = useToast();
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
+  const [brandFilter, setBrandFilter] = useState<string>("all");
+
+  const triageQueryKey = brandFilter === "all"
+    ? ["/api/admin/triage"]
+    : ["/api/admin/triage", { brand: brandFilter }];
+
+  const triageUrl = brandFilter === "all"
+    ? "/api/admin/triage"
+    : `/api/admin/triage?brand=${encodeURIComponent(brandFilter)}`;
 
   const { data, isLoading, refetch } = useQuery<TriageResponse>({
-    queryKey: ["/api/admin/triage"],
+    queryKey: triageQueryKey,
+    queryFn: () => fetch(triageUrl).then(r => r.json()),
   });
 
   const collectMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/admin/collect"),
+    mutationFn: () => apiRequest("POST", "/api/admin/collections/run", {}),
     onSuccess: async (res) => {
       const result = await res.json();
-      toast({ title: "Coleta concluída", description: `${result.collected} itens coletados, ${result.queued} na fila` });
+      const totalNew = result.totalNew ?? result.collected ?? 0;
+      toast({ title: "Coleta concluída", description: `${totalNew} novos itens na fila` });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/triage"] });
     },
     onError: (err: any) => {
@@ -218,13 +242,13 @@ export default function AdminTriagem() {
               </Link>
               <div>
                 <h1 className="text-xl font-bold" data-testid="text-page-title">Triagem de Produtos</h1>
-                <p className="text-sm text-muted-foreground">Curadoria do catálogo - aprovar ou rejeitar itens</p>
+                <p className="text-sm text-muted-foreground">Curadoria do catálogo — aprovar ou rejeitar itens</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="outline" data-testid="badge-pending-count">
                 <Package className="w-3 h-3 mr-1" />
-                {total} pendentes
+                {total} {brandFilter !== "all" ? `${brandFilter} ` : ""}pendentes
               </Badge>
               <Button
                 variant="outline"
@@ -249,6 +273,22 @@ export default function AdminTriagem() {
               </Button>
             </div>
           </div>
+
+          {/* Brand filter bar */}
+          <div className="flex items-center gap-2 mt-3 flex-wrap" data-testid="filter-brand-bar">
+            <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            {BRAND_FILTERS.map(f => (
+              <Button
+                key={f.value}
+                variant={brandFilter === f.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setBrandFilter(f.value)}
+                data-testid={`button-filter-brand-${f.value}`}
+              >
+                {f.label}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -260,10 +300,19 @@ export default function AdminTriagem() {
         ) : items.length === 0 ? (
           <Card className="overflow-visible p-8 text-center">
             <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-lg font-medium mb-2" data-testid="text-empty-title">Nenhum item na fila</h2>
+            <h2 className="text-lg font-medium mb-2" data-testid="text-empty-title">
+              {brandFilter !== "all" ? `Nenhum item ${brandFilter} na fila` : "Nenhum item na fila"}
+            </h2>
             <p className="text-muted-foreground mb-4">
-              Clique em "Coletar do ML" para buscar novas ofertas e popular a fila de triagem.
+              {brandFilter !== "all"
+                ? `Clique em "Coletar do ML" para buscar mais ofertas ${brandFilter}.`
+                : `Clique em "Coletar do ML" para buscar novas ofertas.`}
             </p>
+            {brandFilter !== "all" && (
+              <Button variant="outline" onClick={() => setBrandFilter("all")} data-testid="button-clear-filter">
+                Ver todos os itens
+              </Button>
+            )}
           </Card>
         ) : (
           <div className="grid gap-3">

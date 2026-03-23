@@ -125,7 +125,11 @@ export async function scrapeCollectionUrl(
       : null;
 
     const discountText = card.find(".poly-price__disc_label").text().trim();
-    const desconto_percent = parseDiscount(discountText);
+    let desconto_percent = parseDiscount(discountText);
+    // If no discount label, calculate from original vs current price
+    if (!desconto_percent && preco_original && preco_original > preco_atual) {
+      desconto_percent = Math.round((1 - preco_atual / preco_original) * 100);
+    }
 
     const brand = card.find(".poly-component__brand").text().trim();
     const ratingText = card.find(".poly-reviews__rating").text().trim();

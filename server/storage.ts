@@ -18,7 +18,7 @@ import {
   systemSettings, type SystemSetting, type InsertSystemSetting
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc, sql, like, count } from "drizzle-orm";
+import { eq, and, desc, asc, sql, like, ilike, count } from "drizzle-orm";
 
 export interface IStorage {
   getCategories(): Promise<Category[]>;
@@ -74,7 +74,7 @@ export interface IStorage {
   createProcessedItem(item: InsertProcessedItem): Promise<ProcessedItem>;
   getProcessedItem(id: string): Promise<ProcessedItem | undefined>;
 
-  getTriageQueue(options?: { status?: string; limit?: number; offset?: number }): Promise<TriageQueueItem[]>;
+  getTriageQueue(options?: { status?: string; limit?: number; offset?: number; brand?: string }): Promise<TriageQueueItem[]>;
   getTriageItem(id: string): Promise<TriageQueueItem | undefined>;
   createTriageItem(item: InsertTriageQueue): Promise<TriageQueueItem>;
   updateTriageItem(id: string, data: Record<string, any>): Promise<TriageQueueItem | undefined>;
@@ -367,11 +367,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ============ TRIAGE QUEUE ============
-  async getTriageQueue(options?: { status?: string; limit?: number; offset?: number }): Promise<TriageQueueItem[]> {
-    let query = db.select().from(triageQueue);
+  async getTriageQueue(options?: { status?: string; limit?: number; offset?: number; brand?: string }): Promise<TriageQueueItem[]> {
+    const conditions: any[] = [];
 
     if (options?.status) {
-      query = query.where(eq(triageQueue.status, options.status as any)) as any;
+      conditions.push(eq(triageQueue.status, options.status as any));
+    }
+
+    if (options?.brand && options.brand !== 'all') {
+      // Join with processedItems to filter by detectedBrand
+      const rows = await db
+        .select({ tq: triageQueue })
+        .from(triageQueue)
+        .innerJoin(processedItems, eq(triageQueue.processedItemId, processedItems.id))
+        .where(
+          conditions.length > 0
+            ? and(conditions[0], ilike(processedItems.detectedBrand, `%${options.brand}%`))
+            : ilike(processedItems.detectedBrand, `%${options.brand}%`)
+        )
+        .orderBy(desc(triageQueue.priority), asc(triageQueue.createdAt))
+        .limit(options?.limit ?? 50)
+        .offset(options?.offset ?? 0);
+      return rows.map(r => r.tq);
+    }
+
+    let query = db.select().from(triageQueue);
+    if (conditions.length > 0) {
+      query = query.where(conditions[0]) as any;
     }
 
     query = query.orderBy(desc(triageQueue.priority), asc(triageQueue.createdAt)) as any;
