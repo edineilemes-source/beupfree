@@ -1,0 +1,128 @@
+Você é um engenheiro full-stack sênior. Atualize o projeto BeUpFree (React+TS+Vite no client; Express+TS no server; Supabase/Postgres) para adicionar uma nova sessão na Home:
+
+## NOVA SESSÃO (HOME)
+Título: "PROMOÇÕES DAS GRANDES MARCAS DE HOJE"
+Sub-sessões:
+  1) Nike (somente itens com desconto >= 40%)
+  2) Adidas (somente itens com desconto >= 40%)
+
+Regras gerais de UI (iguais às outras sessões):
+- Mostrar "Atualizado: HH:MM" (last_updated_at vindo do último batch com sucesso daquela coleção)
+- Ordenar por discount_percent DESC
+- Itens que não estiverem mais na lista devem permanecer visíveis com selo "ESGOTADO" (não remover do grid)
+- Atualizar backend a cada 1 hora
+- "De hoje" = itens cujo first_seen_at OU captured_at seja >= início do dia (00:00) no fuso America/Sao_Paulo (usar uma função startOfToday())
+
+## FONTES (URLs) - NORMALIZAR
+NÃO usar hash (#...) nem tracking_id nem parâmetros de tracking.
+Cadastrar 2 collection_sources novas:
+
+1) Nike 40%+
+Base URL normalizada (remover tracking_id e hash):
+- https://lista.mercadolivre.com.br/loja/nike/lista/calcados-roupas-bolsas/calcados/tenis/_Discount_40-100
+
+2) Adidas 40%+
+Base URL normalizada:
+- https://lista.mercadolivre.com.br/loja/adidas/lista/calcados-roupas-bolsas/calcados/tenis/adidas/_Discount_40-100_NoIndex_True
+
+Intervalo:
+- update_interval_minutes = 60
+grace_minutes (para ESGOTADO sem flapping):
+- 90 (Oferta do Dia) / 10 (Relâmpago) já existentes
+- para Nike/Adidas 40%+: 180 (3 horas) OU 90 (pode escolher 90 para simplificar)
+
+IMPORTANTE:
+- Mesmo que a URL já esteja filtrada, aplique no processamento: discount_percent >= 40
+- E force brand_normalized = 'nike' ou 'adidas' somente se a inferência estiver consistente; caso contrário não auto-publicar.
+
+## BANCO (Supabase/Postgres)
+Garanta:
+- raw_collected_items.payload_json = jsonb
+
+Tabelas já usadas no projeto:
+- collection_sources, collection_batches, raw_collected_items, processed_items, triage_queue, offers, products
+E a tabela obrigatória:
+- collection_memberships (first_seen_at, last_seen_at, is_active, last_batch_id)
+
+Adicionar em collection_sources (se não existir):
+- slug (unique)
+- name
+- base_url
+- update_interval_minutes
+- grace_minutes
+- is_active boolean default true
+
+## BACKEND - COLETA E ATUALIZAÇÃO
+1) Implementar/ajustar scheduler (node-cron ou setInterval) para rodar as coleções por update_interval_minutes.
+2) Implementar coletor para páginas "lista.mercadolivre.com.br/loja/..."
+   - Extrair cards: title, item_url, image_url, current_price, old_price, discount_percent, rating_avg, reviews_count, shipping flag
+   - External ID (MLB-xxxx) quando possível; senão dedup_hash de item_url normalizada
+   - Salvar payload_json (jsonb) com dados brutos estruturados (sem HTML inteiro)
+   - Ser tolerante a mudanças (fallbacks, logs)
+3) Após cada snapshot:
+   - Upsert membership dos itens vistos (is_active=true, last_seen_at=now, first_seen_at se novo)
+   - Aplicar grace_minutes: marcar is_active=false se now - last_seen_at > grace_minutes
+4) Processar raw -> processed:
+   - Normalizar título
+   - Inferir marca (brand_normalized + brand_confidence)
+   - Calcular discount_percent se necessário
+5) Publicação (regra já definida anteriormente):
+   - Auto-publicar apenas se:
+     a) card completo (title>=10, item_url válida, image_url válida, current_price>0)
+     b) brand_normalized em whitelist (nike, adidas, olympikus, mizuno, puma, fila, jordan, new balance)
+     c) brand_confidence >= 0.85
+   - Caso contrário, triage_queue = pending
+Obs: Para as coleções Nike/Adidas 40%+, espera-se auto-publicação com alta taxa, mas ainda respeitar card completo + confiança.
+
+## ENDPOINTS PÚBLICOS (para o front)
+Criar:
+- GET /api/sections/grandes-marcas-hoje
+Retornar:
+{
+  "last_updated_at": ISO,
+  "nike": { "last_updated_at": ISO, "items": [...] },
+  "adidas": { "last_updated_at": ISO, "items": [...] }
+}
+Cada item deve incluir:
+- title, image_url, item_url, current_price, old_price, discount_percent
+- sold_out boolean (membership.is_active=false)
+- last_seen_at
+- first_seen_at
+E aplicar filtros:
+- discount_percent >= 40
+- "de hoje": first_seen_at >= startOfToday('America/Sao_Paulo') (ou captured_at)
+Ordenar cada lista por discount_percent DESC.
+
+(Alternativa aceitável: criar 2 endpoints separados /nike e /adidas, mas prefira 1 endpoint agregador para a sessão.)
+
+## FRONTEND (React)
+1) Home:
+   - Manter as seções:
+     - OFERTA DO DIA
+     - OFERTA RELÂMPAGO
+     - PROMOÇÕES ANTERIORES
+   - Remover PROMOÇÕES DE ONTEM (não renderizar mais)
+2) Adicionar nova seção:
+   - "PROMOÇÕES DAS GRANDES MARCAS DE HOJE"
+   - Sub-blocos:
+     - Nike
+     - Adidas
+   - Cada sub-bloco:
+     - Mostrar "Atualizado: ..."
+     - Grid ordenado por desconto
+     - Badge "ESGOTADO" se sold_out=true (manter visível)
+3) React Query:
+   - Query para /api/sections/grandes-marcas-hoje
+   - staleTime ~ 5-10 min (front), refetchOnWindowFocus true
+
+## CRITÉRIOS DE ACEITE
+- Scheduler roda Nike e Adidas 40%+ a cada 1 hora e cria collection_batches
+- Endpoint /api/sections/grandes-marcas-hoje retorna duas listas com last_updated_at e itens filtrados desconto>=40
+- Itens que somem do snapshot ficam com sold_out=true e exibem badge "ESGOTADO"
+- Home exibe a sessão nova + remove "Promoções de ontem" + mantém "Promoções anteriores"
+
+Entregar:
+- Código TS (server+client)
+- Migrations SQL
+- Notas de execução (.env SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY)
+- Nada de scraping no frontend
