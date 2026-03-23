@@ -75,12 +75,33 @@ export async function runCollectionsJob(
       let collectedCount = 0;
       let newCount = 0;
 
+      // Detect if this source filters by a specific brand name
+      const sourceLower = source.name.toLowerCase();
+      const brandFilter = sourceLower.includes("nike")
+        ? "nike"
+        : sourceLower.includes("adidas")
+        ? "adidas"
+        : null;
+
       for (const item of items) {
         if (!item.nome || item.preco_atual <= 0) continue;
 
         // For brand sources, filter by discount >= 40%
         if (isBrandSource && item.desconto_percent && item.desconto_percent < 40) {
           continue;
+        }
+
+        // For brand-filtered sources (Nike/Adidas), only keep items matching that brand
+        if (brandFilter) {
+          const titleLower = item.nome.toLowerCase();
+          const marcaLower = (item.marca || "").toLowerCase();
+          if (!titleLower.includes(brandFilter) && !marcaLower.includes(brandFilter)) {
+            continue;
+          }
+          // Also require at least 30% discount for brand-specific sources
+          if (!item.desconto_percent || item.desconto_percent < 30) {
+            continue;
+          }
         }
 
         try {

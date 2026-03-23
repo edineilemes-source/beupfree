@@ -81,17 +81,15 @@ export default function DealOfTheDay() {
             <ProductCard
               key={item.id}
               id={item.id}
-              mainName={item.title}
-              mainBrand="Tênis"
-              mainImageUrl={item.imageUrl}
-              bestOffer={{
-                id: item.id,
-                currentPrice: String(item.currentPrice),
-                oldPrice: item.oldPrice ? String(item.oldPrice) : null,
-                discountPercent: item.discountPercent ? String(item.discountPercent) : null,
-                itemUrl: item.itemUrl,
-                lastSeenAt: new Date(item.lastSeenAt).toISOString(),
-              }}
+              name={item.title}
+              brand="Tênis"
+              price={item.currentPrice}
+              oldPrice={item.oldPrice ?? undefined}
+              discount={item.discountPercent ?? undefined}
+              image={item.imageUrl || ""}
+              category="Calçados"
+              affiliateUrl={item.itemUrl}
+              lastSeenAt={item.lastSeenAt}
             />
           ))}
         </div>

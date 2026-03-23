@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { storage } from "../storage";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { db } from "../db";
 import { offers, products, productImages } from "@shared/schema";
 
@@ -24,37 +24,37 @@ interface DealSectionResponse {
 
 const getSection = async (sourceName: string) => {
   try {
-    // Get the collection source
     const sources = await storage.getCollectionSources();
     const source = sources.find((s) => s.name?.includes(sourceName));
 
-    if (!source) {
-      return { lastUpdatedAt: null, items: [] };
+    let lastUpdatedAt: string | null = null;
+
+    if (source) {
+      const batches = await storage.getCollectionBatches(source.id, 1);
+      const latestBatch = batches?.[0];
+      lastUpdatedAt = latestBatch?.finishedAt?.toISOString() || null;
     }
 
-    // Get latest batch for this source
-    const batches = await storage.getCollectionBatches(source.id, 1);
-    const latestBatch = batches?.[0];
-
-    // Get published offers - all active published offers
     const allOffers = await db
       .select({
         id: offers.id,
         currentPrice: offers.currentPrice,
-        oldPrice: offers.oldPrice,
+        originalPrice: offers.originalPrice,
         discountPercent: offers.discountPercent,
-        itemUrl: offers.itemUrl,
+        affiliateUrl: offers.affiliateUrl,
+        originalUrl: offers.originalUrl,
         productId: offers.productId,
-        createdAt: offers.createdAt,
+        lastSeenAt: offers.lastSeenAt,
       })
       .from(offers)
+      .innerJoin(products, eq(offers.productId, products.id))
       .where(
         and(
-          eq(offers.isPublished, true),
-          eq(offers.offerStatus, "active")
+          eq(offers.status, "active"),
+          eq(products.catalogStatus, "published")
         )
       )
-      .orderBy(desc(sql`CAST(${offers.discountPercent} AS INTEGER)`))
+      .orderBy(desc(offers.discountPercent))
       .limit(12);
 
     const items: DealItem[] = [];
@@ -68,26 +68,23 @@ const getSection = async (sourceName: string) => {
 
       if (!product) continue;
 
-      const prodImages = await db.query.productImages.findFirst({
+      const prodImage = await db.query.productImages.findFirst({
         where: eq(productImages.productId, offer.productId),
       });
 
       items.push({
         id: offer.id,
-        title: product.name || "Produto",
-        imageUrl: prodImages?.imageUrl || null,
-        itemUrl: offer.itemUrl || "",
+        title: product.mainName || "Produto",
+        imageUrl: product.mainImageUrl || prodImage?.imageUrl || null,
+        itemUrl: offer.affiliateUrl || offer.originalUrl || "",
         currentPrice: parseFloat(offer.currentPrice) || 0,
-        oldPrice: offer.oldPrice ? parseFloat(offer.oldPrice) : null,
-        discountPercent: offer.discountPercent ? parseInt(offer.discountPercent) : null,
-        lastSeenAt: offer.createdAt?.toISOString() || new Date().toISOString(),
+        oldPrice: offer.originalPrice ? parseFloat(offer.originalPrice) : null,
+        discountPercent: offer.discountPercent ?? null,
+        lastSeenAt: offer.lastSeenAt?.toISOString() || new Date().toISOString(),
       });
     }
 
-    return {
-      lastUpdatedAt: latestBatch?.finishedAt?.toISOString() || null,
-      items,
-    };
+    return { lastUpdatedAt, items };
   } catch (err: any) {
     console.error(`[DealSections] Error for ${sourceName}:`, err.message);
     return { lastUpdatedAt: null, items: [] };

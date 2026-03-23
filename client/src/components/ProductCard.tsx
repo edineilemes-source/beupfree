@@ -30,7 +30,9 @@ export default function ProductCard({
   freeShipping,
   lastSeenAt,
 }: ProductCardProps) {
-  const computedDiscount = discount || (oldPrice ? Math.round(((oldPrice - price) / oldPrice) * 100) : 0);
+  const safePrice = typeof price === "number" && !isNaN(price) ? price : 0;
+  const safeOldPrice = typeof oldPrice === "number" && !isNaN(oldPrice) ? oldPrice : undefined;
+  const computedDiscount = discount || (safeOldPrice && safeOldPrice > safePrice ? Math.round(((safeOldPrice - safePrice) / safeOldPrice) * 100) : 0);
 
   const getTimeAgoText = (date: Date | string | undefined) => {
     if (!date) return "";
@@ -90,13 +92,13 @@ export default function ProductCard({
           </div>
 
           <div className="space-y-1">
-            {oldPrice && oldPrice > price && (
+            {safeOldPrice && safeOldPrice > safePrice && (
               <p className="text-sm text-muted-foreground line-through" data-testid={`text-old-price-${id}`}>
-                R$ {oldPrice.toFixed(2)}
+                R$ {safeOldPrice.toFixed(2)}
               </p>
             )}
             <p className="text-2xl font-bold" data-testid={`text-price-${id}`}>
-              R$ {price.toFixed(2)}
+              R$ {safePrice.toFixed(2)}
             </p>
           </div>
 
