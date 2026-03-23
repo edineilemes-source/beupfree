@@ -1,0 +1,112 @@
+Você é um engenheiro full-stack sênior. Ajuste o projeto BeUpFree para implementar auto-aprovação (publicação automática) de ofertas quando:
+
+1) a marca do produto estiver em uma whitelist, e
+2) o card estiver “completo” (critérios abaixo).
+
+Todo item fora da whitelist ou com card incompleto deve ir para triagem manual.
+
+✅ Whitelist de marcas (auto-approve)
+A whitelist deve considerar variações de escrita/case:
+
+Nike
+Adidas
+Olympikus
+Mizuno
+Puma
+Fila
+Jordan
+New Balance
+Regras de normalização de marca:
+
+Comparar em lowercase, remover acentos, remover pontuação extra.
+“new balance” deve ser reconhecida mesmo com espaços múltiplos.
+“air jordan” deve mapear para “jordan”.
+Se encontrar mais de 1 marca no título (ex.: “Nike x Adidas”), não auto-aprovar (vai pra triagem por ambiguidade).
+Se não conseguir inferir marca com confiança, vai pra triagem.
+🎯 Definição de “Card completo” (quality gate)
+Um item é “card completo” se tiver, no mínimo:
+
+title (>= 10 caracteres)
+item_url válida (http/https)
+image_url válida
+current_price numérico e > 0
+currency (ex.: BRL) ou assumir BRL se a fonte for ML Brasil
+(opcional mas recomendado) old_price >= current_price quando existir
+(opcional) discount_percent coerente quando existir (0–90)
+Se algum desses campos mínimos faltar → triagem manual.
+
+🧠 Estratégia do pipeline (onde mudar)
+O pipeline atual tem: raw_collected_items → processed_items → triage_queue → aprovação manual → publicação em offers.
+
+Você deve alterar o processamento para: 1) Criar processed_items normalmente (normalizar título, extrair marca, etc.). 2) Rodar evaluateQualityGate(processedItem) e inferBrand(processedItem):
+
+isCardComplete: boolean
+brand: string | null
+brand_confidence: number (0–1)
+auto_approve_reason: string[] 3) Se isCardComplete === true e brand ∈ whitelist e brand_confidence >= 0.85:
+Publicar automaticamente criando/atualizando:
+products (se necessário)
+offers com is_published=true e offer_status='active'
+Registrar auditoria: quem aprovou foi system
+Inserir em triage_queue como approved ou registrar em uma tabela de ações (ver DB abaixo) 4) Caso contrário:
+Criar/atualizar triage_queue com triage_status='pending' e lista de “issues” (ex.: missing_image, missing_price, brand_not_whitelisted, ambiguous_brand)
+🗃️ Banco de dados (Supabase/Postgres) — mudanças
+Garanta que raw_collected_items.payload_json seja jsonb (não text).
+
+Adicione campos/tabelas para auditoria da auto-aprovação (MVP pode ser simples):
+
+Opção A (mínima): adicionar colunas em triage_queue
+
+approved_by text (valores: 'system' | 'admin')
+auto_approved boolean default false
+auto_approved_reason jsonb (array de strings)
+brand_detected text
+brand_confidence numeric
+Opção B (mais limpa): criar curation_actions
+
+id
+processed_item_id
+action_type ('approved'|'rejected'|'auto_approved')
+actor ('system'|'admin')
+reason jsonb
+timestamps
+Implemente migrations SQL.
+
+🌐 Endpoints (Express)
+Manter os endpoints de triagem e garantir que o catálogo público liste apenas offers publicadas:
+
+GET /api/offers → retorna somente offers.is_published=true e offer_status='active'
+GET /api/admin/triage?status=pending → somente pendentes
+POST /api/admin/triage/:id/approve → mantém aprovação manual
+POST /api/admin/triage/:id/reject → mantém rejeição
+Novo endpoint (opcional, mas útil):
+
+GET /api/admin/auto-approve/stats → quantos auto-aprovados por dia, por marca, etc.
+🧩 Frontend (React)
+A lista pública (catálogo) deve consumir GET /api/offers, nunca triagem.
+O Admin Triagem deve mostrar:
+pendentes
+(opcional) filtro “aprovados automaticamente”
+badge “AUTO” quando auto_approved=true
+🧰 Organização sugerida de código (server)
+Crie/ajuste:
+
+server/lib/normalize.ts (remove acento, lower, trim)
+server/services/brandInfer.ts (inferBrand + confidence)
+server/services/qualityGate.ts (isCardComplete + issues)
+server/usecases/autoApprove.ts (decide e publica)
+server/jobs/processRawItems.ts (chama quality + brand + autoApprove)
+server/routes/adminTriage.ts e server/routes/publicOffers.ts
+🧪 Critérios de aceite (tests manuais)
+1) Coletar itens do ML. 2) Item Nike/Adidas/etc com card completo:
+
+não aparece como pending na triagem
+aparece no catálogo público (offers publicadas)
+auditoria indica approved_by='system' 3) Item fora da whitelist ou card incompleto:
+aparece como pending na triagem com issues[] explicando por quê
+⚠️ Observações importantes
+Não coletar nem armazenar texto de comentários de avaliações. Só rating_avg e reviews_count (números).
+Se a inferência de marca estiver incerta/ambígua, não auto-aprovar.
+Toda publicação automática deve ser auditável (log/DB).
+Não fazer scraping no frontend.
+Gere o código em TypeScript, compatível com o projeto existente, com migrations SQL e instruções rápidas de execução (env vars do Supabase, etc.).
