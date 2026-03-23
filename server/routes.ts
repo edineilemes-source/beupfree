@@ -16,6 +16,7 @@ import { scrapeAllSources } from "./services/mlScraper";
 import { runCollectJob } from "./jobs/collect";
 import { registerAdminCollectionsRoutes } from "./routes/adminCollections";
 import brandSectionsRouter from "./routes/brandSections";
+import dealSectionsRouter from "./routes/dealSections";
 import { startScheduler } from "./jobs/scheduler";
 
 const ML_CLIENT_ID = process.env.ML_CLIENT_ID;
@@ -468,6 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ PUBLIC SECTIONS ============
   app.use(brandSectionsRouter);
+  app.use(dealSectionsRouter);
 
   // ============ ADMIN ROUTES ============
   registerAdminCollectionsRoutes(app);

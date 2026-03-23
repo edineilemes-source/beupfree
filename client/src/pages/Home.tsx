@@ -1,8 +1,8 @@
 import Header from "@/components/Header";
 import HeroCarousel from "@/components/HeroCarousel";
-import TodayPromotions from "@/components/TodayPromotions";
+import DealOfTheDay from "@/components/DealOfTheDay";
+import LightningDeals from "@/components/LightningDeals";
 import BrandPromotions from "@/components/BrandPromotions";
-import PreviousPromotions from "@/components/PreviousPromotions";
 import CategoryGrid from "@/components/CategoryGrid";
 import ProductGrid from "@/components/ProductGrid";
 import BrandShowcase from "@/components/BrandShowcase";
@@ -16,9 +16,9 @@ export default function Home() {
       <Header />
       <main>
         <HeroCarousel />
-        <TodayPromotions />
+        <DealOfTheDay />
+        <LightningDeals />
         <BrandPromotions />
-        <PreviousPromotions />
         <CategoryGrid />
         <ProductGrid />
         <BrandShowcase />
