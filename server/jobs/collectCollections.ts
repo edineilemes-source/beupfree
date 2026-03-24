@@ -130,8 +130,10 @@ export async function runCollectionsJob(
           });
 
           const existingRaw = await storage.getRawCollectedItemByHash(contentHash);
+          let processedItem;
 
           if (!existingRaw) {
+            // Brand new item — create raw + processed records
             const rawItem = await storage.createRawCollectedItem({
               batchId: batch.id,
               externalId: item.externalItemId,
@@ -156,7 +158,7 @@ export async function runCollectionsJob(
             const detectedCategory = detectCategory(item.nome);
             const affiliateUrl = item.link_afiliado || buildAffiliateUrl(item.url);
 
-            const processedItem = await storage.createProcessedItem({
+            processedItem = await storage.createProcessedItem({
               rawItemId: rawItem.id,
               normalizedTitle: item.nome,
               detectedBrand,
@@ -174,10 +176,21 @@ export async function runCollectionsJob(
               isDuplicate: false,
               matchedProductId: null,
             });
+          } else {
+            // Previously collected — retrieve existing processed item
+            processedItem = await storage.getProcessedItemByContentHash(contentHash);
+          }
 
+          collectedCount++;
+
+          // Always check if a pending triage entry exists — even for previously-seen items.
+          // This ensures items re-appear in triage after the queue is cleared.
+          if (processedItem) {
             const existingTriageForHash = await storage.getTriageItemByContentHash(contentHash);
 
             if (!existingTriageForHash) {
+              const affiliateUrl = processedItem.affiliateUrl || buildAffiliateUrl(item.url);
+
               // Evaluate auto-approval
               const approval = evaluateAutoApproval({
                 title: item.nome,
@@ -200,7 +213,7 @@ export async function runCollectionsJob(
                     shortDescription: item.nome,
                   }).returning().then(r => r[0]);
 
-                  const offer = await db.insert(offers).values({
+                  await db.insert(offers).values({
                     productId: product.id,
                     marketplaceId,
                     currentPrice: String(item.preco_atual),
@@ -211,7 +224,7 @@ export async function runCollectionsJob(
                     freeShipping: item.frete_gratis,
                     externalId: item.externalItemId,
                     status: 'active',
-                  }).returning().then(r => r[0]);
+                  });
 
                   if (item.imagens[0]) {
                     await db.insert(productImages).values({
@@ -241,7 +254,7 @@ export async function runCollectionsJob(
 
                   autoApprovedCount++;
                 } catch (approveErr: any) {
-                  // If auto-approve fails, fall back to triage
+                  // If auto-approve fails, fall back to manual triage
                   result.errors.push(`[${source.name}] Auto-approve falhou para "${item.nome}": ${approveErr.message}`);
                   await storage.createTriageItem({
                     processedItemId: processedItem.id,
@@ -249,6 +262,7 @@ export async function runCollectionsJob(
                     priority: item.desconto_percent && item.desconto_percent >= 20 ? 1 : 0,
                     suggestedBrandId: null,
                     suggestedCategoryId: null,
+                    collectionSourceId: source.id,
                     adminNotes: `Coleta automática: ${source.name}`,
                     brandDetected: approval.brand,
                     brandConfidence: String(approval.confidence),
@@ -256,7 +270,7 @@ export async function runCollectionsJob(
                   } as any);
                 }
               } else {
-                // Send to manual triage with audit info
+                // Send to manual triage
                 await storage.createTriageItem({
                   processedItemId: processedItem.id,
                   status: "pending",
@@ -273,8 +287,6 @@ export async function runCollectionsJob(
 
               newCount++;
             }
-
-            collectedCount++;
           }
         } catch (itemErr: any) {
           result.errors.push(`[${source.name}] Item "${item.nome}": ${itemErr.message}`);

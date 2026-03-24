@@ -73,6 +73,7 @@ export interface IStorage {
 
   createProcessedItem(item: InsertProcessedItem): Promise<ProcessedItem>;
   getProcessedItem(id: string): Promise<ProcessedItem | undefined>;
+  getProcessedItemByContentHash(contentHash: string): Promise<ProcessedItem | undefined>;
 
   getTriageQueue(options?: { status?: string; limit?: number; offset?: number; brand?: string }): Promise<TriageQueueItem[]>;
   getTriageItem(id: string): Promise<TriageQueueItem | undefined>;
@@ -363,6 +364,16 @@ export class DatabaseStorage implements IStorage {
 
   async getProcessedItem(id: string): Promise<ProcessedItem | undefined> {
     const [item] = await db.select().from(processedItems).where(eq(processedItems.id, id));
+    return item || undefined;
+  }
+
+  async getProcessedItemByContentHash(contentHash: string): Promise<ProcessedItem | undefined> {
+    const [item] = await db
+      .select()
+      .from(processedItems)
+      .where(eq(processedItems.contentHash, contentHash))
+      .orderBy(desc(processedItems.processedAt))
+      .limit(1);
     return item || undefined;
   }
 
