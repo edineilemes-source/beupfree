@@ -67,6 +67,7 @@ export interface IStorage {
 
   getMembershipStats(sourceId: string): Promise<{ total: number; active: number; inactive: number }>;
   getTriageItemByContentHash(contentHash: string): Promise<TriageQueueItem | undefined>;
+  hasBeenTriaged(contentHash: string): Promise<boolean>;
 
   createRawCollectedItem(item: InsertRawCollectedItem): Promise<RawCollectedItem>;
   getRawCollectedItemByHash(hash: string): Promise<RawCollectedItem | undefined>;
@@ -332,6 +333,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ============ TRIAGE — lookup by hash ============
+  // Returns any pending triage entry for this hash (used to avoid duplicates in queue)
   async getTriageItemByContentHash(contentHash: string): Promise<TriageQueueItem | undefined> {
     const [item] = await db
       .select({ triage: triageQueue })
@@ -343,6 +345,32 @@ export class DatabaseStorage implements IStorage {
       ))
       .limit(1);
     return item?.triage || undefined;
+  }
+
+  // Returns true if ANY triage entry (pending/approved/rejected) exists for this hash or externalId.
+  // Checks both contentHash and externalId to catch duplicates even when hashes differ.
+  async hasBeenTriaged(contentHash: string, externalId?: string | null): Promise<boolean> {
+    // Check by contentHash first
+    const [byHash] = await db
+      .select({ id: triageQueue.id })
+      .from(triageQueue)
+      .innerJoin(processedItems, eq(triageQueue.processedItemId, processedItems.id))
+      .where(eq(processedItems.contentHash, contentHash))
+      .limit(1);
+    if (byHash) return true;
+
+    // Also check by externalId (catches hash mismatches — same product, different hash)
+    if (externalId) {
+      const [byExtId] = await db
+        .select({ id: triageQueue.id })
+        .from(triageQueue)
+        .innerJoin(processedItems, eq(triageQueue.processedItemId, processedItems.id))
+        .where(eq(processedItems.externalId, externalId))
+        .limit(1);
+      if (byExtId) return true;
+    }
+
+    return false;
   }
 
   // ============ RAW COLLECTED ITEMS ============

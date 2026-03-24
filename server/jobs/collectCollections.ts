@@ -121,7 +121,9 @@ export async function runCollectionsJob(
         }
 
         try {
-          const contentHash = item.contentHash || sha256(`${item.nome}::${item.preco_atual}`);
+          // Always compute SHA256 from title+price for consistency —
+          // ignore the scraper's 8-char hash which can cause lookup mismatches.
+          const contentHash = sha256(`${item.nome}::${item.preco_atual}`);
 
           await upsertMembership({
             collectionSourceId: source.id,
@@ -183,10 +185,12 @@ export async function runCollectionsJob(
 
           collectedCount++;
 
-          // Always check if a pending triage entry exists — even for previously-seen items.
-          // This ensures items re-appear in triage after the queue is cleared.
+          // Always check if a triage entry exists — even for previously-seen items.
+          // Use hasBeenTriaged (any status) to avoid re-adding approved/rejected items.
+          // Items only re-enter triage if their triage record was deleted (queue cleared).
           if (processedItem) {
-            const existingTriageForHash = await storage.getTriageItemByContentHash(contentHash);
+            const alreadyTriaged = await storage.hasBeenTriaged(contentHash, item.externalItemId);
+            const existingTriageForHash = alreadyTriaged ? true : await storage.getTriageItemByContentHash(contentHash);
 
             if (!existingTriageForHash) {
               const affiliateUrl = processedItem.affiliateUrl || buildAffiliateUrl(item.url);

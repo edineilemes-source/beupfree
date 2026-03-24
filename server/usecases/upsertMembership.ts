@@ -39,6 +39,8 @@ export async function upsertMembership(input: UpsertMembershipInput): Promise<vo
         rawUrl: item.url,
         isActive: true,
         missedRunsCount: 0,
+        // Also update contentHash in case it was stored as a short 8-char hash before
+        contentHash: item.contentHash,
       })
       .where(eq(collectionMemberships.id, existing.id));
   } else {
