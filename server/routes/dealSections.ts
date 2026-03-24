@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { storage } from "../storage";
-import { db } from "../db";
+import { db, pool } from "../db";
 import { collectionMemberships, processedItems, collectionBatches, collectionSources, products, offers } from "@shared/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 
@@ -43,9 +43,14 @@ async function getLastUpdatedAt(sourceId: string): Promise<string | null> {
 }
 
 /**
- * Main query: get items from collection_memberships (joined with processed_items)
- * for a given source. Includes sold_out (is_active=false).
- * Ordered by discount DESC NULLS LAST.
+ * Main query: get items from collection_memberships joined with processed_items,
+ * filtered to ONLY items that have been approved in triage_queue.
+ *
+ * Approval check uses both content_hash AND external_id so price changes
+ * don't cause previously-approved items to disappear.
+ *
+ * onlySoldOut=true  → only is_active=false  (for "Ofertas Anteriores")
+ * onlyActive=true   → only is_active=true   (for live sections)
  */
 async function getMembershipItems(
   sourceId: string,
@@ -53,56 +58,92 @@ async function getMembershipItems(
   onlySoldOut = false,
   onlyActive = false
 ): Promise<DealItem[]> {
-  // Get memberships for this source
-  const conditions = [eq(collectionMemberships.collectionSourceId, sourceId)];
-  if (onlySoldOut) conditions.push(eq(collectionMemberships.isActive, false));
-  if (onlyActive) conditions.push(eq(collectionMemberships.isActive, true));
+  const activeFilter = onlyActive
+    ? "AND cm.is_active = true"
+    : onlySoldOut
+    ? "AND cm.is_active = false"
+    : "";
 
-  const memberships = await db
-    .select()
-    .from(collectionMemberships)
-    .where(and(...conditions))
-    .orderBy(desc(collectionMemberships.lastSeenAt))
-    .limit(limit * 3); // fetch more to account for missing processed items
+  const { rows } = await pool.query<{
+    membership_id: string;
+    is_active: boolean;
+    last_seen_at: Date;
+    normalized_title: string | null;
+    price: string | null;
+    original_price: string | null;
+    discount_percent: number | null;
+    image_url: string | null;
+    affiliate_url: string | null;
+    source_url: string | null;
+    raw_url: string | null;
+    raw_title: string | null;
+    free_shipping: boolean | null;
+  }>(
+    `
+    SELECT *
+    FROM (
+      SELECT DISTINCT ON (pi.external_id, pi.price)
+        cm.id              AS membership_id,
+        cm.is_active,
+        cm.last_seen_at,
+        pi.normalized_title,
+        pi.price,
+        pi.original_price,
+        pi.discount_percent,
+        pi.image_url,
+        pi.affiliate_url,
+        pi.source_url,
+        cm.raw_url,
+        cm.raw_title,
+        pi.free_shipping
+      FROM collection_memberships cm
+      JOIN processed_items pi ON pi.content_hash = cm.content_hash
+      WHERE cm.collection_source_id = $1
+        ${activeFilter}
+        AND (
+          EXISTS (
+            SELECT 1 FROM triage_queue tq
+            WHERE tq.processed_item_id = pi.id
+              AND tq.status = 'approved'
+          )
+          OR
+          (pi.external_id IS NOT NULL AND EXISTS (
+            SELECT 1 FROM triage_queue tq2
+            JOIN processed_items pi2 ON pi2.id = tq2.processed_item_id
+            WHERE pi2.external_id = pi.external_id
+              AND tq2.status = 'approved'
+          ))
+        )
+      ORDER BY pi.external_id, pi.price, pi.discount_percent DESC NULLS LAST
+    ) AS sub
+    ORDER BY sub.discount_percent DESC NULLS LAST
+    LIMIT $2
+    `,
+    [sourceId, limit * 3]
+  );
 
   const items: DealItem[] = [];
   const seen = new Set<string>();
 
-  for (const m of memberships) {
-    if (items.length >= limit) break;
-    if (!m.contentHash && !m.externalItemId) continue;
-
-    // Find processed item by content_hash
-    const [pi] = m.contentHash
-      ? await db
-          .select()
-          .from(processedItems)
-          .where(eq(processedItems.contentHash, m.contentHash))
-          .orderBy(desc(processedItems.processedAt))
-          .limit(1)
-      : [];
-
-    if (!pi) continue;
-
-    // Dedupe by title+price combo
-    const dedupeKey = `${pi.normalizedTitle}::${pi.price}`;
+  for (const row of rows) {
+    const dedupeKey = `${row.normalized_title}::${row.price}`;
     if (seen.has(dedupeKey)) continue;
     seen.add(dedupeKey);
 
-    const currentPrice = parseFloat(pi.price || "0");
+    const currentPrice = parseFloat(row.price || "0");
     if (currentPrice <= 0) continue;
 
     items.push({
-      id: m.id,
-      title: pi.normalizedTitle || m.rawTitle || "Produto",
-      imageUrl: pi.imageUrl ?? null,
-      itemUrl: pi.affiliateUrl || pi.sourceUrl || m.rawUrl || "",
+      id: row.membership_id,
+      title: row.normalized_title || row.raw_title || "Produto",
+      imageUrl: row.image_url ?? null,
+      itemUrl: row.affiliate_url || row.source_url || row.raw_url || "",
       currentPrice,
-      oldPrice: pi.originalPrice ? parseFloat(pi.originalPrice) : null,
-      discountPercent: pi.discountPercent ?? null,
-      soldOut: !m.isActive,
-      freeShipping: pi.freeShipping ?? false,
-      lastSeenAt: m.lastSeenAt?.toISOString() ?? new Date().toISOString(),
+      oldPrice: row.original_price ? parseFloat(row.original_price) : null,
+      discountPercent: row.discount_percent ?? null,
+      soldOut: !row.is_active,
+      freeShipping: row.free_shipping ?? false,
+      lastSeenAt: row.last_seen_at?.toISOString() ?? new Date().toISOString(),
     });
   }
 
