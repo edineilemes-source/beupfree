@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { collectionMemberships } from "@shared/schema";
-import { and, eq, lt, ne, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import type { CollectedItem } from "../services/mlCollectionsCollector";
 
 export interface UpsertMembershipInput {
@@ -56,6 +56,35 @@ export async function upsertMembership(input: UpsertMembershipInput): Promise<vo
   }
 }
 
+/**
+ * Robust batch-based deactivation:
+ * Marks as ESGOTADO all active memberships that were NOT seen in the current batch.
+ * Only called when batch succeeded AND total_collected >= MIN_EXPECTED.
+ */
+export async function deactivateByBatch(
+  collectionSourceId: string,
+  currentBatchId: string
+): Promise<number> {
+  const result = await db
+    .update(collectionMemberships)
+    .set({
+      isActive: false,
+      missedRunsCount: sql`${collectionMemberships.missedRunsCount} + 1`,
+    })
+    .where(
+      and(
+        eq(collectionMemberships.collectionSourceId, collectionSourceId),
+        eq(collectionMemberships.isActive, true),
+        ne(collectionMemberships.lastBatchId, currentBatchId)
+      )
+    );
+
+  return result.rowCount ?? 0;
+}
+
+/**
+ * Legacy time-based deactivation (kept for backward compat).
+ */
 export async function deactivateStaleMemberships(
   collectionSourceId: string,
   currentBatchId: string,
@@ -74,7 +103,7 @@ export async function deactivateStaleMemberships(
         eq(collectionMemberships.collectionSourceId, collectionSourceId),
         eq(collectionMemberships.isActive, true),
         ne(collectionMemberships.lastBatchId, currentBatchId),
-        lt(collectionMemberships.lastSeenAt, thresholdDate)
+        sql`${collectionMemberships.lastSeenAt} < ${thresholdDate}`
       )
     );
 

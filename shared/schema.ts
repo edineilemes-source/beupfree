@@ -355,6 +355,13 @@ export const triageQueue = pgTable("triage_queue", {
   suggestedBrandId: varchar("suggested_brand_id", { length: 36 }),
   suggestedCategoryId: varchar("suggested_category_id", { length: 36 }),
   adminNotes: text("admin_notes"),
+  // Auto-approval audit fields
+  approvedBy: varchar("approved_by", { length: 20 }),  // 'system' | 'admin' | null
+  autoApproved: boolean("auto_approved").default(false),
+  autoApprovedReason: jsonb("auto_approved_reason").$type<Record<string, unknown>>(),
+  brandDetected: varchar("brand_detected", { length: 120 }),
+  brandConfidence: decimal("brand_confidence", { precision: 4, scale: 3 }),
+  issues: jsonb("issues").$type<string[]>(),
   createdAt: timestamp("created_at").defaultNow(),
   resolvedAt: timestamp("resolved_at"),
 }, (table) => [
@@ -516,7 +523,7 @@ export const insertProcessedItemSchema = createInsertSchema(processedItems).omit
 export type InsertProcessedItem = z.infer<typeof insertProcessedItemSchema>;
 export type ProcessedItem = typeof processedItems.$inferSelect;
 
-export const insertTriageQueueSchema = createInsertSchema(triageQueue).omit({ id: true, createdAt: true, resolvedAt: true });
+export const insertTriageQueueSchema = createInsertSchema(triageQueue).omit({ id: true, createdAt: true });
 export type InsertTriageQueue = z.infer<typeof insertTriageQueueSchema>;
 export type TriageQueueItem = typeof triageQueue.$inferSelect;
 

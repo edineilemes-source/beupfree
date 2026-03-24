@@ -12,6 +12,8 @@ interface DealItem {
   currentPrice: number;
   oldPrice: number | null;
   discountPercent: number | null;
+  soldOut: boolean;
+  freeShipping: boolean;
   lastSeenAt: string;
 }
 
@@ -89,7 +91,9 @@ export default function DealOfTheDay() {
               image={item.imageUrl || ""}
               category="Calçados"
               affiliateUrl={item.itemUrl}
+              freeShipping={item.freeShipping}
               lastSeenAt={item.lastSeenAt}
+              soldOut={item.soldOut}
             />
           ))}
         </div>

@@ -3,8 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ProductCard from "./ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Zap } from "lucide-react";
+import { History } from "lucide-react";
 
 interface DealItem {
   id: string;
@@ -28,24 +27,27 @@ const formatLastUpdate = (isoString: string | null): string => {
   if (!isoString) return "Nunca atualizado";
   const date = new Date(isoString);
   try {
-    return formatDistanceToNow(date, { addSuffix: false, locale: ptBR });
+    return formatDistanceToNow(date, { addSuffix: true, locale: ptBR });
   } catch {
     return "Recentemente";
   }
 };
 
-export default function LightningDeals() {
+export default function PreviousOffers() {
   const { data, isLoading } = useQuery<DealSectionResponse>({
-    queryKey: ["/api/sections/oferta-relampago"],
-    staleTime: 1 * 60 * 1000,
-    refetchOnWindowFocus: true,
+    queryKey: ["/api/sections/ofertas-anteriores"],
+    staleTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   if (isLoading) {
     return (
       <section className="py-8 md:py-12 px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Oferta Relâmpago</h2>
+          <div className="flex items-center gap-2 mb-6">
+            <History className="w-6 h-6 text-muted-foreground" />
+            <h2 className="text-2xl md:text-3xl font-bold">Ofertas Anteriores</h2>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array(8)
               .fill(0)
@@ -59,31 +61,29 @@ export default function LightningDeals() {
   }
 
   if (!data || data.items.length === 0) {
-    return (
-      <section className="py-8 md:py-12 px-4 md:px-6">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Oferta Relâmpago</h2>
-          <p className="text-muted-foreground">Nenhuma oferta relâmpago disponível no momento!</p>
-        </div>
-      </section>
-    );
+    return null;
   }
 
   return (
-    <section className="py-8 md:py-12 px-4 md:px-6 bg-red-50 dark:bg-red-950/20">
+    <section className="py-8 md:py-12 px-4 md:px-6 bg-muted/30">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <Zap className="w-6 h-6 text-red-600" />
-            <h2 className="text-2xl md:text-3xl font-bold">Oferta Relâmpago</h2>
-            <Badge variant="destructive">⚡ Urgente</Badge>
+            <History className="w-6 h-6 text-muted-foreground" />
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold">Ofertas Anteriores</h2>
+              <p className="text-sm text-muted-foreground">
+                Produtos que estiveram em oferta — veja os preços históricos
+              </p>
+            </div>
           </div>
           {data.lastUpdatedAt && (
             <span className="text-xs text-muted-foreground">
-              Atualizado: {formatLastUpdate(data.lastUpdatedAt)}
+              Última atualização {formatLastUpdate(data.lastUpdatedAt)}
             </span>
           )}
         </div>
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {data.items.map((item) => (
             <ProductCard
@@ -99,7 +99,7 @@ export default function LightningDeals() {
               affiliateUrl={item.itemUrl}
               freeShipping={item.freeShipping}
               lastSeenAt={item.lastSeenAt}
-              soldOut={item.soldOut}
+              soldOut={true}
             />
           ))}
         </div>

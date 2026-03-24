@@ -6,6 +6,7 @@ import BrandPromotions from "@/components/BrandPromotions";
 import CategoryGrid from "@/components/CategoryGrid";
 import ProductGrid from "@/components/ProductGrid";
 import BrandShowcase from "@/components/BrandShowcase";
+import PreviousOffers from "@/components/PreviousOffers";
 import BenefitsBar from "@/components/BenefitsBar";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
@@ -22,6 +23,7 @@ export default function Home() {
         <CategoryGrid />
         <ProductGrid />
         <BrandShowcase />
+        <PreviousOffers />
         <BenefitsBar />
         <Newsletter />
       </main>

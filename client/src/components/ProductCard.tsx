@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Truck } from "lucide-react";
+import { ExternalLink, Truck, PackageX } from "lucide-react";
 
 interface ProductCardProps {
   id: string;
@@ -15,6 +15,7 @@ interface ProductCardProps {
   affiliateUrl: string;
   freeShipping?: boolean;
   lastSeenAt?: Date | string;
+  soldOut?: boolean;
 }
 
 export default function ProductCard({
@@ -29,6 +30,7 @@ export default function ProductCard({
   affiliateUrl,
   freeShipping,
   lastSeenAt,
+  soldOut = false,
 }: ProductCardProps) {
   const safePrice = typeof price === "number" && !isNaN(price) ? price : 0;
   const safeOldPrice = typeof oldPrice === "number" && !isNaN(oldPrice) ? oldPrice : undefined;
@@ -52,19 +54,26 @@ export default function ProductCard({
       data-testid={`card-product-${id}`}
     >
       <CardContent className="p-0">
-        <div className="relative aspect-square overflow-hidden bg-card">
+        <div className={`relative aspect-square overflow-hidden bg-card ${soldOut ? "opacity-60" : ""}`}>
           <img
             src={image}
             alt={name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className={`w-full h-full object-cover transition-transform duration-300 ${soldOut ? "grayscale" : "group-hover:scale-105"}`}
             data-testid={`img-product-${id}`}
           />
           
           <div className="absolute top-2 left-2 flex flex-col gap-1">
-            <Badge variant="secondary" className="font-semibold" data-testid={`badge-brand-${id}`}>
-              {brand}
-            </Badge>
-            {freeShipping && (
+            {soldOut ? (
+              <Badge variant="outline" className="bg-background/80 backdrop-blur-sm font-semibold text-muted-foreground" data-testid={`badge-soldout-${id}`}>
+                <PackageX className="w-3 h-3 mr-1" />
+                Esgotado
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="font-semibold" data-testid={`badge-brand-${id}`}>
+                {brand}
+              </Badge>
+            )}
+            {!soldOut && freeShipping && (
               <Badge variant="default" className="bg-green-600" data-testid={`badge-shipping-${id}`}>
                 <Truck className="w-3 h-3 mr-1" />
                 Frete Grátis
@@ -72,7 +81,7 @@ export default function ProductCard({
             )}
           </div>
           
-          {computedDiscount > 0 && (
+          {!soldOut && computedDiscount > 0 && (
             <div className="absolute top-2 right-2">
               <Badge variant="destructive" data-testid={`badge-discount-${id}`}>
                 -{computedDiscount}%
@@ -104,12 +113,22 @@ export default function ProductCard({
 
           <Button 
             className="w-full gap-2" 
-            variant="default"
-            onClick={() => window.open(affiliateUrl, '_blank')}
+            variant={soldOut ? "outline" : "default"}
+            disabled={soldOut}
+            onClick={soldOut ? undefined : () => window.open(affiliateUrl, '_blank')}
             data-testid={`button-buy-${id}`}
           >
-            <ExternalLink className="h-4 w-4" />
-            Ver no Mercado Livre
+            {soldOut ? (
+              <>
+                <PackageX className="h-4 w-4" />
+                Oferta Encerrada
+              </>
+            ) : (
+              <>
+                <ExternalLink className="h-4 w-4" />
+                Ver no Mercado Livre
+              </>
+            )}
           </Button>
 
           <p className="text-xs text-center text-muted-foreground" data-testid={`text-updated-${id}`}>
