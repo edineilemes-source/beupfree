@@ -1,0 +1,135 @@
+Você é um engenheiro full-stack sênior. Ajuste o projeto BeUpFree (React+TS no client; Express+TS no server; Supabase/Postgres) para trabalhar APENAS com 3 seções no front:
+a) Oferta Relâmpago
+b) Oferta do Dia
+c) Ofertas Anteriores
+Remover/ignorar qualquer implementação de "Grandes Marcas".
+
+========================
+1) COLEÇÕES E ATUALIZAÇÃO
+========================
+Criar/garantir 2 collection_sources:
+
+const SOURCES = [
+  {
+    slug: "oferta-relampago-tenis-mlb3900",
+    name: "OFERTA RELÂMPAGO",
+    base_url: "https://www.mercadolivre.com.br/ofertas?category=MLB3900&promotion_type=lightning",
+    update_interval_minutes: 5
+  },
+  {
+    slug: "oferta-do-dia-tenis-mlb3900",
+    name: "OFERTA DO DIA",
+    base_url: "https://www.mercadolivre.com.br/ofertas?category=MLB3900&promotion_type=deal_of_the_day",
+    update_interval_minutes: 60
+  }
+];
+
+Scheduler no backend (Express worker) roda essas coletas automaticamente.
+
+========================
+2) ESGOTADO (REGRA OBRIGATÓRIA E ROBUSTA)
+========================
+- Itens que somem da lista devem continuar visíveis na seção, com selo "ESGOTADO".
+- Implementar collection_memberships para controlar is_active por coleção.
+
+Regra robusta para evitar "ESGOTADO por engano":
+- Só marcar is_active=false quando o batch terminar com status=success.
+- E só aplicar a desativação se total_collected >= MIN_EXPECTED_ITEMS (ex.: 30) para evitar falha parcial.
+
+Algoritmo por batch (apenas no final e com success):
+1) Para cada item visto: upsert membership set last_seen_at=now(), is_active=true, last_batch_id=batch.id
+2) Marcar como esgotado: set is_active=false onde collection_source_id=... AND last_batch_id != batch.id
+
+========================
+3) ÚLTIMA ATUALIZAÇÃO
+========================
+Cada endpoint de seção deve retornar last_updated_at = finished_at do último batch success.
+
+========================
+4) ORDENAR POR DESCONTO
+========================
+Sempre ordenar por discount_percent DESC (NULLS LAST).
+Se discount_percent não vier, calcular via old_price/current_price.
+
+========================
+5) AUTO-APROVAÇÃO + TRIAGEM
+========================
+Implementar auto-aprovação (publicação automática) quando:
+1) marca ∈ whitelist
+2) card completo
+
+Whitelist (normalizada):
+- nike, adidas, olympikus, mizuno, puma, fila, jordan, new balance
+
+Normalização:
+- lowercase, remover acentos, pontuação, espaços extras
+- "new balance" reconhecida com múltiplos espaços
+- "air jordan" -> "jordan"
+- Se detectar 2+ marcas no título (ex: "nike x adidas") => NÃO auto-aprovar (ambíguo)
+- Se confiança < 0.85 => triagem
+
+Card completo:
+- title >= 10
+- item_url válida http/https
+- image_url válida
+- current_price > 0
+- currency = BRL (assumir BRL para ML Brasil)
+- discount_percent coerente (0–90) quando existir
+
+Pipeline:
+raw_collected_items -> processed_items -> (auto-approve -> offers publicadas) OU (triage_queue pending)
+
+Auditoria mínima em triage_queue:
+- approved_by ('system'|'admin')
+- auto_approved boolean
+- auto_approved_reason jsonb
+- brand_detected text
+- brand_confidence numeric
+- issues jsonb para pendentes
+
+Não armazenar texto de comentários de reviews. Só rating_avg e reviews_count (números).
+
+========================
+6) ENDPOINTS
+========================
+Públicos:
+- GET /api/sections/oferta-relampago
+- GET /api/sections/oferta-do-dia
+- GET /api/sections/ofertas-anteriores
+
+Retornos:
+- last_updated_at
+- items: incluir sold_out boolean (membership.is_active=false)
+- ordenar por discount_percent DESC
+
+Admin:
+- GET /api/admin/triage?status=pending
+- POST /api/admin/triage/:id/approve
+- POST /api/admin/triage/:id/reject
+
+Catálogo público:
+- GET /api/offers -> somente offers.is_published=true e offer_status='active'
+
+========================
+7) FRONTEND
+========================
+Home deve ter somente:
+- Oferta Relâmpago (com "Atualizado: ...", ordenação por desconto, selo ESGOTADO)
+- Oferta do Dia (idem)
+- Ofertas anteriores (histórico: itens sold_out=true e/ou expired)
+
+Remover seção "Promoções de ontem" (se existir).
+
+========================
+8) RESET DA TRIAGEM (COMEÇAR DO ZERO)
+========================
+Criar um script SQL (ou endpoint admin protegido) para apagar triage_queue.
+Entregar o SQL:
+- delete from triage_queue;
+
+========================
+9) ENTREGÁVEIS
+========================
+- Código TS server+client
+- migrations SQL
+- instruções de env (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
