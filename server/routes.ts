@@ -110,25 +110,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/triage", async (req, res) => {
     try {
       const { status, limit, offset, brand } = req.query;
-      // Normalize brand param: hyphens to spaces (e.g. "new-balance" -> "new balance")
       const brandParam = brand ? String(brand).replace(/-/g, ' ') : undefined;
       const items = await storage.getTriageQueue({
         status: status ? String(status) : 'pending',
-        limit: limit ? parseInt(String(limit)) : 50,
+        limit: limit ? parseInt(String(limit)) : 200,
         offset: offset ? parseInt(String(offset)) : 0,
         brand: brandParam,
       });
 
+      // Fetch all sources once for source name lookup
+      const sources = await storage.getCollectionSources();
+      const sourceMap = new Map(sources.map(s => [s.id, s.name]));
+
       const enriched = await Promise.all(
         items.map(async (item) => {
           const processed = await storage.getProcessedItem(item.processedItemId);
-          return { ...item, processedItem: processed };
+          const sourceName = item.collectionSourceId ? (sourceMap.get(item.collectionSourceId) ?? null) : null;
+          return { ...item, processedItem: processed, sourceName };
         })
       );
 
       res.json({ total: enriched.length, items: enriched });
     } catch (error: any) {
       console.error("Erro ao listar triagem:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Bulk approve
+  app.post("/api/admin/triage/bulk-approve", async (req, res) => {
+    try {
+      const { ids } = req.body as { ids: string[] };
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: "ids must be a non-empty array" });
+      }
+
+      const results = await Promise.allSettled(ids.map(async (id) => {
+        const triageItem = await storage.getTriageItem(id);
+        if (!triageItem) throw new Error(`${id} not found`);
+        const processed = await storage.getProcessedItem(triageItem.processedItemId);
+        if (!processed) throw new Error(`processed item not found for ${id}`);
+
+        const finalName = processed.normalizedTitle;
+        const slug = finalName
+          .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+          .substring(0, 80) + "-" + Date.now().toString(36);
+
+        const product = await storage.createProduct({
+          mainName: finalName, slug,
+          brandId: triageItem.suggestedBrandId ?? null,
+          mainCategoryId: triageItem.suggestedCategoryId ?? null,
+          mainImageUrl: processed.imageUrl,
+          catalogStatus: 'published',
+          shortDescription: finalName,
+        });
+
+        const marketplaceId = await ensureDefaultMarketplace();
+        const offer = await storage.createOffer({
+          productId: product.id, marketplaceId,
+          currentPrice: String(processed.price),
+          originalPrice: processed.originalPrice ?? null,
+          discountPercent: processed.discountPercent,
+          originalUrl: processed.sourceUrl,
+          affiliateUrl: processed.affiliateUrl,
+          freeShipping: processed.freeShipping,
+          externalId: processed.externalId,
+          status: 'active',
+        });
+
+        await storage.updateTriageItem(id, { status: 'approved', resolvedAt: new Date() });
+        await storage.createCurationAction({ triageItemId: id, action: 'approve', resultProductId: product.id, resultOfferId: offer.id });
+        if (processed.imageUrl) {
+          await storage.createProductImage({ productId: product.id, url: processed.imageUrl, alt: finalName, isPrimary: true, sortOrder: 0 });
+        }
+        return id;
+      }));
+
+      const succeeded = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      res.json({ succeeded, failed });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Bulk reject
+  app.post("/api/admin/triage/bulk-reject", async (req, res) => {
+    try {
+      const { ids, reason } = req.body as { ids: string[]; reason?: string };
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: "ids must be a non-empty array" });
+      }
+
+      const results = await Promise.allSettled(ids.map(async (id) => {
+        const triageItem = await storage.getTriageItem(id);
+        if (!triageItem) throw new Error(`${id} not found`);
+        await storage.updateTriageItem(id, { status: 'rejected', resolvedAt: new Date() });
+        await storage.createCurationAction({ triageItemId: id, action: 'reject', rejectionReason: reason ?? 'Rejeitado em lote' });
+        return id;
+      }));
+
+      const succeeded = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      res.json({ succeeded, failed });
+    } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });

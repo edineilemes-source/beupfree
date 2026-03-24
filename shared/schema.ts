@@ -354,6 +354,7 @@ export const triageQueue = pgTable("triage_queue", {
   suggestedProductId: varchar("suggested_product_id", { length: 36 }),
   suggestedBrandId: varchar("suggested_brand_id", { length: 36 }),
   suggestedCategoryId: varchar("suggested_category_id", { length: 36 }),
+  collectionSourceId: varchar("collection_source_id", { length: 36 }),
   adminNotes: text("admin_notes"),
   // Auto-approval audit fields
   approvedBy: varchar("approved_by", { length: 20 }),  // 'system' | 'admin' | null

@@ -17,8 +17,8 @@ export default function Home() {
       <Header />
       <main>
         <HeroCarousel />
-        <DealOfTheDay />
         <LightningDeals />
+        <DealOfTheDay />
         <BrandPromotions />
         <CategoryGrid />
         <ProductGrid />

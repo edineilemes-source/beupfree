@@ -170,9 +170,9 @@ router.get("/api/sections/ofertas-anteriores", async (req, res) => {
     const seenTitles = new Set<string>();
 
     for (const source of targetSources.slice(0, 4)) {
-      const items = await getMembershipItems(source.id, 30, false, false);
+      const items = await getMembershipItems(source.id, 30, true, false);
       for (const item of items) {
-        if (item.soldOut && !seenTitles.has(item.title)) {
+        if (!seenTitles.has(item.title)) {
           seenTitles.add(item.title);
           allItems.push(item);
         }

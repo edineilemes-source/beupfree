@@ -263,6 +263,7 @@ export async function runCollectionsJob(
                   priority: item.desconto_percent && item.desconto_percent >= 20 ? 1 : 0,
                   suggestedBrandId: null,
                   suggestedCategoryId: null,
+                  collectionSourceId: source.id,
                   adminNotes: `Coleta automática: ${source.name}`,
                   brandDetected: approval.brand,
                   brandConfidence: String(approval.confidence),
