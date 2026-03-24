@@ -1,6 +1,5 @@
 import Header from "@/components/Header";
 import HeroCarousel from "@/components/HeroCarousel";
-import ProductGrid from "@/components/ProductGrid";
 import LightningDeals from "@/components/LightningDeals";
 import DealOfTheDay from "@/components/DealOfTheDay";
 import BrandPromotions from "@/components/BrandPromotions";
@@ -17,7 +16,6 @@ export default function Home() {
       <Header />
       <main>
         <HeroCarousel />
-        <ProductGrid />
         <LightningDeals />
         <DealOfTheDay />
         <BrandPromotions />

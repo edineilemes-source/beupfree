@@ -41,16 +41,16 @@ Preferred communication style: Simple, everyday language.
 - **Build Tool**: Vite with React plugin
 
 Pages:
-- `/` — Home (hero → **Melhores Ofertas** curated grid → LightningDeals → DealOfTheDay → BrandPromotions → etc.)
+- `/` — Home (hero → LightningDeals → DealOfTheDay → BrandPromotions → etc.)
 - `/catalogo` — Catalog (all published products from API, sorted by discount DESC)
-- `/admin/triagem` — Admin triage page (approve/reject collected items)
+- `/admin/triagem` — Admin triage page (approve/reject collected items, grouped by section)
 
 Key components:
-- `client/src/components/ProductCard.tsx` — Product card with affiliate link, price, discount badge
+- `client/src/components/LightningDeals.tsx` — "Oferta Relâmpago" section (live ML + approved products tagged section='relampago')
+- `client/src/components/DealOfTheDay.tsx` — "Oferta do Dia" section (live ML + approved products tagged section='dia')
 - `client/src/components/Header.tsx` — Public header with nav and admin settings link
 - `client/src/components/BrandPromotions.tsx` — Brand-specific promotions (Nike/Adidas 40%+ discounts)
-- `client/src/components/ProductGrid.tsx` — "Melhores Ofertas" curated grid (16 products, highest discount first, appears first on home page)
-- `client/src/pages/AdminTriagem.tsx` — Triage queue with collect, approve, reject actions; invalidates home page cache on approve/reject
+- `client/src/pages/AdminTriagem.tsx` — Triage grouped by section (Relâmpago/Dia/Outros); approval sets product.section based on source
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express

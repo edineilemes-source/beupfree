@@ -128,6 +128,7 @@ export const products = pgTable("products", {
   averageRating: decimal("average_rating", { precision: 3, scale: 2 }),
   totalReviews: integer("total_reviews").default(0),
   catalogStatus: catalogStatusEnum("catalog_status").default('draft'),
+  section: varchar("section", { length: 20 }),
   qualityScore: decimal("quality_score", { precision: 5, scale: 2 }),
   tags: text("tags").array().default(sql`ARRAY[]::text[]`),
   metaTitle: text("meta_title"),

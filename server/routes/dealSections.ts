@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { db } from "../db";
-import { collectionMemberships, processedItems, collectionBatches, collectionSources } from "@shared/schema";
-import { eq, desc, asc, and, isNull, isNotNull, sql } from "drizzle-orm";
+import { collectionMemberships, processedItems, collectionBatches, collectionSources, products, offers } from "@shared/schema";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -117,24 +117,99 @@ async function getMembershipItems(
   return items;
 }
 
+/**
+ * Fetch approved products tagged with a specific section ('dia' or 'relampago').
+ * Returns them as DealItem entries to be merged with live membership items.
+ */
+async function getApprovedProductsForSection(section: string): Promise<DealItem[]> {
+  const rows = await db
+    .select({
+      productId: products.id,
+      title: products.mainName,
+      imageUrl: products.mainImageUrl,
+      currentPrice: offers.currentPrice,
+      originalPrice: offers.originalPrice,
+      discountPercent: offers.discountPercent,
+      affiliateUrl: offers.affiliateUrl,
+      originalUrl: offers.originalUrl,
+      freeShipping: offers.freeShipping,
+      updatedAt: products.updatedAt,
+    })
+    .from(products)
+    .innerJoin(offers, and(
+      eq(offers.productId, products.id),
+      eq(offers.status, "active")
+    ))
+    .where(and(
+      eq(products.section, section),
+      eq(products.catalogStatus, "published")
+    ))
+    .orderBy(desc(offers.discountPercent));
+
+  const seen = new Set<string>();
+  const items: DealItem[] = [];
+
+  for (const row of rows) {
+    const dedupeKey = `${row.title}::${row.currentPrice}`;
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+
+    const currentPrice = parseFloat(row.currentPrice || "0");
+    if (currentPrice <= 0) continue;
+
+    items.push({
+      id: row.productId,
+      title: row.title,
+      imageUrl: row.imageUrl ?? null,
+      itemUrl: row.affiliateUrl || row.originalUrl || "",
+      currentPrice,
+      oldPrice: row.originalPrice ? parseFloat(row.originalPrice) : null,
+      discountPercent: row.discountPercent ?? null,
+      soldOut: false,
+      freeShipping: row.freeShipping ?? false,
+      lastSeenAt: row.updatedAt?.toISOString() ?? new Date().toISOString(),
+    });
+  }
+
+  return items;
+}
+
 async function getSection(
   sourceName: string,
+  sectionKey: string,
   limit = 20
 ): Promise<DealSectionResponse> {
   try {
     const sources = await storage.getCollectionSources();
     const source = sources.find((s) => s.name?.includes(sourceName));
 
-    if (!source) {
-      return { lastUpdatedAt: null, items: [] };
-    }
-
-    const [lastUpdatedAt, items] = await Promise.all([
-      getLastUpdatedAt(source.id),
-      getMembershipItems(source.id, limit),
+    const [lastUpdatedAt, membershipItems, approvedItems] = await Promise.all([
+      source ? getLastUpdatedAt(source.id) : Promise.resolve(null),
+      source ? getMembershipItems(source.id, limit) : Promise.resolve([]),
+      getApprovedProductsForSection(sectionKey),
     ]);
 
-    return { lastUpdatedAt, items };
+    // Merge: approved items first (curated), then live ML items
+    const seen = new Set<string>();
+    const merged: DealItem[] = [];
+
+    for (const item of [...approvedItems, ...membershipItems]) {
+      const key = `${item.title}::${item.currentPrice}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(item);
+      if (merged.length >= limit) break;
+    }
+
+    // Sort by discount DESC NULLS LAST
+    merged.sort((a, b) => {
+      if (a.discountPercent === null && b.discountPercent === null) return 0;
+      if (a.discountPercent === null) return 1;
+      if (b.discountPercent === null) return -1;
+      return b.discountPercent - a.discountPercent;
+    });
+
+    return { lastUpdatedAt, items: merged };
   } catch (err: any) {
     console.error(`[DealSections] Error for ${sourceName}:`, err.message);
     return { lastUpdatedAt: null, items: [] };
@@ -144,12 +219,12 @@ async function getSection(
 // ============ Public endpoints ============
 
 router.get("/api/sections/oferta-do-dia", async (req, res) => {
-  const data = await getSection("Oferta do Dia", 20);
+  const data = await getSection("Oferta do Dia", "dia", 20);
   res.json(data);
 });
 
 router.get("/api/sections/oferta-relampago", async (req, res) => {
-  const data = await getSection("Oferta Relâmpago", 20);
+  const data = await getSection("Oferta Relâmpago", "relampago", 20);
   res.json(data);
 });
 
