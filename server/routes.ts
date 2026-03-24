@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { pool } from "./db";
 import {
   askPerplexity,
   classifyProduct,
@@ -318,49 +319,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/products", async (req, res) => {
     try {
       const { category, brand, limit, offset, search } = req.query;
+      const limitNum = limit ? Math.min(parseInt(String(limit)), 200) : 100;
+      const offsetNum = offset ? parseInt(String(offset)) : 0;
 
-      const publishedProducts = await storage.getProducts({
-        status: 'published',
-        limit: limit ? parseInt(String(limit)) : 50,
-        offset: offset ? parseInt(String(offset)) : 0,
-        search: search ? String(search) : undefined,
+      // Build parameterized WHERE conditions
+      const conditions: string[] = ["p.catalog_status = 'published'"];
+      const params: any[] = [];
+      let paramIdx = 1;
+      if (search) { conditions.push(`p.main_name ILIKE $${paramIdx++}`); params.push(`%${String(search)}%`); }
+      if (brand) { conditions.push(`b.slug = $${paramIdx++}`); params.push(String(brand)); }
+      if (category) { conditions.push(`c.slug = $${paramIdx++}`); params.push(String(category)); }
+      const whereClause = conditions.join(' AND ');
+
+      const [dataResult, countResult] = await Promise.all([
+        pool.query(`
+          SELECT
+            p.id, p.main_name, p.main_image_url, p.catalog_status, p.slug, p.created_at,
+            b.name AS brand_name, b.slug AS brand_slug,
+            c.name AS category_name, c.slug AS category_slug,
+            o.id AS offer_id, o.current_price, o.original_price,
+            o.discount_percent, o.affiliate_url, o.free_shipping, o.last_seen_at,
+            COALESCE(oc.cnt, 0) AS offers_count
+          FROM products p
+          LEFT JOIN brands b ON b.id = p.brand_id
+          LEFT JOIN categories c ON c.id = p.main_category_id
+          LEFT JOIN LATERAL (
+            SELECT * FROM offers
+            WHERE product_id = p.id AND status = 'active'
+            ORDER BY discount_percent DESC NULLS LAST, current_price ASC
+            LIMIT 1
+          ) o ON true
+          LEFT JOIN (
+            SELECT product_id, COUNT(*) AS cnt FROM offers WHERE status = 'active' GROUP BY product_id
+          ) oc ON oc.product_id = p.id
+          WHERE ${whereClause}
+          ORDER BY o.discount_percent DESC NULLS LAST, p.created_at DESC
+          LIMIT $${paramIdx++} OFFSET $${paramIdx++}
+        `, [...params, limitNum, offsetNum]),
+        pool.query(`
+          SELECT COUNT(*) AS total FROM products p
+          LEFT JOIN brands b ON b.id = p.brand_id
+          LEFT JOIN categories c ON c.id = p.main_category_id
+          WHERE ${whereClause}
+        `, params),
+      ]);
+
+      const totalCount = parseInt(String(countResult.rows[0]?.total ?? 0));
+      const result = dataResult.rows.map((row) => {
+        const hasOffer = row.offer_id != null;
+        const currentPrice = row.current_price ? parseFloat(row.current_price) : 0;
+        const originalPrice = row.original_price ? parseFloat(row.original_price) : null;
+        return {
+          id: row.id,
+          mainName: row.main_name,
+          mainImageUrl: row.main_image_url,
+          catalogStatus: row.catalog_status,
+          slug: row.slug,
+          brand: row.brand_name ? { name: row.brand_name, slug: row.brand_slug } : null,
+          category: row.category_name ? { name: row.category_name, slug: row.category_slug } : null,
+          offersCount: parseInt(String(row.offers_count ?? 0)),
+          bestOffer: hasOffer ? {
+            id: row.offer_id,
+            currentPrice: row.current_price,
+            originalPrice: row.original_price,
+            discountPercent: row.discount_percent != null ? parseInt(String(row.discount_percent)) : null,
+            affiliateUrl: row.affiliate_url,
+            freeShipping: row.free_shipping ?? false,
+            lastSeenAt: row.last_seen_at,
+            formattedPrice: `R$ ${currentPrice.toFixed(2).replace(".", ",")}`,
+            formattedOriginalPrice: originalPrice ? `R$ ${originalPrice.toFixed(2).replace(".", ",")}` : null,
+          } : null,
+        };
       });
-
-      const productsWithOffers = await Promise.all(
-        publishedProducts.map(async (product) => {
-          const productOffers = await storage.getOffers({ productId: product.id, status: 'active' });
-          const images = await storage.getProductImages(product.id);
-          const brandData = product.brandId ? await storage.getBrand(product.brandId) : null;
-          const categoryData = product.mainCategoryId ? await storage.getCategory(product.mainCategoryId) : null;
-
-          const bestOffer = productOffers.sort((a, b) => parseFloat(a.currentPrice) - parseFloat(b.currentPrice))[0];
-
-          return {
-            ...product,
-            images,
-            brand: brandData,
-            category: categoryData,
-            bestOffer: bestOffer ? {
-              id: bestOffer.id,
-              currentPrice: bestOffer.currentPrice,
-              originalPrice: bestOffer.originalPrice,
-              discountPercent: bestOffer.discountPercent,
-              affiliateUrl: bestOffer.affiliateUrl,
-              freeShipping: bestOffer.freeShipping,
-              lastSeenAt: bestOffer.lastSeenAt,
-              formattedPrice: `R$ ${parseFloat(bestOffer.currentPrice).toFixed(2).replace(".", ",")}`,
-              formattedOriginalPrice: bestOffer.originalPrice ? `R$ ${parseFloat(bestOffer.originalPrice).toFixed(2).replace(".", ",")}` : null,
-            } : null,
-            offersCount: productOffers.length,
-          };
-        })
-      );
-
-      let filtered = productsWithOffers;
-      if (category) filtered = filtered.filter(p => p.category?.slug === category);
-      if (brand) filtered = filtered.filter(p => p.brand?.slug === brand);
-
-      res.json({ total: filtered.length, products: filtered });
+      res.json({ total: totalCount, products: result });
     } catch (error: any) {
       console.error("Erro ao listar produtos:", error);
       res.status(500).json({ error: error.message });

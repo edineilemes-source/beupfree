@@ -1,10 +1,10 @@
 import Header from "@/components/Header";
 import HeroCarousel from "@/components/HeroCarousel";
-import DealOfTheDay from "@/components/DealOfTheDay";
+import ProductGrid from "@/components/ProductGrid";
 import LightningDeals from "@/components/LightningDeals";
+import DealOfTheDay from "@/components/DealOfTheDay";
 import BrandPromotions from "@/components/BrandPromotions";
 import CategoryGrid from "@/components/CategoryGrid";
-import ProductGrid from "@/components/ProductGrid";
 import BrandShowcase from "@/components/BrandShowcase";
 import PreviousOffers from "@/components/PreviousOffers";
 import BenefitsBar from "@/components/BenefitsBar";
@@ -17,11 +17,11 @@ export default function Home() {
       <Header />
       <main>
         <HeroCarousel />
+        <ProductGrid />
         <LightningDeals />
         <DealOfTheDay />
         <BrandPromotions />
         <CategoryGrid />
-        <ProductGrid />
         <BrandShowcase />
         <PreviousOffers />
         <BenefitsBar />
