@@ -119,9 +119,13 @@ async function getMembershipItems(
 
 /**
  * Fetch approved products tagged with a specific section ('dia' or 'relampago').
- * Returns them as DealItem entries to be merged with live membership items.
+ * Only includes products whose ML external_id is STILL active in the given source.
+ * This ensures stale approved products don't linger in live sections.
  */
-async function getApprovedProductsForSection(section: string): Promise<DealItem[]> {
+async function getApprovedProductsForSection(section: string, sourceId: string | null): Promise<DealItem[]> {
+  if (!sourceId) return [];
+
+  // Only return approved products whose externalId is STILL active in the ML source
   const rows = await db
     .select({
       productId: products.id,
@@ -139,6 +143,11 @@ async function getApprovedProductsForSection(section: string): Promise<DealItem[
     .innerJoin(offers, and(
       eq(offers.productId, products.id),
       eq(offers.status, "active")
+    ))
+    .innerJoin(collectionMemberships, and(
+      eq(collectionMemberships.externalItemId, offers.externalId),
+      eq(collectionMemberships.collectionSourceId, sourceId),
+      eq(collectionMemberships.isActive, true)
     ))
     .where(and(
       eq(products.section, section),
@@ -186,7 +195,7 @@ async function getSection(
     const [lastUpdatedAt, membershipItems, approvedItems] = await Promise.all([
       source ? getLastUpdatedAt(source.id) : Promise.resolve(null),
       source ? getMembershipItems(source.id, limit, false, true) : Promise.resolve([]),
-      getApprovedProductsForSection(sectionKey),
+      getApprovedProductsForSection(sectionKey, source?.id ?? null),
     ]);
 
     // Merge: approved items first (curated), then live ML items
