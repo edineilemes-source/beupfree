@@ -92,39 +92,29 @@ export default function Header() {
         <div className="container mx-auto px-4">
           <ul className="flex items-center gap-8 py-3 text-sm font-medium">
             <li>
-              <Link href="/catalogo?categoria=tenis">
-                <span className={`hover-elevate px-3 py-2 rounded-md cursor-pointer ${location.includes('catalogo') ? 'bg-primary/10 text-primary' : ''}`} data-testid="link-tenis">
-                  Tênis
-                </span>
-              </Link>
+              <span className="px-3 py-2 rounded-md text-muted-foreground cursor-default select-none" data-testid="link-tenis">
+                Tênis
+              </span>
             </li>
             <li>
-              <Link href="/catalogo?categoria=meias">
-                <span className="hover-elevate px-3 py-2 rounded-md cursor-pointer" data-testid="link-meias">
-                  Meias
-                </span>
-              </Link>
+              <span className="px-3 py-2 rounded-md text-muted-foreground cursor-default select-none" data-testid="link-meias">
+                Meias
+              </span>
             </li>
             <li>
-              <Link href="/catalogo?categoria=acessorios">
-                <span className="hover-elevate px-3 py-2 rounded-md cursor-pointer" data-testid="link-acessorios">
-                  Acessórios
-                </span>
-              </Link>
+              <span className="px-3 py-2 rounded-md text-muted-foreground cursor-default select-none" data-testid="link-acessorios">
+                Acessórios
+              </span>
             </li>
             <li>
-              <Link href="/catalogo?marcas=todas">
-                <span className="hover-elevate px-3 py-2 rounded-md cursor-pointer" data-testid="link-marcas">
-                  Marcas
-                </span>
-              </Link>
+              <span className="px-3 py-2 rounded-md text-muted-foreground cursor-default select-none" data-testid="link-marcas">
+                Marcas
+              </span>
             </li>
             <li>
-              <Link href="/catalogo?ofertas=true">
-                <span className="text-accent-foreground bg-accent/80 hover-elevate px-3 py-2 rounded-md cursor-pointer font-semibold" data-testid="link-ofertas">
-                  Ofertas
-                </span>
-              </Link>
+              <span className="text-accent-foreground bg-accent/80 px-3 py-2 rounded-md cursor-default select-none font-semibold" data-testid="link-ofertas">
+                Ofertas
+              </span>
             </li>
           </ul>
         </div>

@@ -185,7 +185,7 @@ async function getSection(
 
     const [lastUpdatedAt, membershipItems, approvedItems] = await Promise.all([
       source ? getLastUpdatedAt(source.id) : Promise.resolve(null),
-      source ? getMembershipItems(source.id, limit) : Promise.resolve([]),
+      source ? getMembershipItems(source.id, limit, false, true) : Promise.resolve([]),
       getApprovedProductsForSection(sectionKey),
     ]);
 
