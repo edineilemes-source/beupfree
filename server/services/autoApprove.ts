@@ -13,12 +13,24 @@ const BRAND_WHITELIST = new Set([
   "fila",
   "jordan",
   "new balance",
+  "kappa",
+  "asics",
+  "reebok",
+  "under armour",
+  "skechers",
+  "vans",
+  "converse",
+  "mormaii",
+  "penalty",
+  "umbro",
+  "topper",
 ]);
 
 // Alias map: raw text patterns -> canonical brand
 const BRAND_ALIASES: Array<[RegExp, string]> = [
   [/\bair\s+jordan\b/i, "jordan"],
   [/\bnew\s+balance\b/i, "new balance"],
+  [/\bunder\s+armour\b/i, "under armour"],
   [/\bnike\b/i, "nike"],
   [/\badidas\b/i, "adidas"],
   [/\bolympikus\b/i, "olympikus"],
@@ -26,6 +38,16 @@ const BRAND_ALIASES: Array<[RegExp, string]> = [
   [/\bpuma\b/i, "puma"],
   [/\bfila\b/i, "fila"],
   [/\bjordan\b/i, "jordan"],
+  [/\bkappa\b/i, "kappa"],
+  [/\basics\b/i, "asics"],
+  [/\breebok\b/i, "reebok"],
+  [/\bskechers\b/i, "skechers"],
+  [/\bvans\b/i, "vans"],
+  [/\bconverse\b/i, "converse"],
+  [/\bmormaii\b/i, "mormaii"],
+  [/\bpenalty\b/i, "penalty"],
+  [/\bumbro\b/i, "umbro"],
+  [/\btopper\b/i, "topper"],
 ];
 
 function normalizeBrand(raw: string): string {

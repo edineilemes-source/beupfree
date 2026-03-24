@@ -27,9 +27,11 @@ function addAffiliateCode(url: string): string {
 }
 
 function extractExternalId(url: string): string | null {
-  const match = url.match(/MLB-?\d+/i);
+  // Match MLB123, MLB-123, MLBU123 (universal product URLs), etc.
+  const match = url.match(/MLB[A-Z]?-?\d+/i);
   if (!match) return null;
-  return match[0].replace(/-/g, "");
+  // Normalize: strip country letters after MLB and dashes → MLB12345
+  return match[0].replace(/-/g, "").replace(/^MLB[A-Z]/i, (m) => "MLB" + m.slice(4));
 }
 
 function parseDiscount(text: string): number | null {
@@ -89,7 +91,7 @@ export async function scrapeCollectionUrl(
   const items: CollectedItem[] = [];
   const seen = new Set<string>();
 
-  $("div.poly-card--grid-card").each((_i, el) => {
+  $("div.poly-card").each((_i, el) => {
     const card = $(el);
 
     const title = card.find(".poly-component__title").first().text().trim();
