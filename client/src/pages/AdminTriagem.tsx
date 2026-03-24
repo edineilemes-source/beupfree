@@ -321,6 +321,14 @@ export default function AdminTriagem() {
     },
   });
 
+  const invalidateHomeCache = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/sections/oferta-relampago"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/sections/oferta-do-dia"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/sections/grandes-marcas-hoje"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/sections/ofertas-anteriores"] });
+  };
+
   const approveMutation = useMutation({
     mutationFn: (id: string) => apiRequest("POST", `/api/admin/triage/${id}/approve`),
     onSuccess: () => {
@@ -329,6 +337,7 @@ export default function AdminTriagem() {
       setActionType(null);
       setSelectedIds(prev => { const n = new Set(prev); n.delete(actioningId!); return n; });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/triage"] });
+      invalidateHomeCache();
     },
     onError: (err: any) => {
       toast({ title: "Erro ao aprovar", description: err.message, variant: "destructive" });
@@ -345,6 +354,7 @@ export default function AdminTriagem() {
       setActionType(null);
       setSelectedIds(prev => { const n = new Set(prev); n.delete(actioningId!); return n; });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/triage"] });
+      invalidateHomeCache();
     },
     onError: (err: any) => {
       toast({ title: "Erro ao rejeitar", description: err.message, variant: "destructive" });
@@ -360,6 +370,7 @@ export default function AdminTriagem() {
       toast({ title: `${result.succeeded} aprovados`, description: result.failed > 0 ? `${result.failed} falharam` : undefined });
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: ["/api/admin/triage"] });
+      invalidateHomeCache();
     },
     onError: (err: any) => {
       toast({ title: "Erro ao aprovar em lote", description: err.message, variant: "destructive" });
@@ -373,6 +384,7 @@ export default function AdminTriagem() {
       toast({ title: `${result.succeeded} rejeitados`, description: result.failed > 0 ? `${result.failed} falharam` : undefined });
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: ["/api/admin/triage"] });
+      invalidateHomeCache();
     },
     onError: (err: any) => {
       toast({ title: "Erro ao rejeitar em lote", description: err.message, variant: "destructive" });
