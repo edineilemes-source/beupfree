@@ -28,7 +28,7 @@ interface PaginatedResponse {
   pageSize: number;
 }
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
 
 const formatLastUpdate = (isoString: string | null): string => {
   if (!isoString) return "";
@@ -176,7 +176,7 @@ export default function PaginatedDealSection({
                   Carregando...
                 </>
               ) : (
-                <>Carregar mais 50 ofertas</>
+                <>Carregar mais {PAGE_SIZE} ofertas</>
               )}
             </Button>
           </div>

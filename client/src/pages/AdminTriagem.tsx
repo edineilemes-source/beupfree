@@ -321,6 +321,18 @@ export default function AdminTriagem() {
     },
   });
 
+  const resetMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/admin/reset-catalog", {}),
+    onSuccess: () => {
+      toast({ title: "Catálogo limpo", description: "Banco zerado. Pronto para nova coleta." });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/triage"] });
+      invalidateHomeCache();
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro ao limpar", description: err.message, variant: "destructive" });
+    },
+  });
+
   const invalidateHomeCache = () => {
     queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     queryClient.invalidateQueries({ queryKey: ["/api/sections/oferta-relampago"] });
@@ -475,6 +487,20 @@ export default function AdminTriagem() {
               >
                 {collectMutation.isPending ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1.5" />}
                 Coletar do ML
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => {
+                  if (confirm("Limpar TODO o catálogo (produtos, ofertas, coletas, triagem)? Esta ação é irreversível.")) {
+                    resetMutation.mutate();
+                  }
+                }}
+                disabled={resetMutation.isPending}
+                data-testid="button-reset-catalog"
+              >
+                {resetMutation.isPending ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : null}
+                Limpar Catálogo
               </Button>
             </div>
           </div>

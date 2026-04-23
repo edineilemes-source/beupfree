@@ -13,6 +13,9 @@ const AFFILIATE_CODE = "14610626";
 // Minimum items expected in a successful scrape before we trust deactivation.
 const MIN_EXPECTED_FOR_DEACTIVATION = 30;
 const MIN_DISCOUNT_FOR_AUTO_APPROVE = 30;
+// Quando true, todo item processado vira product+offer direto, pulando triagem.
+// O filtro de desconto mínimo de 25% continua valendo (aplicado no scrape).
+const AUTO_PUBLISH_ALL = process.env.AUTO_PUBLISH_ALL !== "false";
 const GERAL_SOURCE_URL = "https://www.mercadolivre.com.br/ofertas?category=MLB3900";
 const GERAL_SOURCE_NAME = "Ofertas Calçados (Geral)";
 
@@ -192,7 +195,7 @@ export async function runCollectionsJob(
               const meetsDiscountFloor =
                 (item.desconto_percent ?? 0) >= MIN_DISCOUNT_FOR_AUTO_APPROVE;
 
-              if (approval.shouldAutoApprove && meetsDiscountFloor) {
+              if (AUTO_PUBLISH_ALL || (approval.shouldAutoApprove && meetsDiscountFloor)) {
                 // Auto-approve: create product + offer directly
                 try {
                   const slug = generateSlug(item.nome, Date.now().toString(36));

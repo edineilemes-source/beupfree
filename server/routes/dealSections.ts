@@ -65,15 +65,10 @@ async function getItemsByPromotionType(
   // Approval continuity: a product is "approved" if ANY processed_items row
   // sharing the same external_id has an approved triage entry. This survives
   // price changes (which create new content_hash + processed_items rows).
-  const { rows: countRows } = await pool.query<{ total: string }>(
-    `
-    SELECT COUNT(DISTINCT COALESCE(pi.external_id, pi.content_hash))::text AS total
-    FROM collection_memberships cm
-    JOIN processed_items pi ON pi.content_hash = cm.content_hash
-    WHERE cm.collection_source_id = $1
-      AND cm.is_active = true
-      AND pi.promotion_type = $2
-      AND (
+  const AUTO_PUBLISH_ALL = process.env.AUTO_PUBLISH_ALL !== "false";
+  const approvalFilter = AUTO_PUBLISH_ALL
+    ? ""
+    : `AND (
         EXISTS (
           SELECT 1 FROM triage_queue tq
           WHERE tq.processed_item_id = pi.id AND tq.status = 'approved'
@@ -83,7 +78,20 @@ async function getItemsByPromotionType(
           JOIN processed_items pi2 ON pi2.id = tq2.processed_item_id
           WHERE pi2.external_id = pi.external_id AND tq2.status = 'approved'
         ))
-      )
+      )`;
+  // Dedup key: lowercase normalized first 60 chars of title — collapses ML
+  // duplicates (mesmo modelo aparecendo várias vezes em variantes diferentes).
+  const dedupKey = `LOWER(SUBSTRING(REGEXP_REPLACE(COALESCE(pi.normalized_title, cm.raw_title, ''), '\\s+', ' ', 'g'), 1, 60))`;
+
+  const { rows: countRows } = await pool.query<{ total: string }>(
+    `
+    SELECT COUNT(DISTINCT ${dedupKey})::text AS total
+    FROM collection_memberships cm
+    JOIN processed_items pi ON pi.content_hash = cm.content_hash
+    WHERE cm.collection_source_id = $1
+      AND cm.is_active = true
+      AND pi.promotion_type = $2
+      ${approvalFilter}
     `,
     [sourceId, promotionType]
   );
@@ -107,7 +115,7 @@ async function getItemsByPromotionType(
     `
     SELECT *
     FROM (
-      SELECT DISTINCT ON (COALESCE(pi.external_id, pi.content_hash))
+      SELECT DISTINCT ON (${dedupKey})
         cm.id              AS membership_id,
         cm.is_active,
         cm.last_seen_at,
@@ -126,18 +134,8 @@ async function getItemsByPromotionType(
       WHERE cm.collection_source_id = $1
         AND cm.is_active = true
         AND pi.promotion_type = $2
-        AND (
-          EXISTS (
-            SELECT 1 FROM triage_queue tq
-            WHERE tq.processed_item_id = pi.id AND tq.status = 'approved'
-          )
-          OR (pi.external_id IS NOT NULL AND EXISTS (
-            SELECT 1 FROM triage_queue tq2
-            JOIN processed_items pi2 ON pi2.id = tq2.processed_item_id
-            WHERE pi2.external_id = pi.external_id AND tq2.status = 'approved'
-          ))
-        )
-      ORDER BY COALESCE(pi.external_id, pi.content_hash), pi.discount_percent DESC NULLS LAST
+        ${approvalFilter}
+      ORDER BY ${dedupKey}, pi.discount_percent DESC NULLS LAST, cm.last_seen_at DESC
     ) AS sub
     ORDER BY sub.discount_percent DESC NULLS LAST, sub.last_seen_at DESC
     LIMIT $3 OFFSET $4
@@ -188,7 +186,7 @@ async function getSection(
 
 function parsePageQuery(req: any): { page: number; pageSize: number; offset: number } {
   const page = Math.max(1, parseInt(String(req.query.page || "1"), 10) || 1);
-  const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || "50"), 10) || 50));
+  const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || "20"), 10) || 20));
   const offset = (page - 1) * pageSize;
   return { page, pageSize, offset };
 }

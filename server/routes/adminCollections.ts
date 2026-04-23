@@ -1,8 +1,37 @@
 import type { Express } from "express";
 import { storage } from "../storage";
 import { runCollectionsJob } from "../jobs/collectCollections";
+import { pool } from "../db";
 
 export function registerAdminCollectionsRoutes(app: Express): void {
+
+  // Limpa todo o catálogo coletado/publicado para um novo teste de busca.
+  // Preserva: brands, categories, marketplaces, admin_users, system_settings,
+  // collection_sources (mantém configuração das fontes).
+  app.post("/api/admin/reset-catalog", async (_req, res) => {
+    try {
+      console.log("[AdminCollections] Reset catálogo solicitado");
+      await pool.query(`
+        TRUNCATE TABLE
+          triage_queue,
+          processed_items,
+          raw_collected_items,
+          collection_memberships,
+          collection_batches,
+          curation_actions,
+          affiliate_clicks,
+          offers,
+          product_images,
+          products
+        RESTART IDENTITY CASCADE
+      `);
+      console.log("[AdminCollections] Catálogo limpo.");
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[AdminCollections] Erro no reset:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   app.post("/api/admin/collections/run", async (req, res) => {
     try {
