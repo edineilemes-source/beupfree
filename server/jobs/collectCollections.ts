@@ -13,7 +13,7 @@ const AFFILIATE_CODE = "14610626";
 // Minimum items expected in a successful scrape before we trust deactivation.
 const MIN_EXPECTED_FOR_DEACTIVATION = 30;
 const MIN_DISCOUNT_FOR_AUTO_APPROVE = 30;
-const GERAL_SOURCE_URL = "https://www.mercadolivre.com.br/ofertas?category=MLB3900&container_id=MLB779362-1";
+const GERAL_SOURCE_URL = "https://www.mercadolivre.com.br/ofertas?category=MLB3900";
 const GERAL_SOURCE_NAME = "Ofertas Calçados (Geral)";
 
 function buildAffiliateUrl(url: string): string {

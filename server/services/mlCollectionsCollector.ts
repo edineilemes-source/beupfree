@@ -165,12 +165,14 @@ function buildPageUrl(baseUrl: string, page: number): string {
 function parsePage(
   html: string,
   sourceName: string
-): { items: CollectedItem[]; hasNextPage: boolean } {
+): { items: CollectedItem[]; hasNextPage: boolean; totalCards: number } {
   const $ = cheerio.load(html);
   const items: CollectedItem[] = [];
   const seen = new Set<string>();
+  const allCards = $("div.poly-card");
+  const totalCards = allCards.length;
 
-  $("div.poly-card").each((_i, el) => {
+  allCards.each((_i, el) => {
     const card = $(el);
     const title = card.find(".poly-component__title").first().text().trim();
     if (!title) return;
@@ -251,13 +253,19 @@ function parsePage(
     });
   });
 
-  // Check for "Próximo" / "Seguinte" link with href
-  const nextLink = $('a[aria-label="Seguinte"], a[aria-label="Próximo"], a[aria-label="Próxima"]')
-    .first()
-    .attr("href");
-  const hasNextPage = !!nextLink && nextLink.length > 0;
+  // Check for any next-page link in pagination. ML uses andes-pagination links
+  // labelled "Vá para a página N" — there is also a "next" arrow button.
+  // We accept any pagination link whose href contains page=N.
+  let hasNextPage = false;
+  $('a.andes-pagination__link, a[aria-label*="página"], a[aria-label="Seguinte"], a[aria-label="Próximo"]').each((_i, el) => {
+    const href = $(el).attr("href") || "";
+    if (/page=\d+/i.test(href)) {
+      hasNextPage = true;
+      return false; // break
+    }
+  });
 
-  return { items, hasNextPage };
+  return { items, hasNextPage, totalCards };
 }
 
 // ============ MAIN: paginated scraper ============
@@ -281,20 +289,23 @@ export async function scrapeCollectionUrl(
       break; // can't continue paginating if a page fails
     }
 
-    const { items, hasNextPage } = parsePage(html, sourceName);
+    const { items, hasNextPage, totalCards } = parsePage(html, sourceName);
 
-    if (items.length === 0) {
-      console.log(`[MLCollector] ${sourceName} page ${page}: 0 items → stop`);
+    // Hard stop only when the page itself has no product cards at all (real end of list)
+    if (totalCards === 0) {
+      console.log(`[MLCollector] ${sourceName} page ${page}: no cards on page → stop`);
       break;
     }
 
     // Anti-loop: if first 5 items repeat from previous page, stop
-    const currentHash = JSON.stringify(items.slice(0, 5).map((i) => i.contentHash));
-    if (currentHash === previousPageHash) {
-      console.log(`[MLCollector] ${sourceName} page ${page}: repeated content → stop`);
-      break;
+    if (items.length > 0) {
+      const currentHash = JSON.stringify(items.slice(0, 5).map((i) => i.contentHash));
+      if (currentHash === previousPageHash) {
+        console.log(`[MLCollector] ${sourceName} page ${page}: repeated content → stop`);
+        break;
+      }
+      previousPageHash = currentHash;
     }
-    previousPageHash = currentHash;
 
     // Dedupe across pages
     let added = 0;
@@ -307,7 +318,7 @@ export async function scrapeCollectionUrl(
     }
 
     console.log(
-      `[MLCollector] ${sourceName} page ${page}: ${items.length} parsed, ${added} new (total: ${allItems.length})`
+      `[MLCollector] ${sourceName} page ${page}: ${totalCards} cards, ${items.length} passed filter, ${added} new (total: ${allItems.length})`
     );
 
     if (!hasNextPage) {

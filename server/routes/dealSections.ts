@@ -26,7 +26,7 @@ export interface DealSectionResponse {
   pageSize?: number;
 }
 
-const GERAL_SOURCE_URL = "https://www.mercadolivre.com.br/ofertas?category=MLB3900&container_id=MLB779362-1";
+const GERAL_SOURCE_URL = "https://www.mercadolivre.com.br/ofertas?category=MLB3900";
 
 async function getGeralSourceId(): Promise<string | null> {
   const [src] = await db
@@ -186,20 +186,27 @@ async function getSection(
 
 // ============ Public endpoints ============
 
-router.get("/api/sections/oferta-relampago", async (_req, res) => {
-  const data = await getSection("lightning", 20);
-  res.json(data);
-});
-
-router.get("/api/sections/oferta-do-dia", async (_req, res) => {
-  const data = await getSection("deal_of_day", 20);
-  res.json(data);
-});
-
-router.get("/api/sections/ofertas-gerais", async (req, res) => {
+function parsePageQuery(req: any): { page: number; pageSize: number; offset: number } {
   const page = Math.max(1, parseInt(String(req.query.page || "1"), 10) || 1);
   const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || "50"), 10) || 50));
   const offset = (page - 1) * pageSize;
+  return { page, pageSize, offset };
+}
+
+router.get("/api/sections/oferta-relampago", async (req, res) => {
+  const { page, pageSize, offset } = parsePageQuery(req);
+  const data = await getSection("lightning", pageSize, offset);
+  res.json({ ...data, page, pageSize });
+});
+
+router.get("/api/sections/oferta-do-dia", async (req, res) => {
+  const { page, pageSize, offset } = parsePageQuery(req);
+  const data = await getSection("deal_of_day", pageSize, offset);
+  res.json({ ...data, page, pageSize });
+});
+
+router.get("/api/sections/ofertas-gerais", async (req, res) => {
+  const { page, pageSize, offset } = parsePageQuery(req);
   const data = await getSection("general", pageSize, offset);
   res.json({ ...data, page, pageSize });
 });
