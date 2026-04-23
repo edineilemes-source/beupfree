@@ -337,10 +337,12 @@ export const processedItems = pgTable("processed_items", {
   contentHash: varchar("content_hash", { length: 64 }),
   isDuplicate: boolean("is_duplicate").default(false),
   matchedProductId: varchar("matched_product_id", { length: 36 }),
+  promotionType: varchar("promotion_type", { length: 20 }).default('general'),
   processedAt: timestamp("processed_at").defaultNow(),
 }, (table) => [
   index("idx_processed_raw").on(table.rawItemId),
-  index("idx_processed_hash").on(table.contentHash)
+  index("idx_processed_hash").on(table.contentHash),
+  index("idx_processed_promo").on(table.promotionType)
 ]);
 
 // ============================================

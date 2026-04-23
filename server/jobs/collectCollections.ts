@@ -1,18 +1,20 @@
 import { storage } from "../storage";
 import { scrapeCollectionUrl } from "../services/mlCollectionsCollector";
-import { scrapeBrandShopUrl } from "../services/mlBrandCollector";
 import { upsertMembership, deactivateByBatch } from "../usecases/upsertMembership";
 import { detectBrand, detectCategory, ensureDefaultMarketplace } from "../services/productSync";
 import { evaluateAutoApproval } from "../services/autoApprove";
 import crypto from "crypto";
 import { db } from "../db";
-import { products, offers, productImages } from "@shared/schema";
+import { products, offers, productImages, collectionSources } from "@shared/schema";
+import { eq, ne, sql } from "drizzle-orm";
 
 const AFFILIATE_CODE = "14610626";
 
 // Minimum items expected in a successful scrape before we trust deactivation.
-// If we get fewer items than this, the scrape was probably partial — don't mark items as ESGOTADO.
-const MIN_EXPECTED_FOR_DEACTIVATION = 5;
+const MIN_EXPECTED_FOR_DEACTIVATION = 30;
+const MIN_DISCOUNT_FOR_AUTO_APPROVE = 30;
+const GERAL_SOURCE_URL = "https://www.mercadolivre.com.br/ofertas?category=MLB3900&container_id=MLB779362-1";
+const GERAL_SOURCE_NAME = "Ofertas Calçados (Geral)";
 
 function buildAffiliateUrl(url: string): string {
   if (!url) return url;
@@ -84,41 +86,15 @@ export async function runCollectionsJob(
     let autoApprovedCount = 0;
 
     try {
-      const isBrandSource = source.sourceType === "ml_brand_offers";
-      const scrapeResult = isBrandSource
-        ? await scrapeBrandShopUrl(source.url!, source.name)
-        : await scrapeCollectionUrl(source.url!, source.name);
-
+      const scrapeResult = await scrapeCollectionUrl(source.url!, source.name);
       const { items, errors: scrapeErrors } = scrapeResult;
 
       if (scrapeErrors.length > 0) {
         result.errors.push(...scrapeErrors.map((e) => `[${source.name}] ${e}`));
       }
 
-      // Detect if this source filters by a specific brand name
-      const sourceLower = source.name.toLowerCase();
-      const brandFilter = sourceLower.includes("nike")
-        ? "nike"
-        : sourceLower.includes("adidas")
-        ? "adidas"
-        : null;
-
       for (const item of items) {
         if (!item.nome || item.preco_atual <= 0) continue;
-
-        // For brand sources, filter by discount >= 40%
-        if (isBrandSource && item.desconto_percent && item.desconto_percent < 40) {
-          continue;
-        }
-
-        // For brand-filtered sources (Nike/Adidas), only keep items matching that brand
-        if (brandFilter) {
-          const titleLower = item.nome.toLowerCase();
-          const marcaLower = (item.marca || "").toLowerCase();
-          if (!titleLower.includes(brandFilter) && !marcaLower.includes(brandFilter)) {
-            continue;
-          }
-        }
 
         try {
           // Always compute SHA256 from title+price for consistency —
@@ -177,10 +153,17 @@ export async function runCollectionsJob(
               contentHash,
               isDuplicate: false,
               matchedProductId: null,
+              promotionType: item.promotionType,
             });
           } else {
             // Previously collected — retrieve existing processed item
             processedItem = await storage.getProcessedItemByContentHash(contentHash);
+            // Refresh promotionType (item may have moved between sections)
+            if (processedItem && (processedItem as any).promotionType !== item.promotionType) {
+              await db.execute(
+                sql`UPDATE processed_items SET promotion_type = ${item.promotionType} WHERE content_hash = ${contentHash}`
+              );
+            }
           }
 
           collectedCount++;
@@ -205,7 +188,11 @@ export async function runCollectionsJob(
                 discountPercent: item.desconto_percent,
               });
 
-              if (approval.shouldAutoApprove) {
+              // Auto-approve requires: brand whitelist (handled by approval) + min discount
+              const meetsDiscountFloor =
+                (item.desconto_percent ?? 0) >= MIN_DISCOUNT_FOR_AUTO_APPROVE;
+
+              if (approval.shouldAutoApprove && meetsDiscountFloor) {
                 // Auto-approve: create product + offer directly
                 try {
                   const slug = generateSlug(item.nome, Date.now().toString(36));
@@ -345,50 +332,28 @@ export async function runCollectionsJob(
 
 async function ensureDefaultCollectionSources(): Promise<void> {
   const existing = await storage.getCollectionSources();
-  const existingUrls = new Set(existing.map((s) => s.url));
+  const geralSource = existing.find((s) => s.url === GERAL_SOURCE_URL);
 
-  const defaultSources = [
-    {
-      name: "Calçados Esportivos - Ofertas do Dia",
-      sourceType: "ml_offers_page",
-      url: "https://www.mercadolivre.com.br/ofertas?category=MLB23332",
-      collectFrequencyMinutes: 120,
-    },
-    {
-      name: "Tênis Esportivos - Destaques",
-      sourceType: "ml_offers_page",
-      url: "https://www.mercadolivre.com.br/ofertas?category=MLB3900",
-      collectFrequencyMinutes: 30,
-    },
-    {
-      name: "Calçados Esportivos - Masculino",
-      sourceType: "ml_offers_page",
-      url: "https://www.mercadolivre.com.br/ofertas?category=MLB3912",
-      collectFrequencyMinutes: 90,
-    },
-    {
-      name: "Calçados Esportivos - Feminino",
-      sourceType: "ml_offers_page",
-      url: "https://www.mercadolivre.com.br/ofertas?category=MLB3913",
-      collectFrequencyMinutes: 360,
-    },
-  ];
+  // Deactivate every other source — we now consolidate everything into one
+  await db
+    .update(collectionSources)
+    .set({ isActive: false })
+    .where(ne(collectionSources.url, GERAL_SOURCE_URL));
 
-  let created = 0;
-  for (const src of defaultSources) {
-    if (!existingUrls.has(src.url)) {
-      await storage.createCollectionSource({
-        name: src.name,
-        sourceType: src.sourceType,
-        url: src.url,
-        isActive: true,
-        collectFrequencyMinutes: src.collectFrequencyMinutes,
-      });
-      created++;
-    }
-  }
-
-  if (created > 0) {
-    console.log(`[CollectCollections] ${created} novas fontes padrão criadas.`);
+  if (!geralSource) {
+    await storage.createCollectionSource({
+      name: GERAL_SOURCE_NAME,
+      sourceType: "ml_offers_page",
+      url: GERAL_SOURCE_URL,
+      isActive: true,
+      collectFrequencyMinutes: 60,
+    });
+    console.log(`[CollectCollections] Fonte Geral criada: ${GERAL_SOURCE_NAME}`);
+  } else if (!geralSource.isActive) {
+    await db
+      .update(collectionSources)
+      .set({ isActive: true, collectFrequencyMinutes: 60 })
+      .where(eq(collectionSources.id, geralSource.id));
+    console.log(`[CollectCollections] Fonte Geral reativada.`);
   }
 }

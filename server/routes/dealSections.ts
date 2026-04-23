@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { storage } from "../storage";
 import { db, pool } from "../db";
-import { collectionMemberships, processedItems, collectionBatches, collectionSources, products, offers } from "@shared/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { collectionBatches, collectionSources } from "@shared/schema";
+import { eq, desc, and } from "drizzle-orm";
 
 const router = Router();
 
@@ -22,11 +21,22 @@ export interface DealItem {
 export interface DealSectionResponse {
   lastUpdatedAt: string | null;
   items: DealItem[];
+  total?: number;
+  page?: number;
+  pageSize?: number;
 }
 
-/**
- * Resolve the last_updated_at from the most recent successful batch for a source.
- */
+const GERAL_SOURCE_URL = "https://www.mercadolivre.com.br/ofertas?category=MLB3900&container_id=MLB779362-1";
+
+async function getGeralSourceId(): Promise<string | null> {
+  const [src] = await db
+    .select({ id: collectionSources.id })
+    .from(collectionSources)
+    .where(eq(collectionSources.url, GERAL_SOURCE_URL))
+    .limit(1);
+  return src?.id ?? null;
+}
+
 async function getLastUpdatedAt(sourceId: string): Promise<string | null> {
   const [batch] = await db
     .select({ finishedAt: collectionBatches.finishedAt })
@@ -43,26 +53,41 @@ async function getLastUpdatedAt(sourceId: string): Promise<string | null> {
 }
 
 /**
- * Main query: get items from collection_memberships joined with processed_items,
- * filtered to ONLY items that have been approved in triage_queue.
- *
- * Approval check uses both content_hash AND external_id so price changes
- * don't cause previously-approved items to disappear.
- *
- * onlySoldOut=true  → only is_active=false  (for "Ofertas Anteriores")
- * onlyActive=true   → only is_active=true   (for live sections)
+ * Query items from collection_memberships JOIN processed_items,
+ * filtered by promotion_type. Only approved (in triage) and active items.
  */
-async function getMembershipItems(
+async function getItemsByPromotionType(
   sourceId: string,
-  limit = 20,
-  onlySoldOut = false,
-  onlyActive = false
-): Promise<DealItem[]> {
-  const activeFilter = onlyActive
-    ? "AND cm.is_active = true"
-    : onlySoldOut
-    ? "AND cm.is_active = false"
-    : "";
+  promotionType: "lightning" | "deal_of_day" | "general",
+  limit: number,
+  offset = 0
+): Promise<{ items: DealItem[]; total: number }> {
+  // Approval continuity: a product is "approved" if ANY processed_items row
+  // sharing the same external_id has an approved triage entry. This survives
+  // price changes (which create new content_hash + processed_items rows).
+  const { rows: countRows } = await pool.query<{ total: string }>(
+    `
+    SELECT COUNT(DISTINCT COALESCE(pi.external_id, pi.content_hash))::text AS total
+    FROM collection_memberships cm
+    JOIN processed_items pi ON pi.content_hash = cm.content_hash
+    WHERE cm.collection_source_id = $1
+      AND cm.is_active = true
+      AND pi.promotion_type = $2
+      AND (
+        EXISTS (
+          SELECT 1 FROM triage_queue tq
+          WHERE tq.processed_item_id = pi.id AND tq.status = 'approved'
+        )
+        OR (pi.external_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM triage_queue tq2
+          JOIN processed_items pi2 ON pi2.id = tq2.processed_item_id
+          WHERE pi2.external_id = pi.external_id AND tq2.status = 'approved'
+        ))
+      )
+    `,
+    [sourceId, promotionType]
+  );
+  const total = parseInt(countRows[0]?.total || "0", 10);
 
   const { rows } = await pool.query<{
     membership_id: string;
@@ -82,7 +107,7 @@ async function getMembershipItems(
     `
     SELECT *
     FROM (
-      SELECT DISTINCT ON (pi.external_id, pi.price)
+      SELECT DISTINCT ON (COALESCE(pi.external_id, pi.content_hash))
         cm.id              AS membership_id,
         cm.is_active,
         cm.last_seen_at,
@@ -99,224 +124,164 @@ async function getMembershipItems(
       FROM collection_memberships cm
       JOIN processed_items pi ON pi.content_hash = cm.content_hash
       WHERE cm.collection_source_id = $1
-        ${activeFilter}
+        AND cm.is_active = true
+        AND pi.promotion_type = $2
         AND (
           EXISTS (
             SELECT 1 FROM triage_queue tq
-            WHERE tq.processed_item_id = pi.id
-              AND tq.status = 'approved'
+            WHERE tq.processed_item_id = pi.id AND tq.status = 'approved'
           )
-          OR
-          (pi.external_id IS NOT NULL AND EXISTS (
+          OR (pi.external_id IS NOT NULL AND EXISTS (
             SELECT 1 FROM triage_queue tq2
             JOIN processed_items pi2 ON pi2.id = tq2.processed_item_id
-            WHERE pi2.external_id = pi.external_id
-              AND tq2.status = 'approved'
+            WHERE pi2.external_id = pi.external_id AND tq2.status = 'approved'
           ))
         )
-      ORDER BY pi.external_id, pi.price, pi.discount_percent DESC NULLS LAST
+      ORDER BY COALESCE(pi.external_id, pi.content_hash), pi.discount_percent DESC NULLS LAST
     ) AS sub
-    ORDER BY sub.discount_percent DESC NULLS LAST
-    LIMIT $2
+    ORDER BY sub.discount_percent DESC NULLS LAST, sub.last_seen_at DESC
+    LIMIT $3 OFFSET $4
     `,
-    [sourceId, limit * 3]
+    [sourceId, promotionType, limit, offset]
   );
 
-  const items: DealItem[] = [];
-  const seen = new Set<string>();
+  const items: DealItem[] = rows.map((row) => ({
+    id: row.membership_id,
+    title: row.normalized_title || row.raw_title || "Produto",
+    imageUrl: row.image_url ?? null,
+    itemUrl: row.affiliate_url || row.source_url || row.raw_url || "",
+    currentPrice: parseFloat(row.price || "0"),
+    oldPrice: row.original_price ? parseFloat(row.original_price) : null,
+    discountPercent: row.discount_percent ?? null,
+    soldOut: !row.is_active,
+    freeShipping: row.free_shipping ?? false,
+    lastSeenAt: row.last_seen_at?.toISOString() ?? new Date().toISOString(),
+  })).filter((i) => i.currentPrice > 0);
 
-  for (const row of rows) {
-    const dedupeKey = `${row.normalized_title}::${row.price}`;
-    if (seen.has(dedupeKey)) continue;
-    seen.add(dedupeKey);
-
-    const currentPrice = parseFloat(row.price || "0");
-    if (currentPrice <= 0) continue;
-
-    items.push({
-      id: row.membership_id,
-      title: row.normalized_title || row.raw_title || "Produto",
-      imageUrl: row.image_url ?? null,
-      itemUrl: row.affiliate_url || row.source_url || row.raw_url || "",
-      currentPrice,
-      oldPrice: row.original_price ? parseFloat(row.original_price) : null,
-      discountPercent: row.discount_percent ?? null,
-      soldOut: !row.is_active,
-      freeShipping: row.free_shipping ?? false,
-      lastSeenAt: row.last_seen_at?.toISOString() ?? new Date().toISOString(),
-    });
-  }
-
-  // Sort by discount DESC NULLS LAST
-  items.sort((a, b) => {
-    if (a.discountPercent === null && b.discountPercent === null) return 0;
-    if (a.discountPercent === null) return 1;
-    if (b.discountPercent === null) return -1;
-    return b.discountPercent - a.discountPercent;
-  });
-
-  return items;
-}
-
-/**
- * Fetch approved products tagged with a specific section ('dia' or 'relampago').
- * Only includes products whose ML external_id is STILL active in the given source.
- * This ensures stale approved products don't linger in live sections.
- */
-async function getApprovedProductsForSection(section: string, sourceId: string | null): Promise<DealItem[]> {
-  if (!sourceId) return [];
-
-  // Only return approved products whose externalId is STILL active in the ML source
-  const rows = await db
-    .select({
-      productId: products.id,
-      title: products.mainName,
-      imageUrl: products.mainImageUrl,
-      currentPrice: offers.currentPrice,
-      originalPrice: offers.originalPrice,
-      discountPercent: offers.discountPercent,
-      affiliateUrl: offers.affiliateUrl,
-      originalUrl: offers.originalUrl,
-      freeShipping: offers.freeShipping,
-      updatedAt: products.updatedAt,
-    })
-    .from(products)
-    .innerJoin(offers, and(
-      eq(offers.productId, products.id),
-      eq(offers.status, "active")
-    ))
-    .innerJoin(collectionMemberships, and(
-      eq(collectionMemberships.externalItemId, offers.externalId),
-      eq(collectionMemberships.collectionSourceId, sourceId),
-      eq(collectionMemberships.isActive, true)
-    ))
-    .where(and(
-      eq(products.section, section),
-      eq(products.catalogStatus, "published")
-    ))
-    .orderBy(desc(offers.discountPercent));
-
-  const seen = new Set<string>();
-  const items: DealItem[] = [];
-
-  for (const row of rows) {
-    const dedupeKey = `${row.title}::${row.currentPrice}`;
-    if (seen.has(dedupeKey)) continue;
-    seen.add(dedupeKey);
-
-    const currentPrice = parseFloat(row.currentPrice || "0");
-    if (currentPrice <= 0) continue;
-
-    items.push({
-      id: row.productId,
-      title: row.title,
-      imageUrl: row.imageUrl ?? null,
-      itemUrl: row.affiliateUrl || row.originalUrl || "",
-      currentPrice,
-      oldPrice: row.originalPrice ? parseFloat(row.originalPrice) : null,
-      discountPercent: row.discountPercent ?? null,
-      soldOut: false,
-      freeShipping: row.freeShipping ?? false,
-      lastSeenAt: row.updatedAt?.toISOString() ?? new Date().toISOString(),
-    });
-  }
-
-  return items;
+  return { items, total };
 }
 
 async function getSection(
-  sourceName: string,
-  sectionKey: string,
-  limit = 20
+  promotionType: "lightning" | "deal_of_day" | "general",
+  limit: number,
+  offset = 0
 ): Promise<DealSectionResponse> {
   try {
-    const sources = await storage.getCollectionSources();
-    const source = sources.find((s) => s.name?.includes(sourceName));
-
-    const [lastUpdatedAt, membershipItems, approvedItems] = await Promise.all([
-      source ? getLastUpdatedAt(source.id) : Promise.resolve(null),
-      source ? getMembershipItems(source.id, limit, false, true) : Promise.resolve([]),
-      getApprovedProductsForSection(sectionKey, source?.id ?? null),
-    ]);
-
-    // Merge: approved items first (curated), then live ML items
-    const seen = new Set<string>();
-    const merged: DealItem[] = [];
-
-    for (const item of [...approvedItems, ...membershipItems]) {
-      const key = `${item.title}::${item.currentPrice}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      merged.push(item);
-      if (merged.length >= limit) break;
+    const sourceId = await getGeralSourceId();
+    if (!sourceId) {
+      return { lastUpdatedAt: null, items: [], total: 0 };
     }
 
-    // Sort by discount DESC NULLS LAST
-    merged.sort((a, b) => {
-      if (a.discountPercent === null && b.discountPercent === null) return 0;
-      if (a.discountPercent === null) return 1;
-      if (b.discountPercent === null) return -1;
-      return b.discountPercent - a.discountPercent;
-    });
+    const [lastUpdatedAt, { items, total }] = await Promise.all([
+      getLastUpdatedAt(sourceId),
+      getItemsByPromotionType(sourceId, promotionType, limit, offset),
+    ]);
 
-    return { lastUpdatedAt, items: merged };
+    return { lastUpdatedAt, items, total };
   } catch (err: any) {
-    console.error(`[DealSections] Error for ${sourceName}:`, err.message);
-    return { lastUpdatedAt: null, items: [] };
+    console.error(`[DealSections] Error for ${promotionType}:`, err.message);
+    return { lastUpdatedAt: null, items: [], total: 0 };
   }
 }
 
 // ============ Public endpoints ============
 
-router.get("/api/sections/oferta-do-dia", async (req, res) => {
-  const data = await getSection("Oferta do Dia", "dia", 20);
+router.get("/api/sections/oferta-relampago", async (_req, res) => {
+  const data = await getSection("lightning", 20);
   res.json(data);
 });
 
-router.get("/api/sections/oferta-relampago", async (req, res) => {
-  const data = await getSection("Oferta Relâmpago", "relampago", 20);
+router.get("/api/sections/oferta-do-dia", async (_req, res) => {
+  const data = await getSection("deal_of_day", 20);
   res.json(data);
+});
+
+router.get("/api/sections/ofertas-gerais", async (req, res) => {
+  const page = Math.max(1, parseInt(String(req.query.page || "1"), 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || "50"), 10) || 50));
+  const offset = (page - 1) * pageSize;
+  const data = await getSection("general", pageSize, offset);
+  res.json({ ...data, page, pageSize });
 });
 
 /**
- * Ofertas Anteriores: items that are now sold_out (is_active=false)
- * from the two main sources, as a historical section.
+ * Ofertas Anteriores: items now sold out (is_active=false) from the geral source.
  */
-router.get("/api/sections/ofertas-anteriores", async (req, res) => {
+router.get("/api/sections/ofertas-anteriores", async (_req, res) => {
   try {
-    const sources = await storage.getCollectionSources();
-
-    const targetSourceNames = ["Oferta do Dia", "Oferta Relâmpago", "Tênis Esportivos", "ML Ofertas"];
-    const targetSources = sources.filter((s) =>
-      targetSourceNames.some((n) => s.name?.includes(n))
-    );
-
-    const allItems: DealItem[] = [];
-    const seenTitles = new Set<string>();
-
-    for (const source of targetSources.slice(0, 4)) {
-      const items = await getMembershipItems(source.id, 30, true, false);
-      for (const item of items) {
-        if (!seenTitles.has(item.title)) {
-          seenTitles.add(item.title);
-          allItems.push(item);
-        }
-      }
+    const sourceId = await getGeralSourceId();
+    if (!sourceId) {
+      res.json({ lastUpdatedAt: null, items: [] });
+      return;
     }
 
-    // Sort sold-out items by discount DESC
-    allItems.sort((a, b) => {
-      if (a.discountPercent === null && b.discountPercent === null) return 0;
-      if (a.discountPercent === null) return 1;
-      if (b.discountPercent === null) return -1;
-      return b.discountPercent - a.discountPercent;
-    });
+    const { rows } = await pool.query<{
+      membership_id: string;
+      last_seen_at: Date;
+      normalized_title: string | null;
+      price: string | null;
+      original_price: string | null;
+      discount_percent: number | null;
+      image_url: string | null;
+      affiliate_url: string | null;
+      source_url: string | null;
+      raw_url: string | null;
+      free_shipping: boolean | null;
+    }>(
+      `
+      SELECT DISTINCT ON (COALESCE(pi.external_id, pi.content_hash))
+        cm.id AS membership_id,
+        cm.last_seen_at,
+        pi.normalized_title,
+        pi.price,
+        pi.original_price,
+        pi.discount_percent,
+        pi.image_url,
+        pi.affiliate_url,
+        pi.source_url,
+        cm.raw_url,
+        pi.free_shipping
+      FROM collection_memberships cm
+      JOIN processed_items pi ON pi.content_hash = cm.content_hash
+      WHERE cm.collection_source_id = $1
+        AND cm.is_active = false
+        AND (
+          EXISTS (
+            SELECT 1 FROM triage_queue tq
+            WHERE tq.processed_item_id = pi.id AND tq.status = 'approved'
+          )
+          OR (pi.external_id IS NOT NULL AND EXISTS (
+            SELECT 1 FROM triage_queue tq2
+            JOIN processed_items pi2 ON pi2.id = tq2.processed_item_id
+            WHERE pi2.external_id = pi.external_id AND tq2.status = 'approved'
+          ))
+        )
+      ORDER BY COALESCE(pi.external_id, pi.content_hash), cm.last_seen_at DESC
+      LIMIT 24
+      `,
+      [sourceId]
+    );
 
-    const lastUpdatedAt = allItems[0]?.lastSeenAt ?? null;
+    const items: DealItem[] = rows
+      .map((row) => ({
+        id: row.membership_id,
+        title: row.normalized_title || "Produto",
+        imageUrl: row.image_url ?? null,
+        itemUrl: row.affiliate_url || row.source_url || row.raw_url || "",
+        currentPrice: parseFloat(row.price || "0"),
+        oldPrice: row.original_price ? parseFloat(row.original_price) : null,
+        discountPercent: row.discount_percent ?? null,
+        soldOut: true,
+        freeShipping: row.free_shipping ?? false,
+        lastSeenAt: row.last_seen_at?.toISOString() ?? new Date().toISOString(),
+      }))
+      .filter((i) => i.currentPrice > 0);
+
+    items.sort((a, b) => (b.discountPercent ?? 0) - (a.discountPercent ?? 0));
 
     res.json({
-      lastUpdatedAt,
-      items: allItems.slice(0, 24),
+      lastUpdatedAt: items[0]?.lastSeenAt ?? null,
+      items,
     });
   } catch (err: any) {
     console.error("[DealSections] ofertas-anteriores error:", err.message);

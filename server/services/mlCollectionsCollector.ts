@@ -2,6 +2,23 @@ import * as cheerio from "cheerio";
 
 const AFFILIATE_CODE = "14610626";
 
+// ============ CONFIG ============
+const USER_AGENTS = [
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+];
+
+const MAX_PAGES = 25;            // hard cap to avoid runaway loops
+const MAX_RETRIES = 3;
+const MIN_DISCOUNT_PERCENT = 25; // filter at collection
+const SLEEP_MIN_MS = 1500;
+const SLEEP_MAX_MS = 3000;
+const HTTP_TIMEOUT_MS = 20000;
+
+export type PromotionType = "lightning" | "deal_of_day" | "general";
+
 export interface CollectedItem {
   externalItemId: string | null;
   nome: string;
@@ -18,6 +35,30 @@ export interface CollectedItem {
   parcelas: string;
   fonte: string;
   contentHash: string;
+  promotionType: PromotionType;
+}
+
+// ============ HELPERS ============
+function getRandomUA(): string {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((res) => setTimeout(res, ms));
+}
+
+function randomBetween(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function isBlocked(html: string): boolean {
+  if (!html || html.length < 5000) return true;
+  const lower = html.toLowerCase();
+  return (
+    lower.includes("access denied") ||
+    lower.includes("pardon our interruption") ||
+    lower.includes("captcha") && lower.includes("verify")
+  );
 }
 
 function addAffiliateCode(url: string): string {
@@ -27,10 +68,8 @@ function addAffiliateCode(url: string): string {
 }
 
 function extractExternalId(url: string): string | null {
-  // Match MLB123, MLB-123, MLBU123 (universal product URLs), etc.
   const match = url.match(/MLB[A-Z]?-?\d+/i);
   if (!match) return null;
-  // Normalize: strip country letters after MLB and dashes → MLB12345
   return match[0].replace(/-/g, "").replace(/^MLB[A-Z]/i, (m) => "MLB" + m.slice(4));
 }
 
@@ -62,38 +101,77 @@ function makeContentHash(title: string, price: number): string {
   return Math.abs(hash).toString(16).padStart(8, "0");
 }
 
-export async function scrapeCollectionUrl(
-  sourceUrl: string,
-  sourceName: string
-): Promise<{ items: CollectedItem[]; errors: string[] }> {
-  const errors: string[] = [];
+// ============ HTTP CLIENT ============
+async function fetchWithRetry(url: string, attempt = 1): Promise<string> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS);
 
-  let html: string;
   try {
-    const response = await fetch(sourceUrl, {
+    const res = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": getRandomUA(),
         "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
       },
+      signal: controller.signal,
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} ao acessar ${sourceUrl}`);
-    }
-    html = await response.text();
-  } catch (err: any) {
-    errors.push(err.message);
-    return { items: [], errors };
-  }
+    clearTimeout(timeout);
 
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const html = await res.text();
+    if (isBlocked(html)) throw new Error("Blocked or empty response from ML");
+
+    return html;
+  } catch (err: any) {
+    clearTimeout(timeout);
+    if (attempt < MAX_RETRIES) {
+      const backoff = 1000 * attempt + randomBetween(200, 800);
+      console.log(`[MLCollector] Retry ${attempt}/${MAX_RETRIES} after ${backoff}ms → ${err.message}`);
+      await sleep(backoff);
+      return fetchWithRetry(url, attempt + 1);
+    }
+    throw err;
+  }
+}
+
+// ============ PARSER ============
+function detectPromotionType(card: cheerio.Cheerio<any>): PromotionType {
+  // Lightning: countdown timer present
+  if (card.find(".poly-component__highlight-countdown, .poly-highlight-countdown__text").length > 0) {
+    return "lightning";
+  }
+  // Deal of the day: highlight badge text
+  const highlightText = card.find(".poly-component__highlight").first().text().trim().toUpperCase();
+  if (highlightText.includes("OFERTA DO DIA")) return "deal_of_day";
+  if (highlightText.includes("OFERTA RELÂMPAGO") || highlightText.includes("RELAMPAGO")) {
+    return "lightning";
+  }
+  return "general";
+}
+
+function buildPageUrl(baseUrl: string, page: number): string {
+  if (page <= 1) return baseUrl;
+  // Strip any existing &page=N or ?page=N
+  const cleaned = baseUrl.replace(/([?&])page=\d+&?/i, "$1").replace(/[?&]$/, "");
+  const sep = cleaned.includes("?") ? "&" : "?";
+  return `${cleaned}${sep}page=${page}`;
+}
+
+function parsePage(
+  html: string,
+  sourceName: string
+): { items: CollectedItem[]; hasNextPage: boolean } {
   const $ = cheerio.load(html);
   const items: CollectedItem[] = [];
   const seen = new Set<string>();
 
   $("div.poly-card").each((_i, el) => {
     const card = $(el);
-
     const title = card.find(".poly-component__title").first().text().trim();
     if (!title) return;
 
@@ -128,10 +206,12 @@ export async function scrapeCollectionUrl(
 
     const discountText = card.find(".poly-price__disc_label").text().trim();
     let desconto_percent = parseDiscount(discountText);
-    // If no discount label, calculate from original vs current price
     if (!desconto_percent && preco_original && preco_original > preco_atual) {
       desconto_percent = Math.round((1 - preco_atual / preco_original) * 100);
     }
+
+    // Apply minimum discount filter at parse time
+    if (!desconto_percent || desconto_percent < MIN_DISCOUNT_PERCENT) return;
 
     const brand = card.find(".poly-component__brand").text().trim();
     const ratingText = card.find(".poly-reviews__rating").text().trim();
@@ -140,11 +220,13 @@ export async function scrapeCollectionUrl(
     const qtd_avaliacoes = parseReviewCount(reviewsText);
 
     const shippingText = card.find(".poly-component__shipping").text().trim();
-    const frete_gratis = shippingText.toLowerCase().includes("grátis") || shippingText.toLowerCase().includes("gratis");
+    const frete_gratis =
+      shippingText.toLowerCase().includes("grátis") ||
+      shippingText.toLowerCase().includes("gratis");
     const parcelas = card.find(".poly-price__installments").text().trim();
 
+    const promotionType = detectPromotionType(card);
     const contentHash = makeContentHash(title, preco_atual);
-
     const dedupeKey = externalItemId || contentHash;
     if (seen.has(dedupeKey)) return;
     seen.add(dedupeKey);
@@ -165,15 +247,85 @@ export async function scrapeCollectionUrl(
       parcelas,
       fonte: sourceName,
       contentHash,
+      promotionType,
     });
   });
 
-  items.sort((a, b) => {
+  // Check for "Próximo" / "Seguinte" link with href
+  const nextLink = $('a[aria-label="Seguinte"], a[aria-label="Próximo"], a[aria-label="Próxima"]')
+    .first()
+    .attr("href");
+  const hasNextPage = !!nextLink && nextLink.length > 0;
+
+  return { items, hasNextPage };
+}
+
+// ============ MAIN: paginated scraper ============
+export async function scrapeCollectionUrl(
+  sourceUrl: string,
+  sourceName: string
+): Promise<{ items: CollectedItem[]; errors: string[] }> {
+  const errors: string[] = [];
+  const allItems: CollectedItem[] = [];
+  const globalSeen = new Set<string>();
+  let previousPageHash = "";
+
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const url = buildPageUrl(sourceUrl, page);
+
+    let html: string;
+    try {
+      html = await fetchWithRetry(url);
+    } catch (err: any) {
+      errors.push(`Página ${page}: ${err.message}`);
+      break; // can't continue paginating if a page fails
+    }
+
+    const { items, hasNextPage } = parsePage(html, sourceName);
+
+    if (items.length === 0) {
+      console.log(`[MLCollector] ${sourceName} page ${page}: 0 items → stop`);
+      break;
+    }
+
+    // Anti-loop: if first 5 items repeat from previous page, stop
+    const currentHash = JSON.stringify(items.slice(0, 5).map((i) => i.contentHash));
+    if (currentHash === previousPageHash) {
+      console.log(`[MLCollector] ${sourceName} page ${page}: repeated content → stop`);
+      break;
+    }
+    previousPageHash = currentHash;
+
+    // Dedupe across pages
+    let added = 0;
+    for (const item of items) {
+      const key = item.externalItemId || item.contentHash;
+      if (globalSeen.has(key)) continue;
+      globalSeen.add(key);
+      allItems.push(item);
+      added++;
+    }
+
+    console.log(
+      `[MLCollector] ${sourceName} page ${page}: ${items.length} parsed, ${added} new (total: ${allItems.length})`
+    );
+
+    if (!hasNextPage) {
+      console.log(`[MLCollector] ${sourceName}: no next-page link → stop at page ${page}`);
+      break;
+    }
+
+    // Respectful delay between pages
+    await sleep(randomBetween(SLEEP_MIN_MS, SLEEP_MAX_MS));
+  }
+
+  // Sort by discount DESC then by reviews DESC
+  allItems.sort((a, b) => {
     const dA = a.desconto_percent || 0;
     const dB = b.desconto_percent || 0;
     if (dB !== dA) return dB - dA;
     return (b.qtd_avaliacoes || 0) - (a.qtd_avaliacoes || 0);
   });
 
-  return { items, errors };
+  return { items: allItems, errors };
 }

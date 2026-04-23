@@ -108,12 +108,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ ADMIN: TRIAGE ============
 
-  function sectionFromSourceId(sourceId: string | null | undefined, sources: { id: string; name: string | null }[]): string | null {
-    if (!sourceId) return null;
-    const src = sources.find(s => s.id === sourceId);
-    if (!src?.name) return null;
-    if (src.name.includes("Relâmpago")) return "relampago";
-    if (src.name.includes("Dia")) return "dia";
+  function sectionFromPromotionType(promotionType: string | null | undefined): string | null {
+    if (promotionType === "lightning") return "relampago";
+    if (promotionType === "deal_of_day") return "dia";
+    if (promotionType === "general") return "geral";
     return null;
   }
 
@@ -163,7 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const processed = await storage.getProcessedItem(triageItem.processedItemId);
         if (!processed) throw new Error(`processed item not found for ${id}`);
 
-        const section = sectionFromSourceId(triageItem.collectionSourceId, allSources);
+        const section = sectionFromPromotionType((processed as any)?.promotionType ?? (processed as any)?.promotion_type);
 
         const finalName = processed.normalizedTitle;
         const slug = finalName
@@ -246,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!processed) return res.status(404).json({ error: "Item processado não encontrado" });
 
       const allSources = await storage.getCollectionSources();
-      const section = sectionFromSourceId(triageItem.collectionSourceId, allSources);
+      const section = sectionFromPromotionType((processed as any)?.promotionType ?? (processed as any)?.promotion_type);
 
       const finalName = productName || processed.normalizedTitle;
       const slug = finalName

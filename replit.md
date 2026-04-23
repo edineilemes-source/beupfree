@@ -19,7 +19,20 @@ Preferred communication style: Simple, everyday language.
 ### Scheduler
 - `server/jobs/scheduler.ts` starts automatically at server boot (5s delay)
 - Runs each active source at its configured interval (`collectFrequencyMinutes`)
-- 6 default sources: Calçados (120min), Tênis (30min), Masculino (90min), Feminino (360min), Nike 40%+ (60min), Adidas 40%+ (60min)
+- **Single active source** (since v2): `Ofertas Calçados (Geral)` pointing to
+  `https://www.mercadolivre.com.br/ofertas?category=MLB3900&container_id=MLB779362-1`
+  (frequência: 60min). Faz scrape paginado de até 25 páginas (~1300 cards).
+- All previous brand/category sources are kept in DB but `isActive=false`
+  (preserves historical memberships).
+
+### Promotion Type Classification
+- Each `processed_items` row has `promotion_type`: `lightning` | `deal_of_day` | `general`
+- Detected at scrape time from CSS classes:
+  - `lightning`: card has `.poly-component__highlight-countdown`
+  - `deal_of_day`: `.poly-component__highlight` text contains "OFERTA DO DIA"
+  - `general`: everything else
+- Min discount filter: 25% at scrape time (lower discounts skipped entirely)
+- Auto-approve gate: brand whitelist (autoApprove.ts) AND discount ≥ 30%
 
 ### Membership Tracking + Anti-Flapping
 - `collection_memberships` table: tracks `external_item_id`, `first_seen_at`, `last_seen_at`, `is_active`, `missed_runs_count`
