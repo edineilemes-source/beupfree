@@ -135,9 +135,9 @@ async function getItemsByPromotionType(
         AND cm.is_active = true
         AND pi.promotion_type = $2
         ${approvalFilter}
-      ORDER BY ${dedupKey}, pi.discount_percent DESC NULLS LAST, cm.last_seen_at DESC
+      ORDER BY ${dedupKey}, pi.discount_percent DESC NULLS LAST, cm.last_seen_at DESC, cm.id
     ) AS sub
-    ORDER BY sub.discount_percent DESC NULLS LAST, sub.last_seen_at DESC
+    ORDER BY sub.discount_percent DESC NULLS LAST, sub.last_seen_at DESC, sub.membership_id
     LIMIT $3 OFFSET $4
     `,
     [sourceId, promotionType, limit, offset]

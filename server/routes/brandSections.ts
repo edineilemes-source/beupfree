@@ -1,141 +1,179 @@
 import { Router } from "express";
-import { eq, desc, and, sql } from "drizzle-orm";
-import { db } from "../db";
-import { offers, products, productImages, brands } from "@shared/schema";
+import { db, pool } from "../db";
+import { collectionBatches, collectionSources } from "@shared/schema";
+import { eq, desc, and } from "drizzle-orm";
 
 const router = Router();
 
-interface BrandSectionItem {
-  id: string;
-  title: string;
-  imageUrl: string | null;
-  itemUrl: string;
-  currentPrice: number;
-  oldPrice: number | null;
-  discountPercent: number | null;
-  lastSeenAt: string;
+const GERAL_SOURCE_URL = "https://www.mercadolivre.com.br/ofertas?category=MLB3900";
+
+// Marcas suportadas — slug → label legível
+export const SUPPORTED_BRANDS: Record<string, string> = {
+  nike: "Nike",
+  adidas: "Adidas",
+  olympikus: "Olympikus",
+  asics: "Asics",
+  fila: "Fila",
+};
+
+async function getGeralSourceId(): Promise<string | null> {
+  const [src] = await db
+    .select({ id: collectionSources.id })
+    .from(collectionSources)
+    .where(eq(collectionSources.url, GERAL_SOURCE_URL))
+    .limit(1);
+  return src?.id ?? null;
 }
 
-interface BrandSectionResponse {
-  lastUpdatedAt: string | null;
-  nike: {
-    lastUpdatedAt: string | null;
-    items: BrandSectionItem[];
-  };
-  adidas: {
-    lastUpdatedAt: string | null;
-    items: BrandSectionItem[];
-  };
-}
-
-async function getBrandItems(brandSlug: string, limit = 8): Promise<{ items: BrandSectionItem[]; lastUpdatedAt: string | null }> {
-  try {
-    const brand = await db.query.brands.findFirst({
-      where: eq(brands.slug, brandSlug),
-    });
-
-    if (!brand) {
-      return { items: [], lastUpdatedAt: null };
-    }
-
-    const rows = await db
-      .select({
-        offerId: offers.id,
-        currentPrice: offers.currentPrice,
-        originalPrice: offers.originalPrice,
-        discountPercent: offers.discountPercent,
-        affiliateUrl: offers.affiliateUrl,
-        originalUrl: offers.originalUrl,
-        productId: offers.productId,
-        updatedAt: offers.updatedAt,
-      })
-      .from(offers)
-      .innerJoin(products, eq(offers.productId, products.id))
-      .where(
-        and(
-          eq(offers.status, "active"),
-          eq(products.catalogStatus, "published"),
-          eq(products.brandId, brand.id)
-        )
+async function getLastUpdatedAt(sourceId: string): Promise<string | null> {
+  const [batch] = await db
+    .select({ finishedAt: collectionBatches.finishedAt })
+    .from(collectionBatches)
+    .where(
+      and(
+        eq(collectionBatches.sourceId, sourceId),
+        eq(collectionBatches.status, "completed")
       )
-      .orderBy(desc(offers.discountPercent))
-      .limit(limit);
-
-    const items: BrandSectionItem[] = [];
-    let lastUpdatedAt: string | null = null;
-
-    for (const row of rows) {
-      if (!row.productId) continue;
-
-      const product = await db.query.products.findFirst({
-        where: eq(products.id, row.productId),
-      });
-
-      if (!product) continue;
-
-      const prodImage = await db.query.productImages.findFirst({
-        where: eq(productImages.productId, row.productId),
-      });
-
-      const updatedIso = row.updatedAt?.toISOString() || new Date().toISOString();
-      if (!lastUpdatedAt || updatedIso > lastUpdatedAt) {
-        lastUpdatedAt = updatedIso;
-      }
-
-      items.push({
-        id: row.offerId,
-        title: product.mainName || "Produto",
-        imageUrl: product.mainImageUrl || prodImage?.imageUrl || null,
-        itemUrl: row.affiliateUrl || row.originalUrl || "",
-        currentPrice: parseFloat(row.currentPrice) || 0,
-        oldPrice: row.originalPrice ? parseFloat(row.originalPrice) : null,
-        discountPercent: row.discountPercent ?? null,
-        lastSeenAt: updatedIso,
-      });
-    }
-
-    return { items, lastUpdatedAt };
-  } catch (err: any) {
-    console.error(`[BrandSections] Error for ${brandSlug}:`, err.message);
-    return { items: [], lastUpdatedAt: null };
-  }
+    )
+    .orderBy(desc(collectionBatches.finishedAt))
+    .limit(1);
+  return batch?.finishedAt?.toISOString() ?? null;
 }
 
-router.get("/api/sections/grandes-marcas-hoje", async (req, res) => {
+// Lista marcas + contagem de itens ativos (para o carrossel da home)
+router.get("/api/sections/marcas", async (_req, res) => {
   try {
-    const [nikeData, adidasData] = await Promise.all([
-      getBrandItems("nike"),
-      getBrandItems("adidas"),
-    ]);
-
-    const lastUpdatedAt =
-      nikeData.lastUpdatedAt && adidasData.lastUpdatedAt
-        ? nikeData.lastUpdatedAt > adidasData.lastUpdatedAt
-          ? nikeData.lastUpdatedAt
-          : adidasData.lastUpdatedAt
-        : nikeData.lastUpdatedAt || adidasData.lastUpdatedAt;
-
-    const response: BrandSectionResponse = {
-      lastUpdatedAt,
-      nike: {
-        lastUpdatedAt: nikeData.lastUpdatedAt,
-        items: nikeData.items,
-      },
-      adidas: {
-        lastUpdatedAt: adidasData.lastUpdatedAt,
-        items: adidasData.items,
-      },
-    };
-
-    res.json(response);
+    const sourceId = await getGeralSourceId();
+    if (!sourceId) {
+      res.json({ brands: [] });
+      return;
+    }
+    const slugs = Object.keys(SUPPORTED_BRANDS);
+    const { rows } = await pool.query<{ detected_brand: string; total: string }>(
+      `
+      SELECT pi.detected_brand, COUNT(DISTINCT LOWER(SUBSTRING(REGEXP_REPLACE(COALESCE(pi.normalized_title, cm.raw_title, ''), '\\s+', ' ', 'g'), 1, 60)))::text AS total
+      FROM collection_memberships cm
+      JOIN processed_items pi ON pi.content_hash = cm.content_hash
+      WHERE cm.collection_source_id = $1
+        AND cm.is_active = true
+        AND pi.detected_brand = ANY($2::text[])
+      GROUP BY pi.detected_brand
+      `,
+      [sourceId, slugs]
+    );
+    const counts: Record<string, number> = {};
+    rows.forEach((r) => { counts[r.detected_brand] = parseInt(r.total, 10); });
+    const brands = slugs.map((slug) => ({
+      slug,
+      name: SUPPORTED_BRANDS[slug],
+      total: counts[slug] ?? 0,
+    }));
+    res.json({ brands });
   } catch (err: any) {
-    console.error("[BrandSections] Error:", err.message || String(err));
-    res.status(500).json({
-      error: err.message,
-      lastUpdatedAt: null,
-      nike: { lastUpdatedAt: null, items: [] },
-      adidas: { lastUpdatedAt: null, items: [] },
-    });
+    console.error("[BrandSections] /marcas error:", err.message);
+    res.json({ brands: [] });
+  }
+});
+
+// Ofertas de uma marca específica, paginado, ordenado por desconto DESC
+router.get("/api/sections/marca/:slug", async (req, res) => {
+  try {
+    const slug = String(req.params.slug || "").toLowerCase();
+    if (!SUPPORTED_BRANDS[slug]) {
+      res.status(404).json({ error: "Marca não suportada" });
+      return;
+    }
+
+    const page = Math.max(1, parseInt(String(req.query.page || "1"), 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || "20"), 10) || 20));
+    const offset = (page - 1) * pageSize;
+
+    const sourceId = await getGeralSourceId();
+    if (!sourceId) {
+      res.json({ brand: SUPPORTED_BRANDS[slug], slug, items: [], total: 0, page, pageSize, lastUpdatedAt: null });
+      return;
+    }
+
+    const dedupKey = `LOWER(SUBSTRING(REGEXP_REPLACE(COALESCE(pi.normalized_title, cm.raw_title, ''), '\\s+', ' ', 'g'), 1, 60))`;
+
+    const { rows: countRows } = await pool.query<{ total: string }>(
+      `
+      SELECT COUNT(DISTINCT ${dedupKey})::text AS total
+      FROM collection_memberships cm
+      JOIN processed_items pi ON pi.content_hash = cm.content_hash
+      WHERE cm.collection_source_id = $1
+        AND cm.is_active = true
+        AND pi.detected_brand = $2
+      `,
+      [sourceId, slug]
+    );
+    const total = parseInt(countRows[0]?.total || "0", 10);
+
+    const { rows } = await pool.query<{
+      membership_id: string;
+      is_active: boolean;
+      last_seen_at: Date;
+      normalized_title: string | null;
+      price: string | null;
+      original_price: string | null;
+      discount_percent: number | null;
+      image_url: string | null;
+      affiliate_url: string | null;
+      source_url: string | null;
+      raw_url: string | null;
+      raw_title: string | null;
+      free_shipping: boolean | null;
+    }>(
+      `
+      SELECT *
+      FROM (
+        SELECT DISTINCT ON (${dedupKey})
+          cm.id              AS membership_id,
+          cm.is_active,
+          cm.last_seen_at,
+          pi.normalized_title,
+          pi.price,
+          pi.original_price,
+          pi.discount_percent,
+          pi.image_url,
+          pi.affiliate_url,
+          pi.source_url,
+          cm.raw_url,
+          cm.raw_title,
+          pi.free_shipping
+        FROM collection_memberships cm
+        JOIN processed_items pi ON pi.content_hash = cm.content_hash
+        WHERE cm.collection_source_id = $1
+          AND cm.is_active = true
+          AND pi.detected_brand = $2
+        ORDER BY ${dedupKey}, pi.discount_percent DESC NULLS LAST, cm.last_seen_at DESC, cm.id
+      ) AS sub
+      ORDER BY sub.discount_percent DESC NULLS LAST, sub.last_seen_at DESC, sub.membership_id
+      LIMIT $3 OFFSET $4
+      `,
+      [sourceId, slug, pageSize, offset]
+    );
+
+    const items = rows
+      .map((row) => ({
+        id: row.membership_id,
+        title: row.normalized_title || row.raw_title || "Produto",
+        imageUrl: row.image_url ?? null,
+        itemUrl: row.affiliate_url || row.source_url || row.raw_url || "",
+        currentPrice: parseFloat(row.price || "0"),
+        oldPrice: row.original_price ? parseFloat(row.original_price) : null,
+        discountPercent: row.discount_percent ?? null,
+        soldOut: !row.is_active,
+        freeShipping: row.free_shipping ?? false,
+        lastSeenAt: row.last_seen_at?.toISOString() ?? new Date().toISOString(),
+      }))
+      .filter((i) => i.currentPrice > 0);
+
+    const lastUpdatedAt = await getLastUpdatedAt(sourceId);
+    res.json({ brand: SUPPORTED_BRANDS[slug], slug, items, total, page, pageSize, lastUpdatedAt });
+  } catch (err: any) {
+    console.error("[BrandSections] /marca/:slug error:", err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 

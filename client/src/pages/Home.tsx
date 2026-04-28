@@ -1,10 +1,10 @@
+import { Tag } from "lucide-react";
 import Header from "@/components/Header";
 import HeroCarousel from "@/components/HeroCarousel";
 import LightningDeals from "@/components/LightningDeals";
 import DealOfTheDay from "@/components/DealOfTheDay";
-import GeneralOffers from "@/components/GeneralOffers";
-import CategoryGrid from "@/components/CategoryGrid";
-import BrandShowcase from "@/components/BrandShowcase";
+import PaginatedDealSection from "@/components/PaginatedDealSection";
+import BrandsCarousel from "@/components/BrandsCarousel";
 import PreviousOffers from "@/components/PreviousOffers";
 import BenefitsBar from "@/components/BenefitsBar";
 import Newsletter from "@/components/Newsletter";
@@ -18,9 +18,14 @@ export default function Home() {
         <HeroCarousel />
         <LightningDeals />
         <DealOfTheDay />
-        <GeneralOffers />
-        <CategoryGrid />
-        <BrandShowcase />
+        <PaginatedDealSection
+          endpoint="/api/sections/ofertas-gerais"
+          title="Outras Ofertas"
+          icon={<Tag className="w-6 h-6 text-primary" />}
+          emptyMessage="Sem outras ofertas no momento."
+          testIdPrefix="outras-ofertas"
+        />
+        <BrandsCarousel />
         <PreviousOffers />
         <BenefitsBar />
         <Newsletter />

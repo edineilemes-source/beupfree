@@ -54,8 +54,9 @@ Preferred communication style: Simple, everyday language.
 - **Build Tool**: Vite with React plugin
 
 Pages:
-- `/` — Home (hero → LightningDeals → DealOfTheDay → BrandPromotions → etc.)
+- `/` — Home (hero → LightningDeals → DealOfTheDay → "Outras Ofertas" (PaginatedDealSection) → BrandsCarousel → PreviousOffers → Benefits → Newsletter)
 - `/catalogo` — Catalog (all published products from API, sorted by discount DESC)
+- `/marca/:slug` — Brand-specific deals page (paginated 20/page + Carregar mais). Slugs supported: nike, adidas, olympikus, asics, fila
 - `/admin/triagem` — Admin triage page (approve/reject collected items, grouped by section)
 
 Key components:
