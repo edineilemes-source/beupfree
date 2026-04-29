@@ -135,7 +135,9 @@ export async function runCollectionsJob(
               contentHash,
             });
 
-            const detectedBrand = detectBrand(item.nome);
+            // Usa a marca explícita do card ML (.poly-component__brand) como hint primário,
+            // depois cai para detecção por título/aliases.
+            const detectedBrand = detectBrand(item.nome, item.marca);
             const detectedCategory = detectCategory(item.nome);
             const affiliateUrl = item.link_afiliado || buildAffiliateUrl(item.url);
 

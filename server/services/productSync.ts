@@ -90,13 +90,69 @@ export function detectCategory(title: string): string {
   return "casual";
 }
 
-export function detectBrand(title: string): string {
+// Aliases conhecidos: linhas/produtos que pertencem a marcas mas não trazem o nome
+// da marca no título (ex: "Lightmotion" é Adidas, "Court Vision" é Nike, etc.).
+const BRAND_ALIASES: Record<string, string> = {
+  // Adidas
+  lightmotion: "adidas",
+  ultraboost: "adidas",
+  ultra_boost: "adidas",
+  superstar: "adidas",
+  ozweego: "adidas",
+  galaxy: "adidas",
+  duramo: "adidas",
+  runfalcon: "adidas",
+  questar: "adidas",
+  ultimashow: "adidas",
+  grand_court: "adidas",
+  // Nike
+  air_max: "nike",
+  airmax: "nike",
+  air_force: "nike",
+  airforce: "nike",
+  pegasus: "nike",
+  revolution: "nike",
+  downshifter: "nike",
+  court_vision: "nike",
+  // Puma
+  rs_x: "puma",
+  suede: "puma",
+  cell: "puma",
+  // Asics
+  gel_: "asics",
+  // Olympikus
+  corre_: "olympikus",
+  // Mizuno
+  wave_: "mizuno",
+};
+
+const BRAND_LIST = [
+  "nike", "adidas", "puma", "mizuno", "asics", "olympikus", "fila",
+  "reebok", "new balance", "under armour", "vans", "converse",
+];
+
+export function detectBrand(title: string, hintBrand?: string | null): string {
+  // 1) Preferir o brand explícito do card do ML (campo .poly-component__brand)
+  if (hintBrand) {
+    const lowerHint = hintBrand.toLowerCase().trim();
+    for (const brand of BRAND_LIST) {
+      if (lowerHint.includes(brand)) return brand;
+    }
+  }
+
   const lower = title.toLowerCase();
-  const brands = ["nike", "adidas", "puma", "mizuno", "asics", "olympikus", "fila", "reebok", "new balance", "under armour", "vans", "converse"];
-  
-  for (const brand of brands) {
+
+  // 2) Procurar nome da marca no título
+  for (const brand of BRAND_LIST) {
     if (lower.includes(brand)) return brand;
   }
+
+  // 3) Aliases (linhas de produto)
+  for (const [alias, brand] of Object.entries(BRAND_ALIASES)) {
+    const needle = alias.replace(/_/g, " ");
+    if (lower.includes(needle)) return brand;
+  }
+
   return "outra";
 }
 

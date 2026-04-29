@@ -38,7 +38,7 @@ export default function BrandsCarousel() {
   const totals = new Map((data?.brands ?? []).map((b) => [b.slug, b.total]));
 
   return (
-    <section className="py-8 md:py-12 px-4 md:px-6" data-testid="section-brands">
+    <section id="marcas" className="py-8 md:py-12 px-4 md:px-6 scroll-mt-20" data-testid="section-brands">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-sm font-bold tracking-wider text-foreground mb-4 uppercase">
           Navegue por Marcas

@@ -45,6 +45,8 @@ export default function Marca() {
     setPage(1);
     setAccumulated([]);
     setSeenIds(new Set());
+    // Sobe para o topo ao entrar/trocar de marca
+    window.scrollTo({ top: 0, behavior: "auto" });
   }, [slug]);
 
   const { data, isLoading, isFetching, error } = useQuery<BrandResponse>({
@@ -95,7 +97,7 @@ export default function Marca() {
         <div className="border-b bg-muted/30">
           <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              <Link href="/">
+              <Link href="/#marcas">
                 <Button variant="ghost" size="icon" aria-label="Voltar para a home" data-testid="button-back-home">
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
