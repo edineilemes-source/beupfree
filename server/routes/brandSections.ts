@@ -11,6 +11,7 @@ const GERAL_SOURCE_URL = "https://www.mercadolivre.com.br/ofertas?category=MLB39
 export const SUPPORTED_BRANDS: Record<string, string> = {
   nike: "Nike",
   adidas: "Adidas",
+  puma: "Puma",
   olympikus: "Olympikus",
   asics: "Asics",
   fila: "Fila",

@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { SiNike, SiAdidas, SiFila } from "react-icons/si";
+import { SiNike, SiAdidas, SiFila, SiPuma } from "react-icons/si";
 import type { ComponentType } from "react";
 
 interface BrandInfo {
@@ -23,6 +23,7 @@ interface BrandConfig {
 const BRAND_CONFIG: BrandConfig[] = [
   { slug: "nike", label: "Nike", Icon: SiNike },
   { slug: "adidas", label: "Adidas", Icon: SiAdidas },
+  { slug: "puma", label: "Puma", Icon: SiPuma },
   { slug: "olympikus", label: "Olympikus", wordmark: { text: "OLYMPIKUS", className: "tracking-tight" } },
   { slug: "asics", label: "Asics", wordmark: { text: "asics", className: "italic" } },
   { slug: "fila", label: "Fila", Icon: SiFila },
