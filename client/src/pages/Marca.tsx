@@ -52,24 +52,34 @@ export default function Marca() {
     queryFn: async () => {
       const res = await fetch(`/api/sections/marca/${slug}?page=${page}&pageSize=${PAGE_SIZE}`);
       if (!res.ok) throw new Error("Marca não encontrada");
-      const json: BrandResponse = await res.json();
-      setAccumulated((prev) => {
-        const next = [...prev];
-        const newSeen = new Set(seenIds);
-        for (const item of json.items) {
-          if (!newSeen.has(item.id)) {
-            next.push(item);
-            newSeen.add(item.id);
-          }
-        }
-        setSeenIds(newSeen);
-        return next;
-      });
-      return json;
+      return (await res.json()) as BrandResponse;
     },
     placeholderData: keepPreviousData,
     enabled: !!slug,
   });
+
+  // Mescla items no acumulado tanto em cache hits quanto em refetches.
+  // page === 1 reseta acumulado; > 1 anexa.
+  useEffect(() => {
+    if (!data?.items) return;
+    if (data.page === 1) {
+      setAccumulated(data.items);
+      setSeenIds(new Set(data.items.map((i) => i.id)));
+    } else {
+      setAccumulated((prev) => {
+        const seen = new Set(prev.map((i) => i.id));
+        const next = [...prev];
+        for (const item of data.items) {
+          if (!seen.has(item.id)) {
+            next.push(item);
+            seen.add(item.id);
+          }
+        }
+        setSeenIds(seen);
+        return next;
+      });
+    }
+  }, [data]);
 
   const total = data?.total ?? 0;
   const lastPageItems = data?.items?.length ?? 0;

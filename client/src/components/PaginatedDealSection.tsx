@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -67,30 +67,47 @@ export default function PaginatedDealSection({
     queryFn: async () => {
       const res = await fetch(`${endpoint}?page=${page}&pageSize=${PAGE_SIZE}`);
       if (!res.ok) throw new Error("Falha ao carregar ofertas");
-      const json: PaginatedResponse = await res.json();
-
-      setAccumulated((prev) => {
-        const next = [...prev];
-        const newSeen = new Set(seenIds);
-        for (const item of json.items) {
-          if (!newSeen.has(item.id)) {
-            next.push(item);
-            newSeen.add(item.id);
-          }
-        }
-        setSeenIds(newSeen);
-        return next;
-      });
-
-      return json;
+      return (await res.json()) as PaginatedResponse;
     },
     staleTime: 2 * 60 * 1000,
     placeholderData: keepPreviousData,
   });
 
+  // Reset acumulado quando o endpoint mudar (ex: mudou de seção)
+  useEffect(() => {
+    setAccumulated([]);
+    setSeenIds(new Set());
+    setPage(1);
+  }, [endpoint]);
+
+  // Mescla os items do data atual no acumulado.
+  // Funciona em cache hits (volta de outra rota) E em refetches (após invalidação).
+  // Se data.page === 1, RESETA acumulado (refresh limpo); se > 1, anexa.
+  useEffect(() => {
+    if (!data?.items) return;
+    if (data.page === 1) {
+      setAccumulated(data.items);
+      setSeenIds(new Set(data.items.map((i) => i.id)));
+    } else {
+      setAccumulated((prev) => {
+        const seen = new Set(prev.map((i) => i.id));
+        const next = [...prev];
+        for (const item of data.items) {
+          if (!seen.has(item.id)) {
+            next.push(item);
+            seen.add(item.id);
+          }
+        }
+        setSeenIds(seen);
+        return next;
+      });
+    }
+  }, [data]);
+
   const total = data?.total ?? 0;
   const lastUpdated = data?.lastUpdatedAt ?? null;
-  const hasMore = accumulated.length < total;
+  const lastPageItems = data?.items?.length ?? 0;
+  const hasMore = accumulated.length < total && lastPageItems >= PAGE_SIZE;
 
   if (isLoading && accumulated.length === 0) {
     return (

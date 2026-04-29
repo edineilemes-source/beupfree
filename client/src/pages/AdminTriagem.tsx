@@ -315,6 +315,8 @@ export default function AdminTriagem() {
       const totalNew = result.totalNew ?? result.collected ?? 0;
       toast({ title: "Coleta concluída", description: `${totalNew} novos itens na fila` });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/triage"] });
+      // Como AUTO_PUBLISH_ALL=true, novos itens vão direto pra home — invalida o cache pra refletir
+      invalidateHomeCache();
     },
     onError: (err: any) => {
       toast({ title: "Erro na coleta", description: err.message, variant: "destructive" });
