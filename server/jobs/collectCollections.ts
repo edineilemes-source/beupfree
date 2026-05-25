@@ -339,12 +339,6 @@ async function ensureDefaultCollectionSources(): Promise<void> {
   const existing = await storage.getCollectionSources();
   const geralSource = existing.find((s) => s.url === GERAL_SOURCE_URL);
 
-  // Deactivate every other source — we now consolidate everything into one
-  await db
-    .update(collectionSources)
-    .set({ isActive: false })
-    .where(ne(collectionSources.url, GERAL_SOURCE_URL));
-
   if (!geralSource) {
     await storage.createCollectionSource({
       name: GERAL_SOURCE_NAME,

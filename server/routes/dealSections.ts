@@ -37,16 +37,14 @@ async function getGeralSourceId(): Promise<string | null> {
   return src?.id ?? null;
 }
 
-async function getLastUpdatedAt(sourceId: string): Promise<string | null> {
+async function getLastUpdatedAt(sourceId?: string): Promise<string | null> {
+  const whereClauses = sourceId
+    ? and(eq(collectionBatches.sourceId, sourceId), eq(collectionBatches.status, "completed"))
+    : eq(collectionBatches.status, "completed");
   const [batch] = await db
     .select({ finishedAt: collectionBatches.finishedAt })
     .from(collectionBatches)
-    .where(
-      and(
-        eq(collectionBatches.sourceId, sourceId),
-        eq(collectionBatches.status, "completed")
-      )
-    )
+    .where(whereClauses)
     .orderBy(desc(collectionBatches.finishedAt))
     .limit(1);
   return batch?.finishedAt?.toISOString() ?? null;
@@ -57,7 +55,6 @@ async function getLastUpdatedAt(sourceId: string): Promise<string | null> {
  * filtered by promotion_type. Only approved (in triage) and active items.
  */
 async function getItemsByPromotionType(
-  sourceId: string,
   promotionType: "lightning" | "deal_of_day" | "general",
   limit: number,
   offset = 0
@@ -88,12 +85,13 @@ async function getItemsByPromotionType(
     SELECT COUNT(DISTINCT ${dedupKey})::text AS total
     FROM collection_memberships cm
     JOIN processed_items pi ON pi.content_hash = cm.content_hash
-    WHERE cm.collection_source_id = $1
+    JOIN collection_sources cs ON cs.id = cm.collection_source_id
+    WHERE cs.is_active = true
       AND cm.is_active = true
-      AND pi.promotion_type = $2
+      AND pi.promotion_type = $1
       ${approvalFilter}
     `,
-    [sourceId, promotionType]
+    [promotionType]
   );
   const total = parseInt(countRows[0]?.total || "0", 10);
 
@@ -131,16 +129,17 @@ async function getItemsByPromotionType(
         pi.free_shipping
       FROM collection_memberships cm
       JOIN processed_items pi ON pi.content_hash = cm.content_hash
-      WHERE cm.collection_source_id = $1
+      JOIN collection_sources cs ON cs.id = cm.collection_source_id
+      WHERE cs.is_active = true
         AND cm.is_active = true
-        AND pi.promotion_type = $2
+        AND pi.promotion_type = $1
         ${approvalFilter}
       ORDER BY ${dedupKey}, pi.discount_percent DESC NULLS LAST, cm.last_seen_at DESC, cm.id
     ) AS sub
     ORDER BY sub.discount_percent DESC NULLS LAST, sub.last_seen_at DESC, sub.membership_id
-    LIMIT $3 OFFSET $4
+    LIMIT $2 OFFSET $3
     `,
-    [sourceId, promotionType, limit, offset]
+    [promotionType, limit, offset]
   );
 
   const items: DealItem[] = rows.map((row) => ({
@@ -165,14 +164,9 @@ async function getSection(
   offset = 0
 ): Promise<DealSectionResponse> {
   try {
-    const sourceId = await getGeralSourceId();
-    if (!sourceId) {
-      return { lastUpdatedAt: null, items: [], total: 0 };
-    }
-
     const [lastUpdatedAt, { items, total }] = await Promise.all([
-      getLastUpdatedAt(sourceId),
-      getItemsByPromotionType(sourceId, promotionType, limit, offset),
+      getLastUpdatedAt(),
+      getItemsByPromotionType(promotionType, limit, offset),
     ]);
 
     return { lastUpdatedAt, items, total };

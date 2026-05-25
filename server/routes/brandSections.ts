@@ -44,23 +44,19 @@ async function getLastUpdatedAt(sourceId: string): Promise<string | null> {
 // Lista marcas + contagem de itens ativos (para o carrossel da home)
 router.get("/api/sections/marcas", async (_req, res) => {
   try {
-    const sourceId = await getGeralSourceId();
-    if (!sourceId) {
-      res.json({ brands: [] });
-      return;
-    }
     const slugs = Object.keys(SUPPORTED_BRANDS);
     const { rows } = await pool.query<{ detected_brand: string; total: string }>(
       `
       SELECT pi.detected_brand, COUNT(DISTINCT LOWER(SUBSTRING(REGEXP_REPLACE(COALESCE(pi.normalized_title, cm.raw_title, ''), '\\s+', ' ', 'g'), 1, 60)))::text AS total
       FROM collection_memberships cm
       JOIN processed_items pi ON pi.content_hash = cm.content_hash
-      WHERE cm.collection_source_id = $1
+      JOIN collection_sources cs ON cs.id = cm.collection_source_id
+      WHERE cs.is_active = true
         AND cm.is_active = true
-        AND pi.detected_brand = ANY($2::text[])
+        AND pi.detected_brand = ANY($1::text[])
       GROUP BY pi.detected_brand
       `,
-      [sourceId, slugs]
+      [slugs]
     );
     const counts: Record<string, number> = {};
     rows.forEach((r) => { counts[r.detected_brand] = parseInt(r.total, 10); });
@@ -89,12 +85,6 @@ router.get("/api/sections/marca/:slug", async (req, res) => {
     const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || "20"), 10) || 20));
     const offset = (page - 1) * pageSize;
 
-    const sourceId = await getGeralSourceId();
-    if (!sourceId) {
-      res.json({ brand: SUPPORTED_BRANDS[slug], slug, items: [], total: 0, page, pageSize, lastUpdatedAt: null });
-      return;
-    }
-
     const dedupKey = `LOWER(SUBSTRING(REGEXP_REPLACE(COALESCE(pi.normalized_title, cm.raw_title, ''), '\\s+', ' ', 'g'), 1, 60))`;
 
     const { rows: countRows } = await pool.query<{ total: string }>(
@@ -102,11 +92,12 @@ router.get("/api/sections/marca/:slug", async (req, res) => {
       SELECT COUNT(DISTINCT ${dedupKey})::text AS total
       FROM collection_memberships cm
       JOIN processed_items pi ON pi.content_hash = cm.content_hash
-      WHERE cm.collection_source_id = $1
+      JOIN collection_sources cs ON cs.id = cm.collection_source_id
+      WHERE cs.is_active = true
         AND cm.is_active = true
-        AND pi.detected_brand = $2
+        AND pi.detected_brand = $1
       `,
-      [sourceId, slug]
+      [slug]
     );
     const total = parseInt(countRows[0]?.total || "0", 10);
 
@@ -144,15 +135,16 @@ router.get("/api/sections/marca/:slug", async (req, res) => {
           pi.free_shipping
         FROM collection_memberships cm
         JOIN processed_items pi ON pi.content_hash = cm.content_hash
-        WHERE cm.collection_source_id = $1
+        JOIN collection_sources cs ON cs.id = cm.collection_source_id
+        WHERE cs.is_active = true
           AND cm.is_active = true
-          AND pi.detected_brand = $2
+          AND pi.detected_brand = $1
         ORDER BY ${dedupKey}, pi.discount_percent DESC NULLS LAST, cm.last_seen_at DESC, cm.id
       ) AS sub
       ORDER BY sub.discount_percent DESC NULLS LAST, sub.last_seen_at DESC, sub.membership_id
-      LIMIT $3 OFFSET $4
+      LIMIT $2 OFFSET $3
       `,
-      [sourceId, slug, pageSize, offset]
+      [slug, pageSize, offset]
     );
 
     const items = rows
