@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, NextFunction, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
@@ -23,8 +23,23 @@ import { startScheduler } from "./jobs/scheduler";
 const ML_CLIENT_ID = process.env.ML_CLIENT_ID;
 const ML_CLIENT_SECRET = process.env.ML_CLIENT_SECRET;
 const REPLIT_DEV_DOMAIN = process.env.REPLIT_DEV_DOMAIN;
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
+
+function requireAdminSecret(req: Request, res: Response, next: NextFunction) {
+  if (!ADMIN_SECRET) return next();
+
+  const providedSecret =
+    req.header("x-admin-secret") ||
+    (typeof req.query.adminSecret === "string" ? req.query.adminSecret : undefined);
+
+  if (providedSecret === ADMIN_SECRET) return next();
+
+  return res.status(401).json({ error: "Acesso admin não autorizado" });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.use("/api/admin", requireAdminSecret);
+
   // ============ MERCADO LIVRE OAUTH ============
 
   app.get("/api/ml/auth", (req, res) => {

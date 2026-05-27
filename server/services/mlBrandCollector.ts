@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 
 const AFFILIATE_CODE = "14610626";
+const HTTP_TIMEOUT_MS = 20000;
 
 export interface BrandCollectedItem {
   externalItemId: string | null;
@@ -48,8 +49,10 @@ export async function scrapeBrandShopUrl(
   const errors: string[] = [];
 
   let html: string;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS);
   try {
-    // Add timeout and multiple retry headers
+    // Keep Replit-friendly fetch timeout behavior without non-standard RequestInit fields.
     const response = await fetch(sourceUrl, {
       headers: {
         "User-Agent":
@@ -61,14 +64,16 @@ export async function scrapeBrandShopUrl(
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
       },
-      timeout: 20000,
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status} ao acessar ${sourceUrl}`);
     }
     html = await response.text();
   } catch (err: any) {
+    clearTimeout(timeout);
     errors.push(`[Fetch] ${err.message || String(err)}`);
     // Don't return yet - log to help debugging
     console.log(`[mlBrandCollector] Erro ao acessar ${sourceName}: ${err.message}`);

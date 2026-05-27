@@ -20,6 +20,8 @@ import {
 import { db } from "./db";
 import { eq, and, desc, asc, sql, like, ilike, count } from "drizzle-orm";
 
+type TriageQueueInsert = typeof triageQueue.$inferInsert;
+
 export interface IStorage {
   getCategories(): Promise<Category[]>;
   getCategory(id: string): Promise<Category | undefined>;
@@ -78,8 +80,8 @@ export interface IStorage {
 
   getTriageQueue(options?: { status?: string; limit?: number; offset?: number; brand?: string }): Promise<TriageQueueItem[]>;
   getTriageItem(id: string): Promise<TriageQueueItem | undefined>;
-  createTriageItem(item: InsertTriageQueue): Promise<TriageQueueItem>;
-  updateTriageItem(id: string, data: Record<string, any>): Promise<TriageQueueItem | undefined>;
+  createTriageItem(item: TriageQueueInsert): Promise<TriageQueueItem>;
+  updateTriageItem(id: string, data: Partial<TriageQueueInsert>): Promise<TriageQueueItem | undefined>;
 
   createCurationAction(action: InsertCurationAction): Promise<CurationAction>;
 
@@ -447,12 +449,12 @@ export class DatabaseStorage implements IStorage {
     return item || undefined;
   }
 
-  async createTriageItem(item: InsertTriageQueue): Promise<TriageQueueItem> {
+  async createTriageItem(item: TriageQueueInsert): Promise<TriageQueueItem> {
     const [created] = await db.insert(triageQueue).values(item).returning();
     return created;
   }
 
-  async updateTriageItem(id: string, data: Record<string, any>): Promise<TriageQueueItem | undefined> {
+  async updateTriageItem(id: string, data: Partial<TriageQueueInsert>): Promise<TriageQueueItem | undefined> {
     const [updated] = await db.update(triageQueue).set(data).where(eq(triageQueue.id, id)).returning();
     return updated || undefined;
   }

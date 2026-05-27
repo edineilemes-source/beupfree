@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, pool } from "../db";
 import { collectionBatches, collectionSources } from "@shared/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -21,7 +21,7 @@ async function getGeralSourceId(): Promise<string | null> {
   const [src] = await db
     .select({ id: collectionSources.id })
     .from(collectionSources)
-    .where(eq(collectionSources.url, GERAL_SOURCE_URL))
+    .where(sql`${collectionSources.url} LIKE ${`${GERAL_SOURCE_URL}%`}`)
     .limit(1);
   return src?.id ?? null;
 }

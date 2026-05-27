@@ -5,14 +5,14 @@ export default function ProductCardExample() {
   return (
     <div className="max-w-xs">
       <ProductCard
-        id={1}
+        id="example-product"
         name="Tênis Nike Air Zoom Pegasus 40 Masculino"
         brand="Nike"
         price={599.90}
         oldPrice={799.90}
         image={runningImage}
         category="Corrida"
-        mercadoLivreUrl="#"
+        affiliateUrl="#"
       />
     </div>
   );
