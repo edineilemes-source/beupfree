@@ -114,8 +114,8 @@ export default function PaginatedDealSection({
       <section className={`py-8 md:py-12 px-4 md:px-6 ${sectionClassName}`}>
         <div className="max-w-7xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">{title}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {Array(10).fill(0).map((_, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {Array(6).fill(0).map((_, i) => (
               <Skeleton key={i} className="h-64 w-full rounded-lg" />
             ))}
           </div>
@@ -157,7 +157,7 @@ export default function PaginatedDealSection({
         </div>
 
         <div
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+          className="grid grid-cols-2 md:grid-cols-3 gap-4"
           data-testid={`grid-${testIdPrefix}`}
         >
           {accumulated.map((item) => (

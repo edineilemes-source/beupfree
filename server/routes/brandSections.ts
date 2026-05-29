@@ -1,11 +1,9 @@
 import { Router } from "express";
 import { db, pool } from "../db";
-import { collectionBatches, collectionSources } from "@shared/schema";
+import { collectionBatches } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 
 const router = Router();
-
-const GERAL_SOURCE_URL = "https://www.mercadolivre.com.br/ofertas?category=MLB3900";
 
 // Marcas suportadas — slug → label legível
 export const SUPPORTED_BRANDS: Record<string, string> = {
@@ -17,25 +15,14 @@ export const SUPPORTED_BRANDS: Record<string, string> = {
   fila: "Fila",
 };
 
-async function getGeralSourceId(): Promise<string | null> {
-  const [src] = await db
-    .select({ id: collectionSources.id })
-    .from(collectionSources)
-    .where(eq(collectionSources.url, GERAL_SOURCE_URL))
-    .limit(1);
-  return src?.id ?? null;
-}
-
-async function getLastUpdatedAt(sourceId: string): Promise<string | null> {
+async function getLastUpdatedAt(sourceId?: string): Promise<string | null> {
+  const whereClauses = sourceId
+    ? and(eq(collectionBatches.sourceId, sourceId), eq(collectionBatches.status, "completed"))
+    : eq(collectionBatches.status, "completed");
   const [batch] = await db
     .select({ finishedAt: collectionBatches.finishedAt })
     .from(collectionBatches)
-    .where(
-      and(
-        eq(collectionBatches.sourceId, sourceId),
-        eq(collectionBatches.status, "completed")
-      )
-    )
+    .where(whereClauses)
     .orderBy(desc(collectionBatches.finishedAt))
     .limit(1);
   return batch?.finishedAt?.toISOString() ?? null;
@@ -162,7 +149,7 @@ router.get("/api/sections/marca/:slug", async (req, res) => {
       }))
       .filter((i) => i.currentPrice > 0);
 
-    const lastUpdatedAt = await getLastUpdatedAt(sourceId);
+    const lastUpdatedAt = await getLastUpdatedAt();
     res.json({ brand: SUPPORTED_BRANDS[slug], slug, items, total, page, pageSize, lastUpdatedAt });
   } catch (err: any) {
     console.error("[BrandSections] /marca/:slug error:", err.message);

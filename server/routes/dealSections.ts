@@ -55,7 +55,7 @@ async function getLastUpdatedAt(sourceId?: string): Promise<string | null> {
  * filtered by promotion_type. Only approved (in triage) and active items.
  */
 async function getItemsByPromotionType(
-  promotionType: "lightning" | "deal_of_day" | "general",
+  promotionType: "lightning" | "deal_of_day" | "general" | null,
   limit: number,
   offset = 0
 ): Promise<{ items: DealItem[]; total: number }> {
@@ -80,6 +80,10 @@ async function getItemsByPromotionType(
   // duplicates (mesmo modelo aparecendo várias vezes em variantes diferentes).
   const dedupKey = `LOWER(SUBSTRING(REGEXP_REPLACE(COALESCE(pi.normalized_title, cm.raw_title, ''), '\\s+', ' ', 'g'), 1, 60))`;
 
+  // When promotionType is null, return ALL promotion types (combined section).
+  const promoFilter = promotionType ? "AND pi.promotion_type = $1" : "";
+  const countParams = promotionType ? [promotionType] : [];
+
   const { rows: countRows } = await pool.query<{ total: string }>(
     `
     SELECT COUNT(DISTINCT ${dedupKey})::text AS total
@@ -88,10 +92,10 @@ async function getItemsByPromotionType(
     JOIN collection_sources cs ON cs.id = cm.collection_source_id
     WHERE cs.is_active = true
       AND cm.is_active = true
-      AND pi.promotion_type = $1
+      ${promoFilter}
       ${approvalFilter}
     `,
-    [promotionType]
+    countParams
   );
   const total = parseInt(countRows[0]?.total || "0", 10);
 
@@ -132,14 +136,14 @@ async function getItemsByPromotionType(
       JOIN collection_sources cs ON cs.id = cm.collection_source_id
       WHERE cs.is_active = true
         AND cm.is_active = true
-        AND pi.promotion_type = $1
+        ${promoFilter}
         ${approvalFilter}
       ORDER BY ${dedupKey}, pi.discount_percent DESC NULLS LAST, cm.last_seen_at DESC, cm.id
     ) AS sub
     ORDER BY sub.discount_percent DESC NULLS LAST, sub.last_seen_at DESC, sub.membership_id
-    LIMIT $2 OFFSET $3
+    LIMIT $${promotionType ? 2 : 1} OFFSET $${promotionType ? 3 : 2}
     `,
-    [promotionType, limit, offset]
+    promotionType ? [promotionType, limit, offset] : [limit, offset]
   );
 
   const items: DealItem[] = rows.map((row) => ({
@@ -159,7 +163,7 @@ async function getItemsByPromotionType(
 }
 
 async function getSection(
-  promotionType: "lightning" | "deal_of_day" | "general",
+  promotionType: "lightning" | "deal_of_day" | "general" | null,
   limit: number,
   offset = 0
 ): Promise<DealSectionResponse> {
@@ -200,6 +204,13 @@ router.get("/api/sections/oferta-do-dia", async (req, res) => {
 router.get("/api/sections/ofertas-gerais", async (req, res) => {
   const { page, pageSize, offset } = parsePageQuery(req);
   const data = await getSection("general", pageSize, offset);
+  res.json({ ...data, page, pageSize });
+});
+
+// Seção única combinada: todos os tipos de promoção (relâmpago + dia + geral).
+router.get("/api/sections/produtos-com-desconto", async (req, res) => {
+  const { page, pageSize, offset } = parsePageQuery(req);
+  const data = await getSection(null, pageSize, offset);
   res.json({ ...data, page, pageSize });
 });
 
