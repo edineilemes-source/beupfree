@@ -1,7 +1,14 @@
-import { db } from "../db";
+import { db, pool } from "../db";
 import { collectionMemberships } from "@shared/schema";
 import { and, eq, ne, sql } from "drizzle-orm";
 import type { CollectedItem } from "../services/mlCollectionsCollector";
+
+// Quantas coletas consecutivas um item pode ficar ausente do snapshot antes
+// de ser marcado como esgotado (isActive=false). A página de ofertas do ML
+// rotaciona quais produtos exibe a cada carregamento, então um item ainda à
+// venda pode sumir de um snapshot e voltar no próximo. Anti-flapping: só
+// desativa após MISSED_RUNS_THRESHOLD ausências seguidas.
+const MISSED_RUNS_THRESHOLD = 2;
 
 export interface UpsertMembershipInput {
   collectionSourceId: string;
@@ -59,29 +66,36 @@ export async function upsertMembership(input: UpsertMembershipInput): Promise<vo
 }
 
 /**
- * Robust batch-based deactivation:
- * Marks as ESGOTADO all active memberships that were NOT seen in the current batch.
+ * Robust batch-based deactivation WITH anti-flapping:
+ * For every active membership NOT seen in the current batch, increments
+ * missedRunsCount. Only marks the item as ESGOTADO (isActive=false) once it has
+ * been absent for MISSED_RUNS_THRESHOLD consecutive runs. Items seen again have
+ * their missedRunsCount reset to 0 by upsertMembership.
+ *
+ * This prevents products that simply rotated out of one ML snapshot — but are
+ * still for sale — from being wrongly flagged as sold out on a single miss.
+ *
  * Only called when batch succeeded AND total_collected >= MIN_EXPECTED.
+ * Returns the number of items actually deactivated in this run.
  */
 export async function deactivateByBatch(
   collectionSourceId: string,
   currentBatchId: string
 ): Promise<number> {
-  const result = await db
-    .update(collectionMemberships)
-    .set({
-      isActive: false,
-      missedRunsCount: sql`${collectionMemberships.missedRunsCount} + 1`,
-    })
-    .where(
-      and(
-        eq(collectionMemberships.collectionSourceId, collectionSourceId),
-        eq(collectionMemberships.isActive, true),
-        ne(collectionMemberships.lastBatchId, currentBatchId)
-      )
-    );
+  // Postgres evaluates all SET expressions against the OLD row, so both
+  // `missed_runs_count + 1` and the CASE use the pre-update value consistently.
+  const { rows } = await pool.query<{ is_active: boolean }>(
+    `UPDATE collection_memberships
+        SET missed_runs_count = missed_runs_count + 1,
+            is_active = (missed_runs_count + 1 < $3)
+      WHERE collection_source_id = $1
+        AND is_active = true
+        AND last_batch_id <> $2
+      RETURNING is_active`,
+    [collectionSourceId, currentBatchId, MISSED_RUNS_THRESHOLD]
+  );
 
-  return result.rowCount ?? 0;
+  return rows.filter((r) => r.is_active === false).length;
 }
 
 /**

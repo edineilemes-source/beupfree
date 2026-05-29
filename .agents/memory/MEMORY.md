@@ -1,0 +1,1 @@
+- [ML membership deactivation](membership-deactivation.md) — home page shows only is_active memberships; deactivation must use missed_runs_count anti-flapping (ML rotates its deals snapshot).
