@@ -1,0 +1,38 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "wRPc17R-n4JbiDCaCueu1"
+uri = "file://artifacts/mockup-sandbox/public/images/shoe1.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "X2IJ2ghDIlXY8YTF8po6i"
+uri = "file://artifacts/mockup-sandbox/public/images/shoe2.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "PDJ7nn2sDbgEquebwDjPn"
+uri = "file://artifacts/mockup-sandbox/public/images/shoe3.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "gimrHScWFZJIZS5IcZd7r"
+uri = "file://artifacts/mockup-sandbox/public/images/shoe4.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "X2lRXePjxxu-Qim-UI20q"
+uri = "file://artifacts/mockup-sandbox/public/images/shoe5.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "R5rxJvlFWc3TCcZ74FRkp"
+uri = "file://artifacts/mockup-sandbox/public/images/shoe6.png"
+type = "image"
+title = "generated_image"
