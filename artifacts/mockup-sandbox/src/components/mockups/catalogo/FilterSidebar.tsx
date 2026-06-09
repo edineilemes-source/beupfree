@@ -35,93 +35,42 @@ const MORE_BRANDS: Item[] = [
   { label: "Under Armour", count: "156" },
 ];
 
+/* Filtros mantidos = só os que têm dado real nos títulos do ML.
+   Contagens ilustrativas baseadas na amostra de 1.889 produtos coletados. */
+
 const GENERO: Item[] = [
-  { label: "Feminino" },
-  { label: "Masculino" },
-  { label: "Menina" },
-  { label: "Menino" },
-];
-
-const ESPORTES: Item[] = [
-  { label: "Academia / Fitness", count: "2.368" },
-  { label: "Esportes de Raquete", count: "1.377" },
-  { label: "Skate", count: "1.049" },
-  { label: "Aventura", count: "528" },
-  { label: "Futebol", count: "468" },
-  { label: "Basquete", count: "359" },
-  { label: "Infantil", count: "146" },
-  { label: "Vôlei", count: "123" },
-  { label: "Surf / Stand Up", count: "79" },
-  { label: "Jogos de Mesa", count: "78" },
-];
-
-const MODALIDADE: Item[] = [
-  { label: "Casual", count: "4.110" },
-  { label: "Treino", count: "2.055" },
-  { label: "Caminhada", count: "1.607" },
-  { label: "Tennis", count: "1.098" },
-  { label: "Alta Performance", count: "834" },
-  { label: "Skate", count: "491" },
-  { label: "Outdoor", count: "388" },
-  { label: "Para Jogar", count: "331" },
+  { label: "Masculino", count: "750" },
+  { label: "Feminino", count: "547" },
+  { label: "Unissex", count: "312" },
 ];
 
 const IDADE: Item[] = [
-  { label: "Adulto", count: "25.748" },
-  { label: "Infantil", count: "2.318" },
+  { label: "Adulto", count: "1.776" },
+  { label: "Infantil", count: "113" },
+];
+
+const ESPORTES: Item[] = [
+  { label: "Futebol", count: "98" },
+  { label: "Basquete", count: "54" },
+  { label: "Skate", count: "41" },
+  { label: "Tênis / Raquete", count: "37" },
+  { label: "Vôlei", count: "23" },
+];
+
+const MODALIDADE: Item[] = [
+  { label: "Casual", count: "463" },
+  { label: "Treino", count: "156" },
+  { label: "Corrida", count: "133" },
+  { label: "Caminhada", count: "131" },
+  { label: "Academia", count: "89" },
 ];
 
 const DESCONTO: Item[] = [
-  { label: "1% - 9%", count: "2.690" },
-  { label: "10% - 19%", count: "1.165" },
-  { label: "20% - 29%", count: "919" },
-  { label: "30% - 39%", count: "1.082" },
-  { label: "40% - 49%", count: "615" },
-  { label: "50% - 59%", count: "127" },
-  { label: "60% - 69%", count: "25" },
-  { label: "70% - 79%", count: "1" },
-];
-
-const PISADA: Item[] = [
-  { label: "Neutra" },
-  { label: "Neutra/Supinada" },
-  { label: "Pronada" },
-  { label: "Pronada/Neutra" },
-  { label: "Supinada" },
-  { label: "Não Possui" },
-];
-
-const TECNOLOGIA: Item[] = [
-  { label: "3D Fuse Frame" },
-  { label: "3D Ultralite" },
-  { label: "360 Zone" },
-  { label: "ABZORB" },
-  { label: "Actsystem" },
-  { label: "Adiwear" },
-  { label: "AEROREADY" },
-  { label: "AHAR" },
-  { label: "Air" },
-  { label: "Air Max" },
-  { label: "Air-Cooled" },
-  { label: "Boost" },
-  { label: "Floatride" },
-  { label: "Lightmotion" },
-];
-
-const ALTURA_CANO: Item[] = [
-  { label: "Cano Alto" },
-  { label: "Cano Baixo" },
-  { label: "Cano Curto" },
-  { label: "Cano Médio" },
-];
-
-const FECHAMENTO: Item[] = [
-  { label: "1 Fecho de contato" },
-  { label: "2 Fechos de contato" },
-  { label: "Ajustável" },
-  { label: "Amarração" },
-  { label: "Elástico" },
-  { label: "Velcro" },
+  { label: "Até 19%", count: "612" },
+  { label: "20% - 29%", count: "534" },
+  { label: "30% - 39%", count: "421" },
+  { label: "40% - 49%", count: "218" },
+  { label: "50% ou mais", count: "104" },
 ];
 
 const SIZES = ["34", "35", "36", "37", "38", "39", "40", "41", "42", "43"];
@@ -429,7 +378,16 @@ export function FilterSidebar() {
           selected={get("genero")}
           onToggle={toggle}
           resetSignal={resetSignal}
-          searchable
+        />
+
+        {/* Idade */}
+        <FilterGroup
+          groupKey="idade"
+          title="Idade"
+          items={IDADE}
+          selected={get("idade")}
+          onToggle={toggle}
+          resetSignal={resetSignal}
         />
 
         {/* Esportes */}
@@ -440,7 +398,6 @@ export function FilterSidebar() {
           selected={get("esportes")}
           onToggle={toggle}
           resetSignal={resetSignal}
-          searchable
         />
 
         {/* Modalidade */}
@@ -451,7 +408,6 @@ export function FilterSidebar() {
           selected={get("modalidade")}
           onToggle={toggle}
           resetSignal={resetSignal}
-          searchable
         />
 
         {/* Tamanho */}
@@ -483,16 +439,6 @@ export function FilterSidebar() {
             {showAllSizes ? "Ver menos" : "Ver mais"}
           </button>
         </Section>
-
-        {/* Idade */}
-        <FilterGroup
-          groupKey="idade"
-          title="Idade"
-          items={IDADE}
-          selected={get("idade")}
-          onToggle={toggle}
-          resetSignal={resetSignal}
-        />
 
         {/* Preço */}
         <Section title="Preço">
@@ -619,50 +565,6 @@ export function FilterSidebar() {
             })}
           </div>
         </Section>
-
-        {/* Pisada */}
-        <FilterGroup
-          groupKey="pisada"
-          title="Pisada"
-          items={PISADA}
-          selected={get("pisada")}
-          onToggle={toggle}
-          resetSignal={resetSignal}
-          searchable
-        />
-
-        {/* Tecnologia */}
-        <FilterGroup
-          groupKey="tecnologia"
-          title="Tecnologia"
-          items={TECNOLOGIA}
-          selected={get("tecnologia")}
-          onToggle={toggle}
-          resetSignal={resetSignal}
-          searchable
-        />
-
-        {/* Altura do Cano */}
-        <FilterGroup
-          groupKey="altura"
-          title="Altura do Cano"
-          items={ALTURA_CANO}
-          selected={get("altura")}
-          onToggle={toggle}
-          resetSignal={resetSignal}
-          searchable
-        />
-
-        {/* Fechamento */}
-        <FilterGroup
-          groupKey="fechamento"
-          title="Fechamento"
-          items={FECHAMENTO}
-          selected={get("fechamento")}
-          onToggle={toggle}
-          resetSignal={resetSignal}
-          searchable
-        />
 
         {/* Apply */}
         <button
