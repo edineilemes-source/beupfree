@@ -1,0 +1,300 @@
+Pensou por 6s
+
+Sim, consegue. E essa é a melhor evolução do BeUpFree.
+
+O caminho ideal seria em camadas:
+
+1. Primeiro buscar no próprio Mercado Livre pelo ID do produto
+Cada produto tem um ID tipo MLB-4189646883. Pela API do Mercado Livre, normalmente dá para obter atributos do item, categoria, variações, preço, fotos e descrição. A documentação oficial do Mercado Livre trata os anúncios como “itens” com atributos de produto.
+
+2. Depois enriquecer com IA a partir do título + descrição + atributos
+Exemplo:
+
+Título: Tênis Asics Gel Revelation Masculino Preto Azul 42 BR
+Descrição: Produto para caminhada, corrida e academia...
+
+A IA preencheria:
+
+{
+  "marca": "Asics",
+  "genero": "Masculino",
+  "tamanho": "42",
+  "modalidade": ["Caminhada", "Corrida", "Academia"],
+  "cor": ["Preto", "Azul"],
+  "tecnologia": "Gel",
+  "idade": "Adulto"
+}
+
+3. Se ainda faltar dado, buscar fora do ML
+Aí você pode pesquisar pelo nome do produto na web, no site da marca, em lojas como Centauro, Netshoes, Amazon, Shopee etc. Mas eu usaria isso como segunda etapa, porque é mais lento, mais caro e pode dar erro.
+
+Minha recomendação técnica:
+
+Produto ML
+→ API/scraper do ML
+→ título + descrição + atributos
+→ IA extratora
+→ banco de dados BeUpFree
+→ filtros laterais
+
+No banco, eu criaria campos assim:
+
+detected_brand
+detected_gender
+detected_size
+detected_modality
+detected_age_group
+detected_colors
+detected_technology
+confidence_score
+source_used
+last_enriched_at
+
+Então sim: você não precisa depender só do título. Dá para montar um motor de enriquecimento de produto, que busca mais informações e melhora os filtros automaticamente.
+
+mas como eu usaria a IA pra enriquecer os dados dos produtos?
+
+Você usaria a IA como uma etapa intermediária entre a coleta do produto e a gravação no banco.
+
+Fluxo:
+
+Produto vindo do Mercado Livre
+        ↓
+Título + preço + marca + descrição + atributos
+        ↓
+IA analisa o texto
+        ↓
+IA devolve JSON padronizado
+        ↓
+Você salva no Supabase
+        ↓
+Filtros do site usam esses campos
+
+Exemplo prático:
+
+Entrada para IA:
+
+{
+  "title": "Tênis Asics Caminhada Corrida Gel Revelation Masculino Preto/Azul 42 Br",
+  "description": "Tênis esportivo indicado para caminhada, corrida e academia.",
+  "brand": "Asics",
+  "price": 94.04
+}
+
+Saída esperada da IA:
+
+{
+  "gender": "masculino",
+  "age_group": "adulto",
+  "sizes": ["42"],
+  "colors": ["preto", "azul"],
+  "modalities": ["caminhada", "corrida", "academia"],
+  "technology": ["gel"],
+  "confidence": 0.92
+}
+
+No banco, você teria colunas como:
+
+detected_gender
+detected_age_group
+detected_sizes
+detected_colors
+detected_modalities
+detected_technology
+ai_confidence
+enriched_at
+
+A regra seria:
+
+Se o produto ainda não foi enriquecido:
+    manda para IA
+    recebe JSON
+    valida os dados
+    salva no banco
+Senão:
+    usa os dados já salvos
+
+O ideal é não chamar IA toda vez que o usuário abre o site. Você chama uma vez, salva o resultado e reaproveita.
+
+Pedido que você pode mandar para o Replit:
+
+Crie um serviço separado chamado product-enrichment-service.
+
+Esse serviço deve receber title, description, brand, category e attributes do produto vindo do Mercado Livre e retornar um JSON padronizado com:
+
+detected_gender,
+detected_age_group,
+detected_sizes,
+detected_colors,
+detected_modalities,
+detected_technology,
+confidence_score,
+source_used.
+
+Use IA apenas quando os dados não forem encontrados por regra simples. Primeiro aplique regex e dicionários locais. Depois use IA como fallback.
+
+Salve o resultado no Supabase e faça os filtros laterais consumirem esses campos enriquecidos.
+
+Essa abordagem deixa o BeUpFree mais inteligente e barato, porque a IA entra só quando realmente precisa.
+
+mas qual IA usaria, qual plano?
+
+Para o BeUpFree, eu não começaria usando IA para tudo. O melhor custo-benefício é uma arquitetura em 3 níveis:
+
+Nível 1 - Regras e Regex (80% dos casos)
+
+Sem IA.
+
+Exemplo:
+
+if(title.includes("Masculino"))
+   gender = "Masculino";
+
+if(title.match(/\b(3[4-9]|4[0-8])\b/))
+   size = tamanho;
+
+Custo:
+
+R$ 0,00
+
+Você já consegue extrair:
+
+Marca
+Gênero
+Tamanho
+Modalidade
+Infantil/Adulto
+Cor
+
+Provavelmente mais de 70% dos seus filtros.
+
+Nível 2 - IA Local (recomendado)
+
+Aqui está o que eu faria hoje.
+
+Modelos:
+
+Llama 3.1 8B
+Gemma 3
+Qwen 3
+
+Rodando via:
+
+Ollama
+
+Exemplo:
+
+Produto:
+Tênis Nike Air Max Excee Masculino Preto 42
+
+Extraia:
+- gênero
+- modalidade
+- tecnologia
+- faixa etária
+
+Resposta:
+
+{
+  "gender":"masculino",
+  "modality":"casual",
+  "technology":"air max",
+  "age":"adulto"
+}
+
+Custo:
+
+R$ 0 por consulta
+
+Só usa sua máquina ou servidor.
+
+Para um catálogo de 10.000 produtos é excelente.
+
+Nível 3 - IA via API (quando crescer)
+Melhor custo hoje
+
+OpenRouter
+
+Você pode trocar de modelo sem alterar código.
+
+Exemplos:
+
+GPT
+Claude
+Gemini
+DeepSeek
+Qwen
+Opção mais barata
+
+DeepSeek
+
+Muito barato para classificação.
+
+Exemplo:
+
+100.000 produtos
+
+custaria poucos dólares.
+
+Melhor qualidade
+
+OpenAI Platform
+
+Modelos GPT.
+
+Vantagem:
+
+Melhor interpretação
+Menos erros
+
+Desvantagem:
+
+Mais caro
+O que eu faria no BeUpFree hoje
+
+Fase 1:
+
+Regex + Dicionários
+
+Extrair:
+
+Marca
+Tamanho
+Gênero
+Modalidade
+Cor
+
+Fase 2:
+
+Ollama + Llama 3.1
+
+Somente para produtos que ficaram incompletos.
+
+Fase 3:
+
+OpenRouter
+
+Somente para produtos premium ou quando a IA local estiver insegura.
+
+Se o objetivo é chegar a comparar Mercado Livre, Amazon, Shopee, AliExpress, Shein e futuramente lojas oficiais de Nike, Adidas e Olympikus, eu criaria desde já uma tabela chamada:
+
+product_enrichment
+
+com campos como:
+
+product_id
+marketplace
+brand
+gender
+age_group
+sizes
+colors
+modalities
+technology
+material
+sport
+confidence_score
+enriched_by
+enriched_at
+
+Assim, quando você integrar novos marketplaces, todos usarão o mesmo padrão de filtros e o usuário verá uma experiência parecida com Centauro e Netshoes, independentemente da origem do produto.
