@@ -76,6 +76,11 @@ const DESCONTO: Item[] = [
   { label: "Até 19%", count: "612" },
 ];
 
+const FRETE: Item[] = [
+  { label: "Sim", count: "1.342" },
+  { label: "Não", count: "547" },
+];
+
 const SIZES = ["34", "35", "36", "37", "38", "39", "40", "41", "42", "43"];
 
 /* ---------------- shared pieces ---------------- */
@@ -541,6 +546,16 @@ export function FilterSidebar() {
             </label>
           </div>
         </Section>
+
+        {/* Frete Grátis */}
+        <FilterGroup
+          groupKey="frete"
+          title="Frete Grátis"
+          items={FRETE}
+          selected={get("frete")}
+          onToggle={toggle}
+          resetSignal={resetSignal}
+        />
 
         {/* Gênero */}
         <FilterGroup
