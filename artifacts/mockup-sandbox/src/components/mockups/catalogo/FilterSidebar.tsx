@@ -66,11 +66,11 @@ const MODALIDADE: Item[] = [
 ];
 
 const DESCONTO: Item[] = [
-  { label: "Até 19%", count: "612" },
-  { label: "20% - 29%", count: "534" },
-  { label: "30% - 39%", count: "421" },
-  { label: "40% - 49%", count: "218" },
   { label: "50% ou mais", count: "104" },
+  { label: "40% - 49%", count: "218" },
+  { label: "30% - 39%", count: "421" },
+  { label: "20% - 29%", count: "534" },
+  { label: "Até 19%", count: "612" },
 ];
 
 const SIZES = ["34", "35", "36", "37", "38", "39", "40", "41", "42", "43"];
