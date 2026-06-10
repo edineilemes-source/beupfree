@@ -5,11 +5,14 @@ import {
   SlidersHorizontal,
   Search,
   Star,
+  X,
 } from "lucide-react";
 import "./_group.css";
 
 const GREEN = "hsl(145 70% 35%)";
 const GREEN_DARK = "hsl(145 70% 28%)";
+const CHIP_BG = "hsl(145 55% 94%)";
+const CHIP_BORDER = "hsl(145 45% 82%)";
 
 const PRICE_MAX = 6115;
 const PRICE_MIN = 8;
@@ -233,10 +236,32 @@ function FilterGroup({
   );
 }
 
+/* Removable chip for the "selected filters" summary */
+function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <button
+      onClick={onRemove}
+      className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium"
+      style={{
+        backgroundColor: CHIP_BG,
+        borderColor: CHIP_BORDER,
+        color: GREEN_DARK,
+      }}
+    >
+      <span className="leading-none">{label}</span>
+      <X className="h-3 w-3" />
+    </button>
+  );
+}
+
 /* ---------------- main ---------------- */
 
 export function FilterSidebar() {
-  const [selected, setSelected] = useState<Record<string, string[]>>({});
+  const [selected, setSelected] = useState<Record<string, string[]>>({
+    marca: ["Nike"],
+    tamanho: ["38"],
+    desconto: ["30% - 39%"],
+  });
   const [showMoreBrands, setShowMoreBrands] = useState(false);
   const [showAllSizes, setShowAllSizes] = useState(false);
   const [brandQuery, setBrandQuery] = useState("");
@@ -282,6 +307,23 @@ export function FilterSidebar() {
   const leftPct = ((price[0] - PRICE_MIN) / span) * 100;
   const rightPct = ((price[1] - PRICE_MIN) / span) * 100;
 
+  /* Selected-filter chips (shown under the "Filtros" header) */
+  const chipLabel = (key: string, v: string) =>
+    key === "tamanho"
+      ? `Tamanho ${v}`
+      : key === "avaliacao"
+        ? `${v}+ estrelas`
+        : v;
+
+  const chips: { key: string; value: string; label: string }[] = [];
+  Object.entries(selected).forEach(([key, vals]) =>
+    vals.forEach((v) =>
+      chips.push({ key, value: v, label: chipLabel(key, v) }),
+    ),
+  );
+  const priceChanged = price[0] !== PRICE_MIN || price[1] !== PRICE_MAX;
+  const hasActive = chips.length > 0 || priceChanged;
+
   return (
     <aside className="w-[240px] flex-shrink-0">
       <div
@@ -303,6 +345,30 @@ export function FilterSidebar() {
             Limpar todos
           </button>
         </div>
+
+        {/* Filtros selecionados */}
+        {hasActive && (
+          <div className="border-b border-gray-200 py-3" data-testid="active-filters">
+            <span className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-gray-500">
+              Filtros selecionados
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {chips.map((c) => (
+                <Chip
+                  key={`${c.key}-${c.value}`}
+                  label={c.label}
+                  onRemove={() => toggle(c.key, c.value)}
+                />
+              ))}
+              {priceChanged && (
+                <Chip
+                  label={`R$ ${price[0]} – R$ ${price[1]}`}
+                  onRemove={() => setPrice([PRICE_MIN, PRICE_MAX])}
+                />
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Marca (fixed + ver mais) */}
         <Section title="Marca">
@@ -370,46 +436,6 @@ export function FilterSidebar() {
           )}
         </Section>
 
-        {/* Gênero */}
-        <FilterGroup
-          groupKey="genero"
-          title="Gênero"
-          items={GENERO}
-          selected={get("genero")}
-          onToggle={toggle}
-          resetSignal={resetSignal}
-        />
-
-        {/* Idade */}
-        <FilterGroup
-          groupKey="idade"
-          title="Idade"
-          items={IDADE}
-          selected={get("idade")}
-          onToggle={toggle}
-          resetSignal={resetSignal}
-        />
-
-        {/* Esportes */}
-        <FilterGroup
-          groupKey="esportes"
-          title="Esportes"
-          items={ESPORTES}
-          selected={get("esportes")}
-          onToggle={toggle}
-          resetSignal={resetSignal}
-        />
-
-        {/* Modalidade */}
-        <FilterGroup
-          groupKey="modalidade"
-          title="Modalidade"
-          items={MODALIDADE}
-          selected={get("modalidade")}
-          onToggle={toggle}
-          resetSignal={resetSignal}
-        />
-
         {/* Tamanho */}
         <Section title="Tamanho">
           <div className="grid grid-cols-5 gap-1.5">
@@ -439,6 +465,17 @@ export function FilterSidebar() {
             {showAllSizes ? "Ver menos" : "Ver mais"}
           </button>
         </Section>
+
+        {/* Desconto */}
+        <FilterGroup
+          groupKey="desconto"
+          title="Desconto"
+          items={DESCONTO}
+          selected={get("desconto")}
+          onToggle={toggle}
+          resetSignal={resetSignal}
+          maxVisible={6}
+        />
 
         {/* Preço */}
         <Section title="Preço">
@@ -505,15 +542,24 @@ export function FilterSidebar() {
           </div>
         </Section>
 
-        {/* Desconto */}
+        {/* Gênero */}
         <FilterGroup
-          groupKey="desconto"
-          title="Desconto"
-          items={DESCONTO}
-          selected={get("desconto")}
+          groupKey="genero"
+          title="Gênero"
+          items={GENERO}
+          selected={get("genero")}
           onToggle={toggle}
           resetSignal={resetSignal}
-          maxVisible={6}
+        />
+
+        {/* Idade */}
+        <FilterGroup
+          groupKey="idade"
+          title="Idade"
+          items={IDADE}
+          selected={get("idade")}
+          onToggle={toggle}
+          resetSignal={resetSignal}
         />
 
         {/* Avaliação */}
@@ -565,6 +611,26 @@ export function FilterSidebar() {
             })}
           </div>
         </Section>
+
+        {/* Esportes */}
+        <FilterGroup
+          groupKey="esportes"
+          title="Esportes"
+          items={ESPORTES}
+          selected={get("esportes")}
+          onToggle={toggle}
+          resetSignal={resetSignal}
+        />
+
+        {/* Modalidade */}
+        <FilterGroup
+          groupKey="modalidade"
+          title="Modalidade"
+          items={MODALIDADE}
+          selected={get("modalidade")}
+          onToggle={toggle}
+          resetSignal={resetSignal}
+        />
 
         {/* Apply */}
         <button
