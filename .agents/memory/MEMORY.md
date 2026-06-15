@@ -1,3 +1,4 @@
 - [ML membership deactivation](membership-deactivation.md) — home page shows only is_active memberships; deactivation must use missed_runs_count anti-flapping (ML rotates its deals snapshot).
 - [Published product brand/category resolution](published-product-brand.md) — brand/category resolved to FK ids at publish time; /api/products returns them; client no longer parses titles.
 - [Product attribute backfill](product-attribute-backfill.md) — backfill products.* from scrape data via offers.external_id ↔ raw_collected_items.external_id (raw_data jsonb).
+- [HSL token alpha in inline styles](hsl-alpha-inline-styles.md) — brand tokens are hsl() strings; use alpha() helper, never `${NEON}33` hex suffix (silently invalid CSS, no error).

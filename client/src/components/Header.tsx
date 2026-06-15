@@ -1,101 +1,109 @@
-import { Search, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search, User, Heart, ShoppingCart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Link } from "wouter";
-import { NEON, DARK_NAV, RUNNER_PATH } from "@/lib/brand";
+import { NEON, DARK, DARK_NAV, alpha } from "@/lib/brand";
+import logoUrl from "@assets/logo_UpPulse_transparent.png";
 
-const NAV: { label: string; param: string; value: string }[] = [
-  { label: "Masculino", param: "genero", value: "Masculino" },
-  { label: "Feminino", param: "genero", value: "Feminino" },
-  { label: "Infantil", param: "idade", value: "Infantil" },
-  { label: "Acessórios", param: "tipo", value: "Acessórios" },
+const SEARCH_BORDER = "hsl(160 55% 38%)";
+
+const NAV: { label: string; href: string }[] = [
+  { label: "Masculino", href: "/catalogo?genero=Masculino" },
+  { label: "Feminino", href: "/catalogo?genero=Feminino" },
+  { label: "Infantil", href: "/catalogo?idade=Infantil" },
+  { label: "Acessórios", href: "/catalogo?tipo=Acessórios" },
+  { label: "Marcas", href: "/catalogo" },
 ];
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <header className="sticky top-0 z-50 bg-background">
-      {/* Top promo bar */}
-      <div className="bg-primary text-primary-foreground">
-        <div className="container mx-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 px-4 py-1.5 text-center text-xs">
-          <span>Peça o tênis que mais combina com você.</span>
-          <span className="opacity-40">|</span>
-          <span className="font-semibold">Parceiro Oficial Mercado Livre</span>
-        </div>
-      </div>
-
+    <header className="sticky top-0 z-50">
       {/* Main header */}
-      <div className="border-b bg-background">
-        <div className="container mx-auto flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
+      <div className="relative overflow-hidden" style={{ backgroundColor: DARK }}>
+        {/* diagonal green streaks */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-50"
+          style={{
+            background: `linear-gradient(115deg, transparent 50%, ${alpha(NEON, 0.08)} 54%, transparent 58%), linear-gradient(115deg, transparent 66%, ${alpha(NEON, 0.06)} 70%, transparent 74%), linear-gradient(115deg, transparent 82%, ${alpha(NEON, 0.05)} 86%, transparent 90%)`,
+          }}
+        />
+        <div className="container relative mx-auto flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
           {/* Logo */}
           <Link href="/">
             <div
-              className="flex flex-shrink-0 items-center gap-2.5 cursor-pointer"
+              className="flex flex-shrink-0 cursor-pointer items-center"
               data-testid="link-logo"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor">
-                  <path d={RUNNER_PATH} />
-                </svg>
-              </span>
-              <div className="leading-none">
-                <p className="text-[22px] font-extrabold tracking-tight" data-testid="text-logo">
-                  <span className="text-foreground">Up</span>
-                  <span className="text-primary">Pulse</span>
-                </p>
-                <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                  Tênis esportivos em promoção
-                </p>
-                <p
-                  className="text-[8px] font-bold uppercase tracking-[0.14em] text-primary"
-                  data-testid="text-by-beupfree"
-                >
-                  by BeUpFree
-                </p>
-              </div>
+              <img
+                src={logoUrl}
+                alt="UpPulse - Tênis esportivos em promoção"
+                className="h-14 w-auto sm:h-16"
+                data-testid="img-logo"
+              />
             </div>
           </Link>
 
           {/* Search */}
-          <div className="relative order-last w-full min-w-0 flex-1 md:order-none md:w-auto md:max-w-[560px]">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative order-last w-full min-w-0 flex-1 md:order-none md:w-auto md:max-w-[440px]">
             <Input
               type="search"
               aria-label="Buscar tênis"
-              placeholder="Buscar tênis, meias, acessórios..."
-              className="w-full rounded-full pl-11 pr-4"
+              placeholder="Buscar tênis..."
+              className="h-11 w-full rounded-full border bg-white/5 pl-5 pr-12 text-white placeholder:text-white/50"
+              style={{ borderColor: SEARCH_BORDER }}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               data-testid="input-search"
             />
+            <Search
+              className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/80"
+              style={{ color: NEON }}
+            />
           </div>
 
-          {/* Admin */}
-          <div className="ml-auto flex flex-shrink-0 items-center gap-2">
-            <Link href="/admin/triagem">
-              <Button
-                variant="outline"
-                size="icon"
-                title="Painel Admin"
-                data-testid="button-admin"
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
-            </Link>
+          {/* Account / Favorites / Cart */}
+          <div className="ml-auto flex flex-shrink-0 items-center gap-3 text-white sm:gap-5">
+            <div
+              className="flex flex-col items-center gap-1 px-2 py-1"
+              data-testid="item-entrar"
+            >
+              <User className="h-6 w-6" />
+              <span className="text-[11px] font-medium">Entrar</span>
+            </div>
+            <div
+              className="flex flex-col items-center gap-1 px-2 py-1"
+              data-testid="item-favoritos"
+            >
+              <Heart className="h-6 w-6" />
+              <span className="text-[11px] font-medium">Favoritos</span>
+            </div>
+            <div
+              className="flex flex-col items-center gap-1 px-2 py-1"
+              data-testid="item-carrinho"
+            >
+              <span className="relative">
+                <ShoppingCart className="h-6 w-6" />
+                <span
+                  className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-black"
+                  style={{ backgroundColor: NEON }}
+                  data-testid="text-cart-count"
+                >
+                  0
+                </span>
+              </span>
+              <span className="text-[11px] font-medium">Carrinho</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Dark neon nav */}
+      {/* Dark green nav */}
       <nav style={{ backgroundColor: DARK_NAV }}>
-        <div className="container mx-auto flex flex-wrap items-center justify-center gap-x-8 gap-y-1 px-4 py-2.5 text-[13px] font-semibold uppercase tracking-wide">
+        <div className="container mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-3 text-[13px] font-semibold uppercase tracking-wide sm:justify-between sm:gap-x-4 md:px-8">
           {NAV.map((item) => (
-            <Link
-              key={item.label}
-              href={`/catalogo?${item.param}=${encodeURIComponent(item.value)}`}
-            >
+            <Link key={item.label} href={item.href}>
               <span
                 className="cursor-pointer text-white/85"
                 data-testid={`link-${item.label.toLowerCase()}`}

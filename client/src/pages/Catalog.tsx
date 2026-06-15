@@ -7,8 +7,8 @@ import ProductCard from "@/components/ProductCard";
 import CatalogFilterSidebar from "@/components/CatalogFilterSidebar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Package, Tag } from "lucide-react";
-import { NEON, DARK, GREEN_GLOW } from "@/lib/brand";
+import { Loader2, Package, Tag, ChevronLeft, ChevronRight } from "lucide-react";
+import { NEON, DARK, GREEN_GLOW, alpha } from "@/lib/brand";
 import {
   CatalogProduct,
   CatalogFilters,
@@ -70,25 +70,53 @@ function filtersFromSearch(search: string): CatalogFilters {
 const PAGE_SIZE = 60;
 
 function Hero({ images }: { images: string[] }) {
-  const shoes = images.slice(0, 3);
+  // Agrupa as imagens dos produtos em "slides" de 3 tênis cada, para o carrossel.
+  const pages = useMemo(() => {
+    const groups: string[][] = [];
+    for (let i = 0; i < images.length; i += 3) {
+      groups.push(images.slice(i, i + 3));
+    }
+    return groups.slice(0, 5);
+  }, [images]);
+
+  const count = Math.max(pages.length, 1);
+  const [page, setPage] = useState(0);
+
+  useEffect(() => {
+    if (page >= count) setPage(0);
+  }, [count, page]);
+
+  useEffect(() => {
+    if (count <= 1) return;
+    const t = setInterval(() => setPage((p) => (p + 1) % count), 5000);
+    return () => clearInterval(t);
+  }, [count]);
+
+  const shoes = pages[page] ?? [];
+  const goPrev = () => setPage((p) => (p - 1 + count) % count);
+  const goNext = () => setPage((p) => (p + 1) % count);
+
   return (
     <section className="relative overflow-hidden" style={{ backgroundColor: DARK }}>
+      {/* green wash */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `radial-gradient(120% 90% at 72% 35%, ${alpha(NEON, 0.12)}, transparent 60%), radial-gradient(80% 70% at 95% 100%, ${alpha(GREEN_GLOW, 0.2)}, transparent 70%)`,
+        }}
+      />
+      {/* diagonal streaks */}
       <div
         className="pointer-events-none absolute inset-0 opacity-60"
         style={{
-          background: `radial-gradient(120% 80% at 80% 30%, ${NEON}22, transparent 60%), radial-gradient(60% 50% at 95% 90%, ${GREEN_GLOW}33, transparent 70%)`,
+          background: `linear-gradient(115deg, transparent 46%, ${alpha(NEON, 0.12)} 51%, transparent 55%), linear-gradient(115deg, transparent 60%, ${alpha(NEON, 0.09)} 65%, transparent 69%), linear-gradient(115deg, transparent 76%, ${alpha(NEON, 0.07)} 80%, transparent 84%)`,
         }}
       />
-      <div
-        className="pointer-events-none absolute -right-10 top-0 h-full w-[55%] opacity-30"
-        style={{
-          background: `linear-gradient(115deg, transparent 40%, ${NEON}55 50%, transparent 60%)`,
-        }}
-      />
-      <div className="container relative mx-auto flex min-h-[280px] items-center gap-4 px-4 py-10">
+
+      <div className="container relative mx-auto flex min-h-[300px] items-center gap-4 px-4 py-10 sm:min-h-[340px]">
         <div className="z-10 flex-shrink-0">
           <h1
-            className="text-[40px] font-extrabold italic leading-[0.95] tracking-tight text-white sm:text-[48px]"
+            className="text-[40px] font-extrabold italic leading-[0.95] tracking-tight text-white sm:text-[52px]"
             data-testid="text-hero-title"
           >
             TÊNIS
@@ -100,23 +128,36 @@ function Hero({ images }: { images: string[] }) {
         </div>
 
         {shoes.length > 0 && (
-          <div className="relative hidden flex-1 items-end justify-center sm:flex">
+          <div
+            className="relative hidden flex-1 items-end justify-center sm:flex"
+            style={{ minHeight: 240 }}
+          >
+            {/* stage glow */}
             <div
-              className="absolute bottom-6 left-1/2 h-8 w-[90%] -translate-x-1/2 rounded-[50%]"
+              className="absolute bottom-8 left-1/2 h-12 w-[88%] -translate-x-1/2 rounded-[50%]"
               style={{
-                background: `radial-gradient(ellipse at center, ${NEON} 0%, ${NEON}00 70%)`,
-                filter: "blur(10px)",
-                opacity: 0.7,
+                background: `radial-gradient(ellipse at center, ${NEON} 0%, ${alpha(NEON, 0)} 70%)`,
+                filter: "blur(14px)",
+                opacity: 0.55,
               }}
             />
-            <div className="relative flex items-end justify-center gap-1">
+            {/* stage rim light */}
+            <div
+              className="absolute bottom-10 left-1/2 h-[3px] w-[66%] -translate-x-1/2 rounded-full"
+              style={{
+                background: NEON,
+                boxShadow: `0 0 16px 2px ${NEON}`,
+                opacity: 0.9,
+              }}
+            />
+            <div className="relative flex items-end justify-center gap-2 pb-10">
               {shoes.map((src, i) => (
                 <img
-                  key={i}
+                  key={`${page}-${i}`}
                   src={src}
                   alt=""
                   className={`object-contain drop-shadow-2xl ${
-                    i === 1 ? "h-32 w-40 sm:h-40 sm:w-52" : "h-24 w-32 sm:h-28 sm:w-40"
+                    i === 1 ? "h-36 w-44 sm:h-44 sm:w-56" : "h-28 w-36 sm:h-32 sm:w-44"
                   } ${i === 0 ? "-rotate-6" : i === 2 ? "rotate-6" : ""}`}
                 />
               ))}
@@ -124,6 +165,49 @@ function Hero({ images }: { images: string[] }) {
           </div>
         )}
       </div>
+
+      {/* prev / next arrows */}
+      {count > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={goPrev}
+            aria-label="Anterior"
+            data-testid="button-hero-prev"
+            className="absolute left-2 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full sm:flex"
+            style={{ border: `2px solid ${NEON}`, color: NEON, backgroundColor: alpha(DARK, 0.8) }}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            aria-label="Próximo"
+            data-testid="button-hero-next"
+            className="absolute right-2 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full sm:flex"
+            style={{ border: `2px solid ${NEON}`, color: NEON, backgroundColor: alpha(DARK, 0.8) }}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </>
+      )}
+
+      {/* dots */}
+      {count > 1 && (
+        <div className="absolute bottom-3 left-1/2 z-10 hidden -translate-x-1/2 gap-2 sm:flex">
+          {pages.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setPage(i)}
+              aria-label={`Ir para slide ${i + 1}`}
+              data-testid={`dot-hero-${i}`}
+              className="h-2.5 w-2.5 rounded-full transition-all"
+              style={{ backgroundColor: i === page ? NEON : "rgba(255,255,255,0.4)" }}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -163,7 +247,7 @@ export default function Catalog() {
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
   const heroImages = useMemo(
-    () => products.map((p) => p.mainImageUrl).filter((x): x is string => !!x).slice(0, 3),
+    () => products.map((p) => p.mainImageUrl).filter((x): x is string => !!x).slice(0, 15),
     [products],
   );
 
