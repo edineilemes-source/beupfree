@@ -32,3 +32,9 @@ from the title and there is no stored rating to filter on.
   (`genderOf`/`ageOf`/`sizeOf`/`modalityOf`) rather than trusting `product.*` fields.
 - Do NOT build a rating filter from title/DB data — it requires first persisting
   the scraped rating through the pipeline and backfilling existing products.
+- Filtering a RARE title-derived dimension (e.g. accessories) needs the catalog to
+  load the FULL published set, not the top-N-by-discount window — the server can't
+  filter derived dims and rare/low-discount items fall outside any small window, so
+  the filter looks falsely empty. The catalog fetches the whole catalog and caps
+  rendering with a "Carregar mais" page size to keep the DOM light. **Why:** a
+  top-200 fetch made `tipo=Acessórios` show 0 results though ~42 exist.

@@ -347,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/products", async (req, res) => {
     try {
       const { category, brand, limit, offset, search } = req.query;
-      const limitNum = limit ? Math.min(parseInt(String(limit)), 200) : 100;
+      const limitNum = limit ? Math.min(parseInt(String(limit)), 5000) : 100;
       const offsetNum = offset ? parseInt(String(offset)) : 0;
 
       // Build parameterized WHERE conditions

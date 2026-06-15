@@ -23,7 +23,8 @@ export type MultiFilterKey =
   | "tamanho"
   | "genero"
   | "idade"
-  | "modalidade";
+  | "modalidade"
+  | "tipo";
 
 export interface CatalogFilters {
   marca: string[];
@@ -33,6 +34,7 @@ export interface CatalogFilters {
   genero: string[];
   idade: string[];
   modalidade: string[];
+  tipo: string[];
   price: [number, number] | null;
 }
 
@@ -44,6 +46,7 @@ export const EMPTY_FILTERS: CatalogFilters = {
   genero: [],
   idade: [],
   modalidade: [],
+  tipo: [],
   price: null,
 };
 
@@ -149,6 +152,40 @@ export function modalityOf(p: CatalogProduct): string | null {
   return null;
 }
 
+// Tipo de produto. O catálogo é majoritariamente calçado, mas o menu também
+// leva para "Acessórios" (meias, bonés, mochilas, etc.). Detectamos acessórios
+// por palavras-chave no título; tudo que não casa é tratado como "Calçados".
+const ACCESSORY_TERMS = [
+  "meia",
+  "meias",
+  "boné",
+  "bone",
+  "mochila",
+  "bolsa",
+  "garrafa",
+  "squeeze",
+  "viseira",
+  "touca",
+  "luva",
+  "munhequeira",
+  "cadarço",
+  "cadarco",
+  "palmilha",
+  "necessaire",
+  "pochete",
+  "sacola",
+  "chaveiro",
+  "acessório",
+  "acessorio",
+];
+
+export const TIPO_OPTIONS = ["Calçados", "Acessórios"] as const;
+
+export function typeOf(p: CatalogProduct): string {
+  const lower = p.mainName.toLowerCase();
+  return ACCESSORY_TERMS.some((t) => lower.includes(t)) ? "Acessórios" : "Calçados";
+}
+
 export function priceOf(p: CatalogProduct): number {
   const raw = p.bestOffer?.currentPrice;
   const n = raw ? parseFloat(raw) : NaN;
@@ -196,6 +233,9 @@ export function applyFilters(products: CatalogProduct[], f: CatalogFilters): Cat
       const m = modalityOf(p);
       if (!m || !f.modalidade.includes(m)) return false;
     }
+    if (f.tipo.length > 0) {
+      if (!f.tipo.includes(typeOf(p))) return false;
+    }
     if (f.price) {
       const price = priceOf(p);
       if (price < f.price[0] || price > f.price[1]) return false;
@@ -212,12 +252,14 @@ export interface CatalogFacets {
   generos: { label: string; count: number }[];
   idades: { label: string; count: number }[];
   modalidades: { label: string; count: number }[];
+  tipos: { label: string; count: number }[];
   priceMin: number;
   priceMax: number;
 }
 
 const GENDER_ORDER = ["Masculino", "Feminino", "Unissex"];
 const IDADE_ORDER = ["Adulto", "Infantil"];
+const TIPO_ORDER = ["Calçados", "Acessórios"];
 
 export function computeFacets(products: CatalogProduct[]): CatalogFacets {
   const brandCounts = new Map<string, number>();
@@ -225,6 +267,7 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
   const generoCounts = new Map<string, number>();
   const idadeCounts = new Map<string, number>();
   const modalidadeCounts = new Map<string, number>();
+  const tipoCounts = new Map<string, number>();
   const desconto: Record<string, number> = {};
   DESCONTO_BUCKETS.forEach((b) => (desconto[b.label] = 0));
   const frete = { Sim: 0, Não: 0 };
@@ -256,6 +299,8 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
     const modalidade = modalityOf(p);
     if (modalidade) bump(modalidadeCounts, modalidade);
 
+    bump(tipoCounts, typeOf(p));
+
     const price = priceOf(p);
     if (price > 0) {
       priceMin = Math.min(priceMin, price);
@@ -281,6 +326,7 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
   const modalidades = Array.from(modalidadeCounts.entries())
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
+  const tipos = orderedFacet(tipoCounts, TIPO_ORDER);
 
   return {
     brands,
@@ -290,6 +336,7 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
     generos,
     idades,
     modalidades,
+    tipos,
     priceMin: Number.isFinite(priceMin) ? Math.floor(priceMin) : 0,
     priceMax: priceMax > 0 ? Math.ceil(priceMax) : 0,
   };
@@ -304,6 +351,7 @@ export function countActiveFilters(f: CatalogFilters): number {
     f.genero.length +
     f.idade.length +
     f.modalidade.length +
+    f.tipo.length +
     (f.price ? 1 : 0)
   );
 }

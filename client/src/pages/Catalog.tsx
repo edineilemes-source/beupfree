@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearch } from "wouter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import CatalogFilterSidebar from "@/components/CatalogFilterSidebar";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Loader2, Package, Tag } from "lucide-react";
 import { NEON, DARK, GREEN_GLOW } from "@/lib/brand";
 import {
@@ -22,6 +24,48 @@ interface ProductsResponse {
   total: number;
   products: CatalogProduct[];
 }
+
+// Os itens do menu (Masculino, Feminino, Infantil, Acessórios) levam para o
+// catálogo já filtrado, passando o filtro pela query string da URL
+// (ex.: /catalogo?genero=Masculino, /catalogo?tipo=Acessórios). Aqui lemos
+// esses parâmetros e montamos o estado inicial dos filtros.
+const URL_FILTER_KEYS: MultiFilterKey[] = [
+  "marca",
+  "desconto",
+  "frete",
+  "tamanho",
+  "genero",
+  "idade",
+  "modalidade",
+  "tipo",
+];
+
+function filtersFromSearch(search: string): CatalogFilters {
+  const params = new URLSearchParams(search);
+  const next: CatalogFilters = {
+    marca: [],
+    desconto: [],
+    frete: [],
+    tamanho: [],
+    genero: [],
+    idade: [],
+    modalidade: [],
+    tipo: [],
+    price: null,
+  };
+  for (const key of URL_FILTER_KEYS) {
+    const raw = params.get(key);
+    if (raw) {
+      next[key] = raw
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean);
+    }
+  }
+  return next;
+}
+
+const PAGE_SIZE = 60;
 
 function Hero({ images }: { images: string[] }) {
   const shoes = images.slice(0, 3);
@@ -83,12 +127,29 @@ function Hero({ images }: { images: string[] }) {
 }
 
 export default function Catalog() {
-  const [filters, setFilters] = useState<CatalogFilters>(EMPTY_FILTERS);
+  const search = useSearch();
+  const [filters, setFilters] = useState<CatalogFilters>(() =>
+    filtersFromSearch(search),
+  );
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // Reaplica os filtros sempre que a URL muda (ex.: o usuário clica em outro
+  // item do menu já estando no catálogo, ou clica em "% Desconto" que volta
+  // para o catálogo sem filtros). Ajustes manuais na barra lateral não mexem
+  // na URL, então não são sobrescritos.
+  useEffect(() => {
+    setFilters(filtersFromSearch(search));
+  }, [search]);
+
+  // Volta para a primeira "página" sempre que os filtros mudam.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [filters]);
 
   const { data, isLoading } = useQuery<ProductsResponse>({
     queryKey: ["/api/products", "catalog"],
     queryFn: async () => {
-      const res = await fetch("/api/products?limit=200");
+      const res = await fetch("/api/products?limit=5000");
       if (!res.ok) throw new Error("Falha ao carregar produtos");
       return (await res.json()) as ProductsResponse;
     },
@@ -97,6 +158,7 @@ export default function Catalog() {
   const products = useMemo(() => data?.products ?? [], [data]);
   const facets = useMemo(() => computeFacets(products), [products]);
   const filtered = useMemo(() => applyFilters(products, filters), [products, filters]);
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
   const heroImages = useMemo(
     () => products.map((p) => p.mainImageUrl).filter((x): x is string => !!x).slice(0, 3),
@@ -184,11 +246,12 @@ export default function Catalog() {
                 </p>
               </Card>
             ) : (
-              <div
-                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                data-testid="grid-catalog-products"
-              >
-                {filtered.map((product) => (
+              <>
+                <div
+                  className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                  data-testid="grid-catalog-products"
+                >
+                  {visible.map((product) => (
                   <ProductCard
                     key={product.id}
                     id={product.id}
@@ -207,8 +270,21 @@ export default function Catalog() {
                     freeShipping={product.bestOffer?.freeShipping || false}
                     lastSeenAt={product.bestOffer?.lastSeenAt}
                   />
-                ))}
-              </div>
+                  ))}
+                </div>
+                {filtered.length > visible.length && (
+                  <div className="mt-8 flex justify-center">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                      data-testid="button-carregar-mais"
+                    >
+                      Carregar mais ofertas
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

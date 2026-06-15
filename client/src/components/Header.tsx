@@ -5,7 +5,12 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { NEON, DARK_NAV, RUNNER_PATH } from "@/lib/brand";
 
-const NAV = ["Masculino", "Feminino", "Infantil", "Acessórios"];
+const NAV: { label: string; param: string; value: string }[] = [
+  { label: "Masculino", param: "genero", value: "Masculino" },
+  { label: "Feminino", param: "genero", value: "Feminino" },
+  { label: "Infantil", param: "idade", value: "Infantil" },
+  { label: "Acessórios", param: "tipo", value: "Acessórios" },
+];
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -87,13 +92,17 @@ export default function Header() {
       <nav style={{ backgroundColor: DARK_NAV }}>
         <div className="container mx-auto flex flex-wrap items-center justify-center gap-x-8 gap-y-1 px-4 py-2.5 text-[13px] font-semibold uppercase tracking-wide">
           {NAV.map((item) => (
-            <span
-              key={item}
-              className="cursor-default select-none text-white/85"
-              data-testid={`link-${item.toLowerCase()}`}
+            <Link
+              key={item.label}
+              href={`/catalogo?${item.param}=${encodeURIComponent(item.value)}`}
             >
-              {item}
-            </span>
+              <span
+                className="cursor-pointer text-white/85"
+                data-testid={`link-${item.label.toLowerCase()}`}
+              >
+                {item.label}
+              </span>
+            </Link>
           ))}
           <Link href="/catalogo">
             <span
