@@ -10,6 +10,7 @@ import {
 import {
   CatalogFilters,
   CatalogFacets,
+  MultiFilterKey,
   DESCONTO_BUCKETS,
   FRETE_OPTIONS,
   countActiveFilters,
@@ -109,7 +110,7 @@ function Chip({ label, onRemove, testId }: { label: string; onRemove: () => void
 interface Props {
   facets: CatalogFacets;
   filters: CatalogFilters;
-  onToggle: (key: "marca" | "desconto" | "frete", value: string) => void;
+  onToggle: (key: MultiFilterKey, value: string) => void;
   onPriceChange: (price: [number, number] | null) => void;
   onClearAll: () => void;
 }
@@ -149,8 +150,14 @@ export default function CatalogFilterSidebar({
   const activeCount = countActiveFilters(filters);
   const hasActive = activeCount > 0;
 
-  const chips: { key: "marca" | "desconto" | "frete"; value: string; label: string }[] = [];
+  const chips: { key: MultiFilterKey; value: string; label: string }[] = [];
   filters.marca.forEach((v) => chips.push({ key: "marca", value: v, label: v }));
+  filters.tamanho.forEach((v) =>
+    chips.push({ key: "tamanho", value: v, label: `Tamanho ${v}` }),
+  );
+  filters.genero.forEach((v) => chips.push({ key: "genero", value: v, label: v }));
+  filters.idade.forEach((v) => chips.push({ key: "idade", value: v, label: v }));
+  filters.modalidade.forEach((v) => chips.push({ key: "modalidade", value: v, label: v }));
   filters.desconto.forEach((v) => chips.push({ key: "desconto", value: v, label: v }));
   filters.frete.forEach((v) =>
     chips.push({ key: "frete", value: v, label: `Frete: ${v}` }),
@@ -256,6 +263,87 @@ export default function CatalogFilterSidebar({
             </button>
           )}
         </Section>
+
+        {/* Tamanho */}
+        {facets.sizes.length > 0 && (
+          <Section title="Tamanho">
+            <div className="grid grid-cols-4 gap-1.5">
+              {facets.sizes.map((s) => {
+                const selected = filters.tamanho.includes(s.label);
+                return (
+                  <button
+                    key={s.label}
+                    type="button"
+                    onClick={() => onToggle("tamanho", s.label)}
+                    aria-pressed={selected}
+                    className={
+                      selected
+                        ? "rounded-md bg-primary py-1.5 text-sm font-semibold text-primary-foreground"
+                        : "rounded-md border border-border py-1.5 text-sm text-foreground hover-elevate"
+                    }
+                    data-testid={`filter-tamanho-${s.label}`}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
+        )}
+
+        {/* Gênero */}
+        {facets.generos.length > 0 && (
+          <Section title="Gênero">
+            <div className="space-y-0.5">
+              {facets.generos.map((g) => (
+                <CheckRow
+                  key={g.label}
+                  label={g.label}
+                  count={g.count}
+                  checked={filters.genero.includes(g.label)}
+                  onToggle={() => onToggle("genero", g.label)}
+                  testId={`filter-genero-${g.label}`}
+                />
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Idade */}
+        {facets.idades.length > 0 && (
+          <Section title="Idade">
+            <div className="space-y-0.5">
+              {facets.idades.map((i) => (
+                <CheckRow
+                  key={i.label}
+                  label={i.label}
+                  count={i.count}
+                  checked={filters.idade.includes(i.label)}
+                  onToggle={() => onToggle("idade", i.label)}
+                  testId={`filter-idade-${i.label}`}
+                />
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Esportes */}
+        {facets.modalidades.length > 0 && (
+          <Section title="Esportes">
+            <div className="space-y-0.5">
+              {facets.modalidades.map((m) => (
+                <CheckRow
+                  key={m.label}
+                  label={m.label}
+                  count={m.count}
+                  checked={filters.modalidade.includes(m.label)}
+                  onToggle={() => onToggle("modalidade", m.label)}
+                  testId={`filter-modalidade-${m.label}`}
+                />
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* Desconto */}
         <Section title="Desconto">

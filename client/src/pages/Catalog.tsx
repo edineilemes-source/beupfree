@@ -10,6 +10,7 @@ import { NEON, DARK, GREEN_GLOW } from "@/lib/brand";
 import {
   CatalogProduct,
   CatalogFilters,
+  MultiFilterKey,
   EMPTY_FILTERS,
   applyFilters,
   computeFacets,
@@ -102,7 +103,7 @@ export default function Catalog() {
     [products],
   );
 
-  const toggle = (key: "marca" | "desconto" | "frete", value: string) => {
+  const toggle = (key: MultiFilterKey, value: string) => {
     setFilters((prev) => {
       const list = prev[key];
       return {
