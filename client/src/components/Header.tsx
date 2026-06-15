@@ -1,4 +1,4 @@
-import { Search, User, Heart, ShoppingCart } from "lucide-react";
+import { Search, User, Heart, ShoppingCart, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Link } from "wouter";
@@ -95,6 +95,15 @@ export default function Header() {
               </span>
               <span className="text-[11px] font-medium">Carrinho</span>
             </div>
+            <Link href="/admin/triagem">
+              <div
+                className="flex cursor-pointer flex-col items-center gap-1 rounded-md px-2 py-1 hover-elevate active-elevate-2"
+                data-testid="link-curadoria"
+              >
+                <Settings className="h-6 w-6" />
+                <span className="text-[11px] font-medium">Curadoria</span>
+              </div>
+            </Link>
           </div>
         </div>
       </div>
