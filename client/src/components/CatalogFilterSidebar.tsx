@@ -5,6 +5,7 @@ import {
   SlidersHorizontal,
   Search,
   Check,
+  Star,
   X,
 } from "lucide-react";
 import {
@@ -13,6 +14,7 @@ import {
   MultiFilterKey,
   DESCONTO_BUCKETS,
   FRETE_OPTIONS,
+  AVALIACAO_BUCKETS,
   countActiveFilters,
 } from "@/lib/catalogFilters";
 
@@ -159,6 +161,7 @@ export default function CatalogFilterSidebar({
   filters.genero.forEach((v) => chips.push({ key: "genero", value: v, label: v }));
   filters.idade.forEach((v) => chips.push({ key: "idade", value: v, label: v }));
   filters.modalidade.forEach((v) => chips.push({ key: "modalidade", value: v, label: v }));
+  filters.avaliacao.forEach((v) => chips.push({ key: "avaliacao", value: v, label: v }));
   filters.desconto.forEach((v) => chips.push({ key: "desconto", value: v, label: v }));
   filters.frete.forEach((v) =>
     chips.push({ key: "frete", value: v, label: `Frete: ${v}` }),
@@ -360,6 +363,50 @@ export default function CatalogFilterSidebar({
                   testId={`filter-modalidade-${m.label}`}
                 />
               ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Avaliação */}
+        {AVALIACAO_BUCKETS.some((b) => facets.avaliacoes[b.label] > 0) && (
+          <Section title="Avaliação">
+            <div className="space-y-0.5">
+              {AVALIACAO_BUCKETS.filter((b) => facets.avaliacoes[b.label] > 0).map((b) => {
+                const checked = filters.avaliacao.includes(b.label);
+                return (
+                  <button
+                    key={b.label}
+                    type="button"
+                    onClick={() => onToggle("avaliacao", b.label)}
+                    className="group flex w-full items-center justify-between rounded-md px-1 py-1.5 hover-elevate"
+                    data-testid={`filter-avaliacao-${b.min}`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span
+                        className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-[4px] border transition-colors"
+                        style={{
+                          borderColor: checked ? "hsl(var(--primary))" : "hsl(var(--input))",
+                          backgroundColor: checked ? "hsl(var(--primary))" : "transparent",
+                        }}
+                      >
+                        {checked && <Check className="h-3 w-3 text-primary-foreground" />}
+                      </span>
+                      <span className="flex items-center gap-1 text-left text-sm leading-tight text-foreground">
+                        {Array.from({ length: b.min }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400"
+                          />
+                        ))}
+                        <span className="ml-0.5">ou mais</span>
+                      </span>
+                    </span>
+                    <span className="flex-shrink-0 text-xs text-muted-foreground">
+                      ({facets.avaliacoes[b.label]})
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </Section>
         )}

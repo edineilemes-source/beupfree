@@ -38,6 +38,7 @@ const URL_FILTER_KEYS: MultiFilterKey[] = [
   "idade",
   "modalidade",
   "tipo",
+  "avaliacao",
 ];
 
 function filtersFromSearch(search: string): CatalogFilters {
@@ -51,6 +52,7 @@ function filtersFromSearch(search: string): CatalogFilters {
     idade: [],
     modalidade: [],
     tipo: [],
+    avaliacao: [],
     price: null,
   };
   for (const key of URL_FILTER_KEYS) {

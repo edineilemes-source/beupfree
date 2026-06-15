@@ -13,6 +13,8 @@ export interface CatalogProduct {
   mainImageUrl: string | null;
   brand: { name: string; slug?: string } | null;
   category: { name: string; slug?: string } | null;
+  averageRating: number | null;
+  totalReviews: number;
   bestOffer: CatalogBestOffer | null;
 }
 
@@ -24,7 +26,8 @@ export type MultiFilterKey =
   | "genero"
   | "idade"
   | "modalidade"
-  | "tipo";
+  | "tipo"
+  | "avaliacao";
 
 export interface CatalogFilters {
   marca: string[];
@@ -35,6 +38,7 @@ export interface CatalogFilters {
   idade: string[];
   modalidade: string[];
   tipo: string[];
+  avaliacao: string[];
   price: [number, number] | null;
 }
 
@@ -47,6 +51,7 @@ export const EMPTY_FILTERS: CatalogFilters = {
   idade: [],
   modalidade: [],
   tipo: [],
+  avaliacao: [],
   price: null,
 };
 
@@ -59,6 +64,13 @@ export const DESCONTO_BUCKETS: { label: string; test: (d: number) => boolean }[]
 ];
 
 export const FRETE_OPTIONS = ["Sim", "Não"] as const;
+
+export const AVALIACAO_BUCKETS: { label: string; min: number }[] = [
+  { label: "4 estrelas ou mais", min: 4 },
+  { label: "3 estrelas ou mais", min: 3 },
+  { label: "2 estrelas ou mais", min: 2 },
+  { label: "1 estrela ou mais", min: 1 },
+];
 
 // Brand and category are detected and persisted server-side at publish time
 // (see server/services/productSync.ts), so the catalog reads them directly
@@ -196,6 +208,20 @@ export function discountOf(p: CatalogProduct): number {
   return p.bestOffer?.discountPercent ?? 0;
 }
 
+export function ratingOf(p: CatalogProduct): number | null {
+  return p.averageRating != null && p.averageRating > 0 ? p.averageRating : null;
+}
+
+function matchesAvaliacao(p: CatalogProduct, labels: string[]): boolean {
+  if (labels.length === 0) return true;
+  const r = ratingOf(p);
+  if (r == null) return false;
+  return labels.some((label) => {
+    const bucket = AVALIACAO_BUCKETS.find((b) => b.label === label);
+    return bucket ? r >= bucket.min : false;
+  });
+}
+
 function matchesDesconto(p: CatalogProduct, labels: string[]): boolean {
   if (labels.length === 0) return true;
   const d = discountOf(p);
@@ -236,6 +262,7 @@ export function applyFilters(products: CatalogProduct[], f: CatalogFilters): Cat
     if (f.tipo.length > 0) {
       if (!f.tipo.includes(typeOf(p))) return false;
     }
+    if (!matchesAvaliacao(p, f.avaliacao)) return false;
     if (f.price) {
       const price = priceOf(p);
       if (price < f.price[0] || price > f.price[1]) return false;
@@ -253,6 +280,7 @@ export interface CatalogFacets {
   idades: { label: string; count: number }[];
   modalidades: { label: string; count: number }[];
   tipos: { label: string; count: number }[];
+  avaliacoes: Record<string, number>;
   priceMin: number;
   priceMax: number;
 }
@@ -270,6 +298,8 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
   const tipoCounts = new Map<string, number>();
   const desconto: Record<string, number> = {};
   DESCONTO_BUCKETS.forEach((b) => (desconto[b.label] = 0));
+  const avaliacoes: Record<string, number> = {};
+  AVALIACAO_BUCKETS.forEach((b) => (avaliacoes[b.label] = 0));
   const frete = { Sim: 0, Não: 0 };
   let priceMin = Infinity;
   let priceMax = 0;
@@ -300,6 +330,13 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
     if (modalidade) bump(modalidadeCounts, modalidade);
 
     bump(tipoCounts, typeOf(p));
+
+    const rating = ratingOf(p);
+    if (rating != null) {
+      for (const bucket of AVALIACAO_BUCKETS) {
+        if (rating >= bucket.min) avaliacoes[bucket.label]++;
+      }
+    }
 
     const price = priceOf(p);
     if (price > 0) {
@@ -337,6 +374,7 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
     idades,
     modalidades,
     tipos,
+    avaliacoes,
     priceMin: Number.isFinite(priceMin) ? Math.floor(priceMin) : 0,
     priceMax: priceMax > 0 ? Math.ceil(priceMax) : 0,
   };
@@ -352,6 +390,7 @@ export function countActiveFilters(f: CatalogFilters): number {
     f.idade.length +
     f.modalidade.length +
     f.tipo.length +
+    f.avaliacao.length +
     (f.price ? 1 : 0)
   );
 }

@@ -154,6 +154,8 @@ export async function runCollectionsJob(
               sourceUrl: item.url,
               affiliateUrl,
               externalId: item.externalItemId,
+              detectedRating: item.avaliacao_media != null ? String(item.avaliacao_media) : null,
+              detectedReviews: item.qtd_avaliacoes ?? 0,
               freeShipping: item.frete_gratis,
               contentHash,
               isDuplicate: false,
@@ -213,6 +215,8 @@ export async function runCollectionsJob(
                     mainImageUrl: item.imagens[0] || null,
                     catalogStatus: 'published',
                     shortDescription: item.nome,
+                    averageRating: item.avaliacao_media != null ? String(item.avaliacao_media) : null,
+                    totalReviews: item.qtd_avaliacoes ?? 0,
                   }).returning().then(r => r[0]);
 
                   await db.insert(offers).values({

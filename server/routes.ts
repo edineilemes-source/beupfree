@@ -184,6 +184,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           catalogStatus: 'published',
           shortDescription: finalName,
           section,
+          averageRating: (processed as any).detectedRating ?? null,
+          totalReviews: (processed as any).detectedReviews ?? 0,
         });
 
         const marketplaceId = await ensureDefaultMarketplace();
@@ -276,6 +278,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         catalogStatus: 'published',
         shortDescription: processed.normalizedTitle,
         section,
+        averageRating: (processed as any).detectedRating ?? null,
+        totalReviews: (processed as any).detectedReviews ?? 0,
       });
 
       const marketplaceId = await ensureDefaultMarketplace();
@@ -363,6 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pool.query(`
           SELECT
             p.id, p.main_name, p.main_image_url, p.catalog_status, p.slug, p.created_at,
+            p.average_rating, p.total_reviews,
             b.name AS brand_name, b.slug AS brand_slug,
             c.name AS category_name, c.slug AS category_slug,
             o.id AS offer_id, o.current_price, o.original_price,
@@ -405,6 +410,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           slug: row.slug,
           brand: row.brand_name ? { name: row.brand_name, slug: row.brand_slug } : null,
           category: row.category_name ? { name: row.category_name, slug: row.category_slug } : null,
+          averageRating: row.average_rating != null ? parseFloat(row.average_rating) : null,
+          totalReviews: parseInt(String(row.total_reviews ?? 0)),
           offersCount: parseInt(String(row.offers_count ?? 0)),
           bestOffer: hasOffer ? {
             id: row.offer_id,

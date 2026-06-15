@@ -333,6 +333,8 @@ export const processedItems = pgTable("processed_items", {
   sourceUrl: text("source_url"),
   affiliateUrl: text("affiliate_url"),
   externalId: varchar("external_id", { length: 100 }),
+  detectedRating: decimal("detected_rating", { precision: 3, scale: 2 }),
+  detectedReviews: integer("detected_reviews").default(0),
   freeShipping: boolean("free_shipping").default(false),
   contentHash: varchar("content_hash", { length: 64 }),
   isDuplicate: boolean("is_duplicate").default(false),
