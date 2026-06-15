@@ -127,8 +127,11 @@ const BRAND_ALIASES: Record<string, string> = {
 };
 
 const BRAND_LIST = [
+  // Multi-word names first so they win over single-word substrings.
+  "on running", "new balance", "under armour",
   "nike", "adidas", "puma", "mizuno", "asics", "olympikus", "fila",
-  "reebok", "new balance", "under armour", "vans", "converse",
+  "reebok", "vans", "converse", "skechers", "oakley", "penalty",
+  "umbro", "diadora", "kappa", "lynd", "and1",
 ];
 
 export function detectBrand(title: string, hintBrand?: string | null): string {
@@ -154,6 +157,44 @@ export function detectBrand(title: string, hintBrand?: string | null): string {
   }
 
   return "outra";
+}
+
+// Resolve a detected brand name (e.g. "nike", "new balance", "outra") to a
+// brand_id from the `brands` table, creating the brand if it doesn't exist yet.
+// Returns null only for empty/unknown input.
+export async function resolveBrandId(detectedBrand?: string | null): Promise<string | null> {
+  const name = (detectedBrand ?? "").trim();
+  if (!name) return null;
+
+  const slug = generateSlug(name);
+  if (!slug) return null;
+
+  const existing = await storage.getBrandBySlug(slug);
+  if (existing) return existing.id;
+
+  // Title-case the display name (e.g. "new balance" -> "New Balance").
+  const displayName = name
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(" ");
+
+  const created = await storage.createBrand({
+    name: displayName,
+    slug,
+    logo: null,
+    isActive: true,
+    isFeatured: false,
+  });
+  return created.id;
+}
+
+// Resolve a detected category slug (e.g. "corrida", "futebol") to a
+// category_id from the `categories` table. Returns null if not found.
+export async function resolveCategoryId(detectedCategory?: string | null): Promise<string | null> {
+  const slug = (detectedCategory ?? "").trim().toLowerCase();
+  if (!slug) return null;
+  const existing = await storage.getCategoryBySlug(slug);
+  return existing?.id ?? null;
 }
 
 export async function ensureDefaultMarketplace(): Promise<string> {

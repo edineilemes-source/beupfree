@@ -57,55 +57,15 @@ export const DESCONTO_BUCKETS: { label: string; test: (d: number) => boolean }[]
 
 export const FRETE_OPTIONS = ["Sim", "Não"] as const;
 
-// Products published by the pipeline often have brand_id / category_id unset,
-// so we derive a display brand/category from the product title (which always
-// contains the brand for ML shoe listings). Multi-word names come first so they
-// win over single-word matches.
-const KNOWN_BRANDS = [
-  "On Running",
-  "New Balance",
-  "Under Armour",
-  "Olympikus",
-  "Mizuno",
-  "Asics",
-  "Adidas",
-  "Reebok",
-  "Skechers",
-  "Converse",
-  "Nike",
-  "Puma",
-  "Fila",
-  "Vans",
-  "Oakley",
-  "Penalty",
-  "Umbro",
-  "Diadora",
-  "Kappa",
-  "Lynd",
-  "And1",
-];
-
-export function detectBrand(name: string): string | null {
-  const lower = name.toLowerCase();
-  for (const brand of KNOWN_BRANDS) {
-    if (lower.includes(brand.toLowerCase())) return brand;
-  }
-  return null;
-}
-
+// Brand and category are detected and persisted server-side at publish time
+// (see server/services/productSync.ts), so the catalog reads them directly
+// from the API instead of parsing the product title.
 export function brandNameOf(p: CatalogProduct): string {
-  return p.brand?.name || detectBrand(p.mainName) || "Outras";
+  return p.brand?.name || "Outras";
 }
 
 export function categoryNameOf(p: CatalogProduct): string {
-  if (p.category?.name) return p.category.name;
-  const lower = p.mainName.toLowerCase();
-  if (lower.includes("meia")) return "Meias";
-  if (lower.includes("chuteira")) return "Chuteira";
-  if (lower.includes("sandália") || lower.includes("sandalia") || lower.includes("chinelo"))
-    return "Sandálias";
-  if (lower.includes("tênis") || lower.includes("tenis")) return "Tênis";
-  return "Calçados";
+  return p.category?.name || "Calçados";
 }
 
 // ---------------------------------------------------------------------------

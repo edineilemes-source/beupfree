@@ -1,7 +1,7 @@
 import { storage } from "../storage";
 import { scrapeCollectionUrl } from "../services/mlCollectionsCollector";
 import { upsertMembership, deactivateByBatch } from "../usecases/upsertMembership";
-import { detectBrand, detectCategory, ensureDefaultMarketplace } from "../services/productSync";
+import { detectBrand, detectCategory, ensureDefaultMarketplace, resolveBrandId, resolveCategoryId } from "../services/productSync";
 import { evaluateAutoApproval } from "../services/autoApprove";
 import crypto from "crypto";
 import { db } from "../db";
@@ -201,9 +201,15 @@ export async function runCollectionsJob(
                 // Auto-approve: create product + offer directly
                 try {
                   const slug = generateSlug(item.nome, Date.now().toString(36));
+                  const [brandId, categoryId] = await Promise.all([
+                    resolveBrandId(detectBrand(item.nome, item.marca)),
+                    resolveCategoryId(detectCategory(item.nome)),
+                  ]);
                   const product = await db.insert(products).values({
                     mainName: item.nome,
                     slug,
+                    brandId,
+                    mainCategoryId: categoryId,
                     mainImageUrl: item.imagens[0] || null,
                     catalogStatus: 'published',
                     shortDescription: item.nome,

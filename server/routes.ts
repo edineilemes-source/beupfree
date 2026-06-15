@@ -12,6 +12,8 @@ import {
   syncBrands,
   syncCategories,
   ensureDefaultMarketplace,
+  resolveBrandId,
+  resolveCategoryId,
 } from "./services/productSync";
 import { scrapeAllSources } from "./services/mlScraper";
 import { runCollectJob } from "./jobs/collect";
@@ -169,10 +171,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
           .substring(0, 80) + "-" + Date.now().toString(36);
 
+        const brandId =
+          triageItem.suggestedBrandId ?? (await resolveBrandId(processed.detectedBrand));
+        const categoryId =
+          triageItem.suggestedCategoryId ?? (await resolveCategoryId(processed.detectedCategory));
+
         const product = await storage.createProduct({
           mainName: finalName, slug,
-          brandId: triageItem.suggestedBrandId ?? null,
-          mainCategoryId: triageItem.suggestedCategoryId ?? null,
+          brandId,
+          mainCategoryId: categoryId,
           mainImageUrl: processed.imageUrl,
           catalogStatus: 'published',
           shortDescription: finalName,
@@ -255,11 +262,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .replace(/^-+|-+$/g, "")
         .substring(0, 100) + "-" + Date.now().toString(36);
 
+      const resolvedBrandId =
+        brandId || triageItem.suggestedBrandId || (await resolveBrandId(processed.detectedBrand));
+      const resolvedCategoryId =
+        categoryId || triageItem.suggestedCategoryId || (await resolveCategoryId(processed.detectedCategory));
+
       const product = await storage.createProduct({
         mainName: finalName,
         slug,
-        brandId: brandId || triageItem.suggestedBrandId || null,
-        mainCategoryId: categoryId || triageItem.suggestedCategoryId || null,
+        brandId: resolvedBrandId,
+        mainCategoryId: resolvedCategoryId,
         mainImageUrl: processed.imageUrl,
         catalogStatus: 'published',
         shortDescription: processed.normalizedTitle,
