@@ -1,1 +1,2 @@
 - [ML membership deactivation](membership-deactivation.md) — home page shows only is_active memberships; deactivation must use missed_runs_count anti-flapping (ML rotates its deals snapshot).
+- [Published products missing brand/category](published-product-brand.md) — products API returns brand:null/category:null; derive from title client-side for filters/badges.

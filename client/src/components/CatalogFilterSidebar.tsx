@@ -1,0 +1,357 @@
+import { useState } from "react";
+import {
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
+  Search,
+  Check,
+  X,
+} from "lucide-react";
+import {
+  CatalogFilters,
+  CatalogFacets,
+  DESCONTO_BUCKETS,
+  FRETE_OPTIONS,
+  countActiveFilters,
+} from "@/lib/catalogFilters";
+
+const MAX_VISIBLE_BRANDS = 6;
+
+function Section({
+  title,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b border-border py-4">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between text-left"
+        data-testid={`section-${title.toLowerCase()}`}
+      >
+        <span className="text-xs font-bold uppercase tracking-wide text-foreground">
+          {title}
+        </span>
+        {open ? (
+          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        )}
+      </button>
+      {open && <div className="mt-3">{children}</div>}
+    </div>
+  );
+}
+
+function CheckRow({
+  label,
+  count,
+  checked,
+  onToggle,
+  testId,
+}: {
+  label: string;
+  count?: number;
+  checked: boolean;
+  onToggle: () => void;
+  testId: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="group flex w-full items-center justify-between rounded-md px-1 py-1.5 hover-elevate"
+      data-testid={testId}
+    >
+      <span className="flex items-center gap-2.5">
+        <span
+          className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-[4px] border transition-colors"
+          style={{
+            borderColor: checked ? "hsl(var(--primary))" : "hsl(var(--input))",
+            backgroundColor: checked ? "hsl(var(--primary))" : "transparent",
+          }}
+        >
+          {checked && <Check className="h-3 w-3 text-primary-foreground" />}
+        </span>
+        <span className="text-left text-sm leading-tight text-foreground">
+          {label}
+        </span>
+      </span>
+      {count !== undefined && (
+        <span className="flex-shrink-0 text-xs text-muted-foreground">
+          ({count})
+        </span>
+      )}
+    </button>
+  );
+}
+
+function Chip({ label, onRemove, testId }: { label: string; onRemove: () => void; testId: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onRemove}
+      className="flex items-center gap-1 rounded-full border border-primary-border bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover-elevate"
+      data-testid={testId}
+    >
+      <span className="leading-none">{label}</span>
+      <X className="h-3 w-3" />
+    </button>
+  );
+}
+
+interface Props {
+  facets: CatalogFacets;
+  filters: CatalogFilters;
+  onToggle: (key: "marca" | "desconto" | "frete", value: string) => void;
+  onPriceChange: (price: [number, number] | null) => void;
+  onClearAll: () => void;
+}
+
+export default function CatalogFilterSidebar({
+  facets,
+  filters,
+  onToggle,
+  onPriceChange,
+  onClearAll,
+}: Props) {
+  const [showAllBrands, setShowAllBrands] = useState(false);
+  const [brandQuery, setBrandQuery] = useState("");
+
+  const priceMin = facets.priceMin;
+  const priceMax = facets.priceMax || 1;
+  const price = filters.price ?? [priceMin, priceMax];
+
+  const clamp = (n: number) =>
+    Math.min(priceMax, Math.max(priceMin, Number.isFinite(n) ? n : priceMin));
+  const setMin = (raw: number) =>
+    onPriceChange([Math.min(clamp(raw), price[1]), price[1]]);
+  const setMax = (raw: number) =>
+    onPriceChange([price[0], Math.max(clamp(raw), price[0])]);
+
+  const span = Math.max(1, priceMax - priceMin);
+  const leftPct = ((price[0] - priceMin) / span) * 100;
+  const rightPct = ((price[1] - priceMin) / span) * 100;
+  const priceChanged = filters.price !== null;
+
+  const matchingBrands = facets.brands.filter((b) =>
+    b.label.toLowerCase().includes(brandQuery.toLowerCase()),
+  );
+  const visibleBrands =
+    showAllBrands || brandQuery ? matchingBrands : matchingBrands.slice(0, MAX_VISIBLE_BRANDS);
+
+  const activeCount = countActiveFilters(filters);
+  const hasActive = activeCount > 0;
+
+  const chips: { key: "marca" | "desconto" | "frete"; value: string; label: string }[] = [];
+  filters.marca.forEach((v) => chips.push({ key: "marca", value: v, label: v }));
+  filters.desconto.forEach((v) => chips.push({ key: "desconto", value: v, label: v }));
+  filters.frete.forEach((v) =>
+    chips.push({ key: "frete", value: v, label: `Frete: ${v}` }),
+  );
+
+  return (
+    <aside className="w-full flex-shrink-0 md:w-[240px]">
+      <div
+        className="rounded-md border border-border bg-background px-4 pb-4 md:sticky md:top-[140px] md:max-h-[calc(100vh-160px)] md:overflow-y-auto"
+        style={{ scrollbarWidth: "thin" }}
+      >
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background py-4">
+          <span className="flex items-center gap-2 text-[15px] font-bold text-foreground">
+            <SlidersHorizontal className="h-4 w-4 text-primary" />
+            Filtros
+            {activeCount > 0 && (
+              <span className="text-xs font-semibold text-muted-foreground">
+                ({activeCount})
+              </span>
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={onClearAll}
+            data-testid="button-limpar-todos"
+            className="text-xs font-semibold text-primary hover:underline"
+          >
+            Limpar todos
+          </button>
+        </div>
+
+        {/* Selected filters */}
+        {hasActive && (
+          <div className="border-b border-border py-3" data-testid="active-filters">
+            <span className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              Filtros selecionados
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {chips.map((c) => (
+                <Chip
+                  key={`${c.key}-${c.value}`}
+                  label={c.label}
+                  onRemove={() => onToggle(c.key, c.value)}
+                  testId={`chip-${c.key}-${c.value}`}
+                />
+              ))}
+              {priceChanged && (
+                <Chip
+                  label={`R$ ${price[0]} – R$ ${price[1]}`}
+                  onRemove={() => onPriceChange(null)}
+                  testId="chip-price"
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Marca */}
+        <Section title="Marca">
+          {facets.brands.length > MAX_VISIBLE_BRANDS && (
+            <div className="relative mb-2">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={brandQuery}
+                onChange={(e) => setBrandQuery(e.target.value)}
+                placeholder="Buscar marcas..."
+                className="w-full rounded-md border border-border bg-background py-1.5 pl-8 pr-2 text-xs text-foreground outline-none focus:border-primary"
+                data-testid="input-brand-search"
+              />
+            </div>
+          )}
+          <div className="space-y-0.5">
+            {visibleBrands.map((b) => (
+              <CheckRow
+                key={b.label}
+                label={b.label}
+                count={b.count}
+                checked={filters.marca.includes(b.label)}
+                onToggle={() => onToggle("marca", b.label)}
+                testId={`filter-marca-${b.label}`}
+              />
+            ))}
+            {visibleBrands.length === 0 && (
+              <p className="px-1 py-2 text-xs text-muted-foreground">
+                Nenhuma marca encontrada
+              </p>
+            )}
+          </div>
+          {!brandQuery && facets.brands.length > MAX_VISIBLE_BRANDS && (
+            <button
+              type="button"
+              onClick={() => setShowAllBrands((s) => !s)}
+              data-testid="button-ver-mais-marcas"
+              className="mt-2 flex items-center gap-1 text-xs font-semibold text-primary"
+            >
+              {showAllBrands ? "Ver menos marcas" : "Ver mais marcas"}
+              {showAllBrands ? (
+                <ChevronUp className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
+            </button>
+          )}
+        </Section>
+
+        {/* Desconto */}
+        <Section title="Desconto">
+          <div className="space-y-0.5">
+            {DESCONTO_BUCKETS.map((b) => (
+              <CheckRow
+                key={b.label}
+                label={b.label}
+                count={facets.desconto[b.label]}
+                checked={filters.desconto.includes(b.label)}
+                onToggle={() => onToggle("desconto", b.label)}
+                testId={`filter-desconto-${b.label}`}
+              />
+            ))}
+          </div>
+        </Section>
+
+        {/* Preço */}
+        <Section title="Preço">
+          <div className="relative mb-4 mt-2 h-4">
+            <div className="absolute top-1/2 h-1.5 w-full -translate-y-1/2 rounded-full bg-muted" />
+            <div
+              className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-primary"
+              style={{ left: `${leftPct}%`, right: `${100 - rightPct}%` }}
+            />
+            <input
+              type="range"
+              min={priceMin}
+              max={priceMax}
+              value={price[0]}
+              onChange={(e) => setMin(Number(e.target.value))}
+              className="beup-range"
+              aria-label="Preço mínimo"
+              data-testid="range-price-min"
+            />
+            <input
+              type="range"
+              min={priceMin}
+              max={priceMax}
+              value={price[1]}
+              onChange={(e) => setMax(Number(e.target.value))}
+              className="beup-range"
+              aria-label="Preço máximo"
+              data-testid="range-price-max"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="flex-1">
+              <span className="mb-1 block text-[11px] text-muted-foreground">Mínimo:</span>
+              <div className="flex items-center rounded-md border border-border px-2 py-1.5">
+                <span className="mr-1 text-xs text-muted-foreground">R$</span>
+                <input
+                  type="number"
+                  min={priceMin}
+                  max={priceMax}
+                  value={price[0]}
+                  onChange={(e) => setMin(Number(e.target.value))}
+                  className="w-full bg-transparent text-xs text-foreground outline-none"
+                  data-testid="input-price-min"
+                />
+              </div>
+            </label>
+            <label className="flex-1">
+              <span className="mb-1 block text-[11px] text-muted-foreground">Máximo:</span>
+              <div className="flex items-center rounded-md border border-border px-2 py-1.5">
+                <span className="mr-1 text-xs text-muted-foreground">R$</span>
+                <input
+                  type="number"
+                  min={priceMin}
+                  max={priceMax}
+                  value={price[1]}
+                  onChange={(e) => setMax(Number(e.target.value))}
+                  className="w-full bg-transparent text-xs text-foreground outline-none"
+                  data-testid="input-price-max"
+                />
+              </div>
+            </label>
+          </div>
+        </Section>
+
+        {/* Frete Grátis */}
+        <Section title="Frete Grátis">
+          <div className="space-y-0.5">
+            {FRETE_OPTIONS.map((opt) => (
+              <CheckRow
+                key={opt}
+                label={opt}
+                count={facets.frete[opt]}
+                checked={filters.frete.includes(opt)}
+                onToggle={() => onToggle("frete", opt)}
+                testId={`filter-frete-${opt}`}
+              />
+            ))}
+          </div>
+        </Section>
+      </div>
+    </aside>
+  );
+}

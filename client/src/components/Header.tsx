@@ -1,68 +1,77 @@
-import { Search, Menu, Settings } from "lucide-react";
+import { Search, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
-import logoImage from "@assets/Photoroom-20251213_085728_1765685713469.png";
+import { Link } from "wouter";
+import { NEON, DARK_NAV, RUNNER_PATH } from "@/lib/brand";
+
+const NAV = ["Masculino", "Feminino", "Infantil", "Acessórios"];
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [location] = useLocation();
 
   return (
-    <header className="sticky top-0 z-50 bg-background border-b">
-      <div className="bg-primary text-primary-foreground py-2 px-4 text-center text-sm font-medium">
-        Frete Grátis em compras acima de R$ 299 | Parceiro Oficial Mercado Livre
+    <header className="sticky top-0 z-50 bg-background">
+      {/* Top promo bar */}
+      <div className="bg-primary text-primary-foreground">
+        <div className="container mx-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 px-4 py-1.5 text-center text-xs">
+          <span>Peça o tênis que mais combina com você.</span>
+          <span className="opacity-40">|</span>
+          <span className="font-semibold">Parceiro Oficial Mercado Livre</span>
+        </div>
       </div>
-      
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="lg:hidden"
-              data-testid="button-menu"
+
+      {/* Main header */}
+      <div className="border-b bg-background">
+        <div className="container mx-auto flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
+          {/* Logo */}
+          <Link href="/">
+            <div
+              className="flex flex-shrink-0 items-center gap-2.5 cursor-pointer"
+              data-testid="link-logo"
             >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <Link href="/">
-              <div className="flex items-center gap-2 cursor-pointer" data-testid="link-logo">
-                <img 
-                  src={logoImage} 
-                  alt="BeUpFree Logo" 
-                  className="h-10 w-auto"
-                />
-                <div className="flex flex-col">
-                  <span className="text-xl font-bold tracking-tight text-primary" data-testid="text-logo">
-                    BeUpFree
-                  </span>
-                  <span className="text-[10px] text-muted-foreground -mt-1 hidden sm:block">
-                    Liberte sua performance
-                  </span>
-                </div>
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <svg viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor">
+                  <path d={RUNNER_PATH} />
+                </svg>
+              </span>
+              <div className="leading-none">
+                <p className="text-[22px] font-extrabold tracking-tight" data-testid="text-logo">
+                  <span className="text-foreground">Up</span>
+                  <span className="text-primary">Pulse</span>
+                </p>
+                <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                  Tênis esportivos em promoção
+                </p>
+                <p
+                  className="text-[8px] font-bold uppercase tracking-[0.14em] text-primary"
+                  data-testid="text-by-beupfree"
+                >
+                  by BeUpFree
+                </p>
               </div>
-            </Link>
-          </div>
-
-          <div className="flex-1 max-w-xl hidden md:flex">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Buscar tênis, meias, acessórios..."
-                className="pl-10 w-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                data-testid="input-search"
-              />
             </div>
+          </Link>
+
+          {/* Search */}
+          <div className="relative order-last w-full min-w-0 flex-1 md:order-none md:w-auto md:max-w-[560px]">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              aria-label="Buscar tênis"
+              placeholder="Buscar tênis, meias, acessórios..."
+              className="w-full rounded-full pl-11 pr-4"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              data-testid="input-search"
+            />
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Admin */}
+          <div className="ml-auto flex flex-shrink-0 items-center gap-2">
             <Link href="/admin/triagem">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 title="Painel Admin"
                 data-testid="button-admin"
@@ -72,51 +81,29 @@ export default function Header() {
             </Link>
           </div>
         </div>
-
-        <div className="mt-3 md:hidden">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar tênis, meias, acessórios..."
-              className="pl-10 w-full"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              data-testid="input-search-mobile"
-            />
-          </div>
-        </div>
       </div>
 
-      <nav className="border-t hidden lg:block bg-muted/30">
-        <div className="container mx-auto px-4">
-          <ul className="flex items-center gap-8 py-3 text-sm font-medium">
-            <li>
-              <span className="px-3 py-2 rounded-md text-muted-foreground cursor-default select-none" data-testid="link-tenis">
-                Tênis
-              </span>
-            </li>
-            <li>
-              <span className="px-3 py-2 rounded-md text-muted-foreground cursor-default select-none" data-testid="link-meias">
-                Meias
-              </span>
-            </li>
-            <li>
-              <span className="px-3 py-2 rounded-md text-muted-foreground cursor-default select-none" data-testid="link-acessorios">
-                Acessórios
-              </span>
-            </li>
-            <li>
-              <span className="px-3 py-2 rounded-md text-muted-foreground cursor-default select-none" data-testid="link-marcas">
-                Marcas
-              </span>
-            </li>
-            <li>
-              <span className="text-accent-foreground bg-accent/80 px-3 py-2 rounded-md cursor-default select-none font-semibold" data-testid="link-ofertas">
-                Ofertas
-              </span>
-            </li>
-          </ul>
+      {/* Dark neon nav */}
+      <nav style={{ backgroundColor: DARK_NAV }}>
+        <div className="container mx-auto flex flex-wrap items-center justify-center gap-x-8 gap-y-1 px-4 py-2.5 text-[13px] font-semibold uppercase tracking-wide">
+          {NAV.map((item) => (
+            <span
+              key={item}
+              className="cursor-default select-none text-white/85"
+              data-testid={`link-${item.toLowerCase()}`}
+            >
+              {item}
+            </span>
+          ))}
+          <Link href="/catalogo">
+            <span
+              className="cursor-pointer"
+              style={{ color: NEON }}
+              data-testid="link-ofertas"
+            >
+              % Desconto
+            </span>
+          </Link>
         </div>
       </nav>
     </header>
