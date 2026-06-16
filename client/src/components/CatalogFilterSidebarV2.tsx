@@ -143,23 +143,7 @@ export default function CatalogFilterSidebar({
   const rightPct = ((price[1] - priceMin) / span) * 100;
   const priceChanged = filters.price !== null;
 
-  const fixedBrandNames = ["Nike", "Adidas", "Olympikus"];
-  const fixedBrandSet = new Set(fixedBrandNames.map((name) => name.toLowerCase()));
-
-  const fixedBrandOptions = fixedBrandNames.flatMap((name) => {
-    const brand = facets.brands.find(
-      (b) => b.label.toLowerCase() === name.toLowerCase(),
-    );
-    return brand ? [brand] : [];
-  });
-
-  const otherBrandOptions = facets.brands.filter(
-    (b) => !fixedBrandSet.has(b.label.toLowerCase()),
-  );
-
-  const orderedBrands = [...fixedBrandOptions, ...otherBrandOptions];
-
-  const matchingBrands = orderedBrands.filter((b) =>
+  const matchingBrands = facets.brands.filter((b) =>
     b.label.toLowerCase().includes(brandQuery.toLowerCase()),
   );
   const visibleBrands =
@@ -169,6 +153,7 @@ export default function CatalogFilterSidebar({
   const hasActive = activeCount > 0;
 
   const chips: { key: MultiFilterKey; value: string; label: string }[] = [];
+  filters.tipo.forEach((v) => chips.push({ key: "tipo", value: v, label: v }));
   filters.marca.forEach((v) => chips.push({ key: "marca", value: v, label: v }));
   filters.tamanho.forEach((v) =>
     chips.push({ key: "tamanho", value: v, label: `Tamanho ${v}` }),
@@ -233,6 +218,24 @@ export default function CatalogFilterSidebar({
               )}
             </div>
           </div>
+        )}
+
+        {/* Tipo */}
+        {facets.tipos.length > 1 && (
+          <Section title="Tipo">
+            <div className="space-y-0.5">
+              {facets.tipos.map((t) => (
+                <CheckRow
+                  key={t.label}
+                  label={t.label}
+                  count={t.count}
+                  checked={filters.tipo.includes(t.label)}
+                  onToggle={() => onToggle("tipo", t.label)}
+                  testId={`filter-tipo-${t.label}`}
+                />
+              ))}
+            </div>
+          </Section>
         )}
 
         {/* Marca */}

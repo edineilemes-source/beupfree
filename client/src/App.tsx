@@ -7,6 +7,7 @@ import Catalog from "@/pages/Catalog";
 import Marca from "@/pages/Marca";
 import AdminTriagem from "@/pages/AdminTriagem";
 import NotFound from "@/pages/not-found";
+import CatalogV2 from "@/pages/CatalogV2";
 
 function Router() {
   return (
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/marca/:slug" component={Marca} />
       <Route path="/admin/triagem" component={AdminTriagem} />
       <Route path="/triagem" component={AdminTriagem} />
+      <Route path="/catalogo-v2" component={CatalogV2} />
       <Route component={NotFound} />
     </Switch>
   );
