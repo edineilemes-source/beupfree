@@ -12,8 +12,9 @@ import CatalogV2 from "@/pages/CatalogV2";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Catalog} />
-      <Route path="/catalogo" component={Catalog} />
+      <Route path="/" component={CatalogV2} />
+      <Route path="/catalogo" component={CatalogV2} />
+      <Route path="/catalogo-antigo" component={Catalog} />
       <Route path="/marca/:slug" component={Marca} />
       <Route path="/admin/triagem" component={AdminTriagem} />
       <Route path="/triagem" component={AdminTriagem} />
