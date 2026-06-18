@@ -168,9 +168,9 @@ export default function CatalogFilterSidebar({
   );
 
   return (
-    <aside className="w-full flex-shrink-0 md:w-[240px]">
+    <aside className="w-full flex-shrink-0 md:w-[250px]">
       <div
-        className="rounded-md border border-border bg-background px-4 pb-4 md:sticky md:top-[140px] md:max-h-[calc(100vh-160px)] md:overflow-y-auto"
+        className="border border-border bg-background px-4 pb-4 md:sticky md:top-[132px] md:max-h-[calc(100vh-148px)] md:overflow-y-auto"
         style={{ scrollbarWidth: "thin" }}
       >
         {/* Header */}

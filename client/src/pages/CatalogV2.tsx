@@ -7,7 +7,7 @@ import ProductCard from "@/components/ProductCard";
 import CatalogFilterSidebar from "@/components/CatalogFilterSidebarV2";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Package, Tag, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Package, Tag } from "lucide-react";
 import { NEON, DARK, GREEN_GLOW, alpha } from "@/lib/brand";
 import {
   CatalogProduct,
@@ -18,6 +18,8 @@ import {
   computeFacets,
   brandNameOf,
   categoryNameOf,
+  discountOf,
+  priceOf,
 } from "@/lib/catalogFilters";
 
 interface ProductsResponse {
@@ -25,10 +27,9 @@ interface ProductsResponse {
   products: CatalogProduct[];
 }
 
-// Os itens do menu (Masculino, Feminino, Infantil, Acessórios) levam para o
-// catálogo já filtrado, passando o filtro pela query string da URL
-// (ex.: /catalogo?genero=Masculino, /catalogo?tipo=Acessórios). Aqui lemos
-// esses parâmetros e montamos o estado inicial dos filtros.
+type SortMode = "maior-desconto" | "relevantes" | "menor-preco" | "recentes";
+
+const PAGE_SIZE = 12;
 const URL_FILTER_KEYS: MultiFilterKey[] = [
   "marca",
   "desconto",
@@ -55,68 +56,105 @@ function filtersFromSearch(search: string): CatalogFilters {
     avaliacao: [],
     price: null,
   };
+
   for (const key of URL_FILTER_KEYS) {
     const raw = params.get(key);
     if (raw) {
       next[key] = raw
         .split(",")
-        .map((v) => v.trim())
+        .map((value) => value.trim())
         .filter(Boolean);
     }
   }
+
   return next;
 }
 
-const PAGE_SIZE = 60;
+function formatBRL(value: number): string {
+  return value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
 
-function Hero({ images }: { images: string[] }) {
-  // Agrupa as imagens dos produtos em "slides" de 3 tênis cada, para o carrossel.
-  const pages = useMemo(() => {
-    const groups: string[][] = [];
-    for (let i = 0; i < images.length; i += 3) {
-      groups.push(images.slice(i, i + 3));
-    }
-    return groups.slice(0, 5);
-  }, [images]);
-
-  const count = Math.max(pages.length, 1);
-  const [page, setPage] = useState(0);
-
-  useEffect(() => {
-    if (page >= count) setPage(0);
-  }, [count, page]);
-
-  useEffect(() => {
-    if (count <= 1) return;
-    const t = setInterval(() => setPage((p) => (p + 1) % count), 5000);
-    return () => clearInterval(t);
-  }, [count]);
-
-  const shoes = pages[page] ?? [];
-  const goPrev = () => setPage((p) => (p - 1 + count) % count);
-  const goNext = () => setPage((p) => (p + 1) % count);
+function PromoTile({ product }: { product: CatalogProduct }) {
+  const price = priceOf(product);
+  const oldPrice = product.bestOffer?.originalPrice
+    ? parseFloat(product.bestOffer.originalPrice)
+    : null;
+  const discount = discountOf(product);
 
   return (
-    <section className="relative overflow-hidden" style={{ backgroundColor: DARK }}>
-      {/* green wash */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: `radial-gradient(120% 90% at 72% 35%, ${alpha(NEON, 0.12)}, transparent 60%), radial-gradient(80% 70% at 95% 100%, ${alpha(GREEN_GLOW, 0.2)}, transparent 70%)`,
-        }}
-      />
-      {/* diagonal streaks */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-60"
-        style={{
-          background: `linear-gradient(115deg, transparent 46%, ${alpha(NEON, 0.12)} 51%, transparent 55%), linear-gradient(115deg, transparent 60%, ${alpha(NEON, 0.09)} 65%, transparent 69%), linear-gradient(115deg, transparent 76%, ${alpha(NEON, 0.07)} 80%, transparent 84%)`,
-        }}
-      />
+    <a
+      href={product.bestOffer?.affiliateUrl || "#"}
+      target="_blank"
+      rel="noreferrer"
+      className="group relative flex min-h-[220px] flex-col border-l border-border bg-white p-4 transition-transform hover:-translate-y-0.5"
+      data-testid={`hero-promo-${product.id}`}
+    >
+      {discount > 0 && (
+        <span className="absolute left-4 top-4 rounded-sm bg-destructive px-2 py-1 text-xs font-bold text-destructive-foreground">
+          -{discount}%
+        </span>
+      )}
 
-      <div className="container relative mx-auto flex min-h-[300px] items-center gap-4 px-4 py-10 sm:min-h-[340px]">
-        <div className="z-10 flex-shrink-0">
+      <div className="flex flex-1 items-center justify-center pt-3">
+        {product.mainImageUrl && (
+          <img
+            src={product.mainImageUrl}
+            alt={product.mainName}
+            className="h-28 w-full object-contain transition-transform group-hover:scale-105"
+          />
+        )}
+      </div>
+
+      <div className="mt-3">
+        <p className="text-[11px] font-bold uppercase text-muted-foreground">
+          {brandNameOf(product)}
+        </p>
+        <p className="mt-1 line-clamp-2 min-h-[34px] text-xs font-semibold leading-snug">
+          {product.mainName}
+        </p>
+        <div className="mt-2 flex flex-wrap items-end gap-2">
+          <span className="text-base font-extrabold text-primary">
+            {formatBRL(price)}
+          </span>
+          {oldPrice && oldPrice > price && (
+            <span className="text-[11px] text-muted-foreground line-through">
+              {formatBRL(oldPrice)}
+            </span>
+          )}
+        </div>
+      </div>
+    </a>
+  );
+}
+
+function Hero({ products }: { products: CatalogProduct[] }) {
+  const featured = useMemo(
+    () =>
+      [...products]
+        .filter((product) => product.mainImageUrl && product.bestOffer)
+        .sort((a, b) => discountOf(b) - discountOf(a))
+        .slice(0, 3),
+    [products],
+  );
+
+  return (
+    <section className="border-b border-border bg-white">
+      <div className="mx-auto grid max-w-[1180px] grid-cols-1 overflow-hidden md:grid-cols-[300px_1fr]">
+        <div
+          className="relative flex min-h-[220px] items-center overflow-hidden px-8 py-8"
+          style={{ backgroundColor: DARK }}
+        >
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: `radial-gradient(100% 80% at 85% 25%, ${alpha(GREEN_GLOW, 0.26)}, transparent 60%)`,
+            }}
+          />
           <h1
-            className="text-[40px] font-extrabold italic leading-[0.95] tracking-tight text-white sm:text-[52px]"
+            className="relative text-[38px] font-extrabold italic leading-[0.94] tracking-normal text-white"
             data-testid="text-hero-title"
           >
             TÊNIS
@@ -127,113 +165,34 @@ function Hero({ images }: { images: string[] }) {
           </h1>
         </div>
 
-        {shoes.length > 0 && (
-          <div
-            className="relative hidden flex-1 items-end justify-center sm:flex"
-            style={{ minHeight: 240 }}
-          >
-            {/* stage glow */}
-            <div
-              className="absolute bottom-8 left-1/2 h-12 w-[88%] -translate-x-1/2 rounded-[50%]"
-              style={{
-                background: `radial-gradient(ellipse at center, ${NEON} 0%, ${alpha(NEON, 0)} 70%)`,
-                filter: "blur(14px)",
-                opacity: 0.55,
-              }}
-            />
-            {/* stage rim light */}
-            <div
-              className="absolute bottom-10 left-1/2 h-[3px] w-[66%] -translate-x-1/2 rounded-full"
-              style={{
-                background: NEON,
-                boxShadow: `0 0 16px 2px ${NEON}`,
-                opacity: 0.9,
-              }}
-            />
-            <div className="relative flex items-end justify-center gap-2 pb-10">
-              {shoes.map((src, i) => (
-                <img
-                  key={`${page}-${i}`}
-                  src={src}
-                  alt=""
-                  className={`object-contain drop-shadow-2xl ${
-                    i === 1 ? "h-36 w-44 sm:h-44 sm:w-56" : "h-28 w-36 sm:h-32 sm:w-44"
-                  } ${i === 0 ? "-rotate-6" : i === 2 ? "rotate-6" : ""}`}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* prev / next arrows */}
-      {count > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={goPrev}
-            aria-label="Anterior"
-            data-testid="button-hero-prev"
-            className="absolute left-2 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full sm:flex"
-            style={{ border: `2px solid ${NEON}`, color: NEON, backgroundColor: alpha(DARK, 0.8) }}
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={goNext}
-            aria-label="Próximo"
-            data-testid="button-hero-next"
-            className="absolute right-2 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full sm:flex"
-            style={{ border: `2px solid ${NEON}`, color: NEON, backgroundColor: alpha(DARK, 0.8) }}
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        </>
-      )}
-
-      {/* dots */}
-      {count > 1 && (
-        <div className="absolute bottom-3 left-1/2 z-10 hidden -translate-x-1/2 gap-2 sm:flex">
-          {pages.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setPage(i)}
-              aria-label={`Ir para slide ${i + 1}`}
-              data-testid={`dot-hero-${i}`}
-              className="h-2.5 w-2.5 rounded-full transition-all"
-              style={{ backgroundColor: i === page ? NEON : "rgba(255,255,255,0.4)" }}
-            />
+        <div className="grid grid-cols-1 sm:grid-cols-3">
+          {featured.map((product) => (
+            <PromoTile key={product.id} product={product} />
           ))}
         </div>
-      )}
+      </div>
     </section>
   );
 }
 
-export default function Catalog() {
+export default function CatalogV2() {
   const search = useSearch();
   const [filters, setFilters] = useState<CatalogFilters>(() =>
     filtersFromSearch(search),
   );
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [page, setPage] = useState(1);
+  const [sortMode, setSortMode] = useState<SortMode>("maior-desconto");
 
-  // Reaplica os filtros sempre que a URL muda (ex.: o usuário clica em outro
-  // item do menu já estando no catálogo, ou clica em "% Desconto" que volta
-  // para o catálogo sem filtros). Ajustes manuais na barra lateral não mexem
-  // na URL, então não são sobrescritos.
   useEffect(() => {
     setFilters(filtersFromSearch(search));
   }, [search]);
 
-  // Volta para a primeira "página" sempre que os filtros mudam.
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [filters]);
+    setPage(1);
+  }, [filters, sortMode]);
 
   const { data, isLoading } = useQuery<ProductsResponse>({
-    queryKey: ["/api/products", "catalog"],
+    queryKey: ["/api/products", "catalog-v2"],
     queryFn: async () => {
       const res = await fetch("/api/products?limit=5000");
       if (!res.ok) throw new Error("Falha ao carregar produtos");
@@ -244,11 +203,32 @@ export default function Catalog() {
   const products = useMemo(() => data?.products ?? [], [data]);
   const facets = useMemo(() => computeFacets(products), [products]);
   const filtered = useMemo(() => applyFilters(products, filters), [products, filters]);
-  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const sorted = useMemo(() => {
+    const next = [...filtered];
 
-  const heroImages = useMemo(
-    () => products.map((p) => p.mainImageUrl).filter((x): x is string => !!x).slice(0, 15),
-    [products],
+    if (sortMode === "maior-desconto") {
+      return next.sort((a, b) => discountOf(b) - discountOf(a));
+    }
+
+    if (sortMode === "menor-preco") {
+      return next.sort((a, b) => priceOf(a) - priceOf(b));
+    }
+
+    if (sortMode === "recentes") {
+      return next.sort((a, b) => {
+        const aTime = new Date(a.bestOffer?.lastSeenAt || 0).getTime();
+        const bTime = new Date(b.bestOffer?.lastSeenAt || 0).getTime();
+        return bTime - aTime;
+      });
+    }
+
+    return next;
+  }, [filtered, sortMode]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const visible = useMemo(
+    () => sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [page, sorted],
   );
 
   const toggle = (key: MultiFilterKey, value: string) => {
@@ -257,7 +237,7 @@ export default function Catalog() {
       return {
         ...prev,
         [key]: list.includes(value)
-          ? list.filter((v) => v !== value)
+          ? list.filter((item) => item !== value)
           : [...list, value],
       };
     });
@@ -269,33 +249,44 @@ export default function Catalog() {
   const clearAll = () => setFilters(EMPTY_FILTERS);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-muted/35">
       <Header />
 
-      <Hero images={heroImages} />
+      <Hero products={products} />
 
       <main className="flex-1">
-        {/* Catalog heading */}
-        <div className="container mx-auto px-4 pt-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+        <div className="container mx-auto px-4 pt-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
             <h2 className="flex items-center gap-2 text-xl font-extrabold" data-testid="text-catalog-title">
-              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <Tag className="h-3.5 w-3.5" />
               </span>
               Produtos com desconto
             </h2>
-            <p className="text-sm text-muted-foreground" data-testid="text-catalog-count">
-              {filtered.length}{" "}
-              {filtered.length === 1 ? "oferta" : "ofertas"}
-              {filtered.length !== products.length && (
-                <> de {products.length}</>
-              )}
-            </p>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <p className="text-xs text-muted-foreground" data-testid="text-catalog-count">
+                Mais de {filtered.length} ofertas
+              </p>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                Ordenar por:
+                <select
+                  value={sortMode}
+                  onChange={(event) => setSortMode(event.target.value as SortMode)}
+                  className="h-9 rounded-md border border-border bg-background px-3 text-xs font-semibold text-foreground outline-none"
+                  data-testid="select-sort"
+                >
+                  <option value="maior-desconto">Maior desconto</option>
+                  <option value="relevantes">Mais relevantes</option>
+                  <option value="menor-preco">Menor preço</option>
+                  <option value="recentes">Mais recentes</option>
+                </select>
+              </label>
+            </div>
           </div>
         </div>
 
-        {/* Body */}
-        <div className="container mx-auto flex flex-col gap-6 px-4 py-6 md:flex-row">
+        <div className="container mx-auto flex flex-col gap-5 px-4 pb-8 md:flex-row">
           {!isLoading && products.length > 0 && (
             <CatalogFilterSidebar
               facets={facets}
@@ -338,35 +329,57 @@ export default function Catalog() {
                   data-testid="grid-catalog-products"
                 >
                   {visible.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    id={product.id}
-                    name={product.mainName}
-                    brand={brandNameOf(product)}
-                    price={product.bestOffer ? parseFloat(product.bestOffer.currentPrice) : 0}
-                    oldPrice={
-                      product.bestOffer?.originalPrice
-                        ? parseFloat(product.bestOffer.originalPrice)
-                        : undefined
-                    }
-                    discount={product.bestOffer?.discountPercent || undefined}
-                    image={product.mainImageUrl || ""}
-                    category={categoryNameOf(product)}
-                    affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
-                    freeShipping={product.bestOffer?.freeShipping || false}
-                    lastSeenAt={product.bestOffer?.lastSeenAt}
-                  />
+                    <ProductCard
+                      key={product.id}
+                      id={product.id}
+                      name={product.mainName}
+                      brand={brandNameOf(product)}
+                      price={priceOf(product)}
+                      oldPrice={
+                        product.bestOffer?.originalPrice
+                          ? parseFloat(product.bestOffer.originalPrice)
+                          : undefined
+                      }
+                      discount={product.bestOffer?.discountPercent || undefined}
+                      image={product.mainImageUrl || ""}
+                      category={categoryNameOf(product)}
+                      affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
+                      freeShipping={product.bestOffer?.freeShipping || false}
+                      lastSeenAt={product.bestOffer?.lastSeenAt}
+                    />
                   ))}
                 </div>
-                {filtered.length > visible.length && (
-                  <div className="mt-8 flex justify-center">
+
+                {totalPages > 1 && (
+                  <div className="mt-8 flex items-center justify-center gap-2">
                     <Button
                       variant="outline"
-                      size="lg"
-                      onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                      data-testid="button-carregar-mais"
+                      size="sm"
+                      disabled={page === 1}
+                      onClick={() => setPage((current) => Math.max(1, current - 1))}
+                      data-testid="button-page-prev"
                     >
-                      Carregar mais ofertas
+                      Anterior
+                    </Button>
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((pageNumber) => (
+                      <Button
+                        key={pageNumber}
+                        variant={page === pageNumber ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPage(pageNumber)}
+                        data-testid={`button-page-${pageNumber}`}
+                      >
+                        {pageNumber}
+                      </Button>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page >= totalPages}
+                      onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                      data-testid="button-page-next"
+                    >
+                      Próxima
                     </Button>
                   </div>
                 )}
