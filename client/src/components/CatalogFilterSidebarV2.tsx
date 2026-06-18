@@ -18,7 +18,24 @@ import {
   countActiveFilters,
 } from "@/lib/catalogFilters";
 
-const MAX_VISIBLE_BRANDS = 6;
+const PINNED_BRANDS = ["Nike", "Adidas", "Olympikus"];
+
+function normalizeBrand(label: string) {
+  return label
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function isSameBrand(a: string, b: string) {
+  const normalizedA = normalizeBrand(a);
+  const normalizedB = normalizeBrand(b);
+  if (normalizedB === "olympikus") {
+    return normalizedA === "olympikus" || normalizedA === "olimpikus";
+  }
+  return normalizedA === normalizedB;
+}
 
 function Section({
   title,
@@ -143,17 +160,24 @@ export default function CatalogFilterSidebar({
   const rightPct = ((price[1] - priceMin) / span) * 100;
   const priceChanged = filters.price !== null;
 
-  const matchingBrands = facets.brands.filter((b) =>
-    b.label.toLowerCase().includes(brandQuery.toLowerCase()),
+  const pinnedBrands = PINNED_BRANDS.map((brand) => {
+    const match = facets.brands.find((b) => isSameBrand(b.label, brand));
+    return { label: match?.label ?? brand, count: match?.count ?? 0 };
+  });
+  const otherBrands = facets.brands.filter(
+    (b) => !PINNED_BRANDS.some((brand) => isSameBrand(b.label, brand)),
   );
-  const visibleBrands =
-    showAllBrands || brandQuery ? matchingBrands : matchingBrands.slice(0, MAX_VISIBLE_BRANDS);
+  const brandQueryNormalized = normalizeBrand(brandQuery);
+  const searchedBrands = [...pinnedBrands, ...otherBrands].filter((b) =>
+    normalizeBrand(b.label).includes(brandQueryNormalized),
+  );
+  const visibleBrands = brandQuery ? searchedBrands : pinnedBrands;
+  const expandableBrands = brandQuery || !showAllBrands ? [] : otherBrands;
 
   const activeCount = countActiveFilters(filters);
   const hasActive = activeCount > 0;
 
   const chips: { key: MultiFilterKey; value: string; label: string }[] = [];
-  filters.tipo.forEach((v) => chips.push({ key: "tipo", value: v, label: v }));
   filters.marca.forEach((v) => chips.push({ key: "marca", value: v, label: v }));
   filters.tamanho.forEach((v) =>
     chips.push({ key: "tamanho", value: v, label: `Tamanho ${v}` }),
@@ -220,27 +244,9 @@ export default function CatalogFilterSidebar({
           </div>
         )}
 
-        {/* Tipo */}
-        {facets.tipos.length > 1 && (
-          <Section title="Tipo">
-            <div className="space-y-0.5">
-              {facets.tipos.map((t) => (
-                <CheckRow
-                  key={t.label}
-                  label={t.label}
-                  count={t.count}
-                  checked={filters.tipo.includes(t.label)}
-                  onToggle={() => onToggle("tipo", t.label)}
-                  testId={`filter-tipo-${t.label}`}
-                />
-              ))}
-            </div>
-          </Section>
-        )}
-
         {/* Marca */}
         <Section title="Marca">
-          {facets.brands.length > MAX_VISIBLE_BRANDS && (
+          {facets.brands.length > PINNED_BRANDS.length && (
             <div className="relative mb-2">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <input
@@ -263,20 +269,30 @@ export default function CatalogFilterSidebar({
                 testId={`filter-marca-${b.label}`}
               />
             ))}
+            {expandableBrands.map((b) => (
+              <CheckRow
+                key={b.label}
+                label={b.label}
+                count={b.count}
+                checked={filters.marca.includes(b.label)}
+                onToggle={() => onToggle("marca", b.label)}
+                testId={`filter-marca-${b.label}`}
+              />
+            ))}
             {visibleBrands.length === 0 && (
               <p className="px-1 py-2 text-xs text-muted-foreground">
                 Nenhuma marca encontrada
               </p>
             )}
           </div>
-          {!brandQuery && facets.brands.length > MAX_VISIBLE_BRANDS && (
+          {!brandQuery && otherBrands.length > 0 && (
             <button
               type="button"
               onClick={() => setShowAllBrands((s) => !s)}
               data-testid="button-ver-mais-marcas"
               className="mt-2 flex items-center gap-1 text-xs font-semibold text-primary"
             >
-              {showAllBrands ? "Ver menos marcas" : "Ver mais marcas"}
+              {showAllBrands ? "Ver menos marcas" : "Outras marcas"}
               {showAllBrands ? (
                 <ChevronUp className="h-3.5 w-3.5" />
               ) : (
@@ -306,104 +322,6 @@ export default function CatalogFilterSidebar({
                     data-testid={`filter-tamanho-${s.label}`}
                   >
                     {s.label}
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
-        )}
-
-        {/* Gênero */}
-        {facets.generos.length > 0 && (
-          <Section title="Gênero">
-            <div className="space-y-0.5">
-              {facets.generos.map((g) => (
-                <CheckRow
-                  key={g.label}
-                  label={g.label}
-                  count={g.count}
-                  checked={filters.genero.includes(g.label)}
-                  onToggle={() => onToggle("genero", g.label)}
-                  testId={`filter-genero-${g.label}`}
-                />
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* Idade */}
-        {facets.idades.length > 0 && (
-          <Section title="Idade">
-            <div className="space-y-0.5">
-              {facets.idades.map((i) => (
-                <CheckRow
-                  key={i.label}
-                  label={i.label}
-                  count={i.count}
-                  checked={filters.idade.includes(i.label)}
-                  onToggle={() => onToggle("idade", i.label)}
-                  testId={`filter-idade-${i.label}`}
-                />
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* Esportes */}
-        {facets.modalidades.length > 0 && (
-          <Section title="Esportes">
-            <div className="space-y-0.5">
-              {facets.modalidades.map((m) => (
-                <CheckRow
-                  key={m.label}
-                  label={m.label}
-                  count={m.count}
-                  checked={filters.modalidade.includes(m.label)}
-                  onToggle={() => onToggle("modalidade", m.label)}
-                  testId={`filter-modalidade-${m.label}`}
-                />
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* Avaliação */}
-        {AVALIACAO_BUCKETS.some((b) => facets.avaliacoes[b.label] > 0) && (
-          <Section title="Avaliação">
-            <div className="space-y-0.5">
-              {AVALIACAO_BUCKETS.filter((b) => facets.avaliacoes[b.label] > 0).map((b) => {
-                const checked = filters.avaliacao.includes(b.label);
-                return (
-                  <button
-                    key={b.label}
-                    type="button"
-                    onClick={() => onToggle("avaliacao", b.label)}
-                    className="group flex w-full items-center justify-between rounded-md px-1 py-1.5 hover-elevate"
-                    data-testid={`filter-avaliacao-${b.min}`}
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <span
-                        className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-[4px] border transition-colors"
-                        style={{
-                          borderColor: checked ? "hsl(var(--primary))" : "hsl(var(--input))",
-                          backgroundColor: checked ? "hsl(var(--primary))" : "transparent",
-                        }}
-                      >
-                        {checked && <Check className="h-3 w-3 text-primary-foreground" />}
-                      </span>
-                      <span className="flex items-center gap-1 text-left text-sm leading-tight text-foreground">
-                        {Array.from({ length: b.min }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400"
-                          />
-                        ))}
-                        <span className="ml-0.5">ou mais</span>
-                      </span>
-                    </span>
-                    <span className="flex-shrink-0 text-xs text-muted-foreground">
-                      ({facets.avaliacoes[b.label]})
-                    </span>
                   </button>
                 );
               })}
@@ -505,6 +423,105 @@ export default function CatalogFilterSidebar({
             ))}
           </div>
         </Section>
+
+        {/* Gênero */}
+        {facets.generos.length > 0 && (
+          <Section title="Gênero">
+            <div className="space-y-0.5">
+              {facets.generos.map((g) => (
+                <CheckRow
+                  key={g.label}
+                  label={g.label}
+                  count={g.count}
+                  checked={filters.genero.includes(g.label)}
+                  onToggle={() => onToggle("genero", g.label)}
+                  testId={`filter-genero-${g.label}`}
+                />
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Idade */}
+        {facets.idades.length > 0 && (
+          <Section title="Idade">
+            <div className="space-y-0.5">
+              {facets.idades.map((i) => (
+                <CheckRow
+                  key={i.label}
+                  label={i.label}
+                  count={i.count}
+                  checked={filters.idade.includes(i.label)}
+                  onToggle={() => onToggle("idade", i.label)}
+                  testId={`filter-idade-${i.label}`}
+                />
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Avaliação */}
+        {AVALIACAO_BUCKETS.some((b) => facets.avaliacoes[b.label] > 0) && (
+          <Section title="Avaliação">
+            <div className="space-y-0.5">
+              {AVALIACAO_BUCKETS.filter((b) => facets.avaliacoes[b.label] > 0).map((b) => {
+                const checked = filters.avaliacao.includes(b.label);
+                return (
+                  <button
+                    key={b.label}
+                    type="button"
+                    onClick={() => onToggle("avaliacao", b.label)}
+                    className="group flex w-full items-center justify-between rounded-md px-1 py-1.5 hover-elevate"
+                    data-testid={`filter-avaliacao-${b.min}`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span
+                        className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-[4px] border transition-colors"
+                        style={{
+                          borderColor: checked ? "hsl(var(--primary))" : "hsl(var(--input))",
+                          backgroundColor: checked ? "hsl(var(--primary))" : "transparent",
+                        }}
+                      >
+                        {checked && <Check className="h-3 w-3 text-primary-foreground" />}
+                      </span>
+                      <span className="flex items-center gap-1 text-left text-sm leading-tight text-foreground">
+                        {Array.from({ length: b.min }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400"
+                          />
+                        ))}
+                        <span className="ml-0.5">ou mais</span>
+                      </span>
+                    </span>
+                    <span className="flex-shrink-0 text-xs text-muted-foreground">
+                      ({facets.avaliacoes[b.label]})
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
+        )}
+
+        {/* Tipo de Uso */}
+        {facets.modalidades.length > 0 && (
+          <Section title="Tipo de Uso">
+            <div className="space-y-0.5">
+              {facets.modalidades.map((m) => (
+                <CheckRow
+                  key={m.label}
+                  label={m.label}
+                  count={m.count}
+                  checked={filters.modalidade.includes(m.label)}
+                  onToggle={() => onToggle("modalidade", m.label)}
+                  testId={`filter-modalidade-${m.label}`}
+                />
+              ))}
+            </div>
+          </Section>
+        )}
+
       </div>
     </aside>
   );
