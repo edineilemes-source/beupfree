@@ -101,6 +101,23 @@ function makeContentHash(title: string, price: number): string {
   return Math.abs(hash).toString(16).padStart(8, "0");
 }
 
+function errorDetails(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string" && error.trim()) return error;
+
+  try {
+    const serialized = JSON.stringify(
+      error,
+      Object.getOwnPropertyNames(error as object),
+    );
+    if (serialized && serialized !== "{}") return serialized;
+  } catch {
+    // Fall through to generic message.
+  }
+
+  return "Erro desconhecido";
+}
+
 // ============ HTTP CLIENT ============
 async function fetchWithRetry(url: string, attempt = 1): Promise<string> {
   const controller = new AbortController();
@@ -129,9 +146,10 @@ async function fetchWithRetry(url: string, attempt = 1): Promise<string> {
     return html;
   } catch (err: any) {
     clearTimeout(timeout);
+    const message = errorDetails(err);
     if (attempt < MAX_RETRIES) {
       const backoff = 1000 * attempt + randomBetween(200, 800);
-      console.log(`[MLCollector] Retry ${attempt}/${MAX_RETRIES} after ${backoff}ms → ${err.message}`);
+      console.log(`[MLCollector] Retry ${attempt}/${MAX_RETRIES} after ${backoff}ms → ${message}`);
       await sleep(backoff);
       return fetchWithRetry(url, attempt + 1);
     }
@@ -284,8 +302,8 @@ export async function scrapeCollectionUrl(
     let html: string;
     try {
       html = await fetchWithRetry(url);
-    } catch (err: any) {
-      errors.push(`Página ${page}: ${err.message}`);
+    } catch (err: unknown) {
+      errors.push(`Página ${page}: ${errorDetails(err)}`);
       break; // can't continue paginating if a page fails
     }
 

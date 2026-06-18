@@ -19,6 +19,23 @@ const AUTO_PUBLISH_ALL = process.env.AUTO_PUBLISH_ALL !== "false";
 const GERAL_SOURCE_URL = "https://www.mercadolivre.com.br/ofertas?category=MLB3900";
 const GERAL_SOURCE_NAME = "Ofertas Calçados (Geral)";
 
+function errorDetails(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string" && error.trim()) return error;
+
+  try {
+    const serialized = JSON.stringify(
+      error,
+      Object.getOwnPropertyNames(error as object),
+    );
+    if (serialized && serialized !== "{}") return serialized;
+  } catch {
+    // Fall through to generic message.
+  }
+
+  return "Erro desconhecido";
+}
+
 function buildAffiliateUrl(url: string): string {
   if (!url) return url;
   const separator = url.includes("?") ? "&" : "?";
@@ -259,9 +276,9 @@ export async function runCollectionsJob(
                   } as any);
 
                   autoApprovedCount++;
-                } catch (approveErr: any) {
+                } catch (approveErr: unknown) {
                   // If auto-approve fails, fall back to manual triage
-                  result.errors.push(`[${source.name}] Auto-approve falhou para "${item.nome}": ${approveErr.message}`);
+                  result.errors.push(`[${source.name}] Auto-approve falhou para "${item.nome}": ${errorDetails(approveErr)}`);
                   await storage.createTriageItem({
                     processedItemId: processedItem.id,
                     status: "pending",
@@ -294,8 +311,8 @@ export async function runCollectionsJob(
               newCount++;
             }
           }
-        } catch (itemErr: any) {
-          result.errors.push(`[${source.name}] Item "${item.nome}": ${itemErr.message}`);
+        } catch (itemErr: unknown) {
+          result.errors.push(`[${source.name}] Item "${item.nome}": ${errorDetails(itemErr)}`);
         }
       }
 
@@ -332,12 +349,13 @@ export async function runCollectionsJob(
       console.log(
         `[CollectCollections] ${source.name}: ${collectedCount} coletados, ${newCount} novos (${autoApprovedCount} auto-aprovados), ${deactivated} desativados`
       );
-    } catch (err: any) {
-      result.errors.push(`[${source.name}] Falha na coleta: ${err.message}`);
+    } catch (err: unknown) {
+      const message = errorDetails(err);
+      result.errors.push(`[${source.name}] Falha na coleta: ${message}`);
       await storage.updateCollectionBatch(batch.id, {
         status: "failed",
         finishedAt: new Date(),
-        errorLog: err.message,
+        errorLog: message,
       });
     }
   }

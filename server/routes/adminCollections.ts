@@ -3,6 +3,23 @@ import { storage } from "../storage";
 import { runCollectionsJob } from "../jobs/collectCollections";
 import { pool } from "../db";
 
+function errorDetails(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string" && error.trim()) return error;
+
+  try {
+    const serialized = JSON.stringify(
+      error,
+      Object.getOwnPropertyNames(error as object),
+    );
+    if (serialized && serialized !== "{}") return serialized;
+  } catch {
+    // Ignore serialization failures and use the fallback below.
+  }
+
+  return "Erro desconhecido na coleta. Verifique o terminal do servidor.";
+}
+
 export function registerAdminCollectionsRoutes(app: Express): void {
 
   // Limpa todo o catálogo coletado/publicado para um novo teste de busca.
@@ -27,9 +44,10 @@ export function registerAdminCollectionsRoutes(app: Express): void {
       `);
       console.log("[AdminCollections] Catálogo limpo.");
       res.json({ success: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = errorDetails(error);
       console.error("[AdminCollections] Erro no reset:", error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: message });
     }
   });
 
@@ -39,9 +57,10 @@ export function registerAdminCollectionsRoutes(app: Express): void {
       console.log(`[AdminCollections] Iniciando coleta manual${sourceId ? ` da fonte ${sourceId}` : " de todas as fontes"}`);
       const result = await runCollectionsJob(sourceId);
       res.json({ success: true, ...result });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = errorDetails(error);
       console.error("[AdminCollections] Erro na coleta:", error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: message });
     }
   });
 
@@ -83,9 +102,10 @@ export function registerAdminCollectionsRoutes(app: Express): void {
       );
 
       res.json({ sources: sourcesWithStats });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = errorDetails(error);
       console.error("[AdminCollections] Erro ao buscar status:", error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: message });
     }
   });
 
@@ -103,8 +123,8 @@ export function registerAdminCollectionsRoutes(app: Express): void {
 
       if (!updated) return res.status(404).json({ error: "Fonte não encontrada" });
       res.json(updated);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      res.status(500).json({ error: errorDetails(error) });
     }
   });
 }
