@@ -7,7 +7,7 @@ import ProductCard from "@/components/ProductCard";
 import CatalogFilterSidebar from "@/components/CatalogFilterSidebarV2";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Package, Tag } from "lucide-react";
+import { Loader2, Package, Tag, Truck } from "lucide-react";
 import { NEON, DARK, GREEN_GLOW, alpha } from "@/lib/brand";
 import {
   CatalogProduct,
@@ -77,6 +77,54 @@ function formatBRL(value: number): string {
   });
 }
 
+const HERO_PRIMARY_BRANDS = ["Nike", "Adidas", "Olympikus"];
+const HERO_FALLBACK_BRANDS = ["Asics", "Puma", "Fila"];
+
+function normalizeBrand(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function selectHeroProducts(products: CatalogProduct[]): CatalogProduct[] {
+  const available = products
+    .filter((product) => product.mainImageUrl && product.bestOffer && discountOf(product) > 0)
+    .sort((a, b) => discountOf(b) - discountOf(a));
+
+  const selected: CatalogProduct[] = [];
+  const usedIds = new Set<string>();
+
+  const pickByBrand = (brand: string) => {
+    const normalized = normalizeBrand(brand);
+    const product = available.find(
+      (item) =>
+        !usedIds.has(item.id) &&
+        normalizeBrand(brandNameOf(item)).includes(normalized),
+    );
+
+    if (product) {
+      selected.push(product);
+      usedIds.add(product.id);
+    }
+  };
+
+  HERO_PRIMARY_BRANDS.forEach(pickByBrand);
+  HERO_FALLBACK_BRANDS.forEach((brand) => {
+    if (selected.length < 3) pickByBrand(brand);
+  });
+
+  for (const product of available) {
+    if (selected.length >= 3) break;
+    if (!usedIds.has(product.id)) {
+      selected.push(product);
+      usedIds.add(product.id);
+    }
+  }
+
+  return selected.slice(0, 3);
+}
+
 function PromoTile({ product }: { product: CatalogProduct }) {
   const price = priceOf(product);
   const oldPrice = product.bestOffer?.originalPrice
@@ -89,34 +137,34 @@ function PromoTile({ product }: { product: CatalogProduct }) {
       href={product.bestOffer?.affiliateUrl || "#"}
       target="_blank"
       rel="noreferrer"
-      className="group relative flex min-h-[220px] flex-col border-l border-border bg-white p-4 transition-transform hover:-translate-y-0.5"
+      className="group relative flex min-h-[300px] flex-col bg-white p-5 transition-transform hover:-translate-y-0.5"
       data-testid={`hero-promo-${product.id}`}
     >
       {discount > 0 && (
-        <span className="absolute left-4 top-4 rounded-sm bg-destructive px-2 py-1 text-xs font-bold text-destructive-foreground">
+        <span className="absolute left-5 top-[54%] z-10 rounded-sm bg-destructive px-2 py-1 text-xs font-bold text-destructive-foreground shadow-sm">
           -{discount}%
         </span>
       )}
 
-      <div className="flex flex-1 items-center justify-center pt-3">
+      <div className="flex h-44 items-center justify-center rounded-sm bg-gradient-to-br from-white to-muted/45">
         {product.mainImageUrl && (
           <img
             src={product.mainImageUrl}
             alt={product.mainName}
-            className="h-28 w-full object-contain transition-transform group-hover:scale-105"
+            className="h-40 w-full object-contain transition-transform group-hover:scale-105"
           />
         )}
       </div>
 
-      <div className="mt-3">
-        <p className="text-[11px] font-bold uppercase text-muted-foreground">
+      <div className="mt-7">
+        <p className="text-sm font-extrabold uppercase text-foreground">
           {brandNameOf(product)}
         </p>
-        <p className="mt-1 line-clamp-2 min-h-[34px] text-xs font-semibold leading-snug">
+        <p className="mt-2 line-clamp-2 min-h-[36px] text-xs font-semibold uppercase leading-snug text-foreground">
           {product.mainName}
         </p>
-        <div className="mt-2 flex flex-wrap items-end gap-2">
-          <span className="text-base font-extrabold text-primary">
+        <div className="mt-3 flex flex-wrap items-end gap-2">
+          <span className="text-lg font-extrabold text-primary">
             {formatBRL(price)}
           </span>
           {oldPrice && oldPrice > price && (
@@ -125,36 +173,35 @@ function PromoTile({ product }: { product: CatalogProduct }) {
             </span>
           )}
         </div>
+        {product.bestOffer?.freeShipping && (
+          <span className="mt-3 inline-flex items-center gap-1 rounded-full border border-primary px-2.5 py-1 text-[11px] font-bold uppercase text-primary">
+            <Truck className="h-3.5 w-3.5" />
+            Frete grátis
+          </span>
+        )}
       </div>
     </a>
   );
 }
 
 function Hero({ products }: { products: CatalogProduct[] }) {
-  const featured = useMemo(
-    () =>
-      [...products]
-        .filter((product) => product.mainImageUrl && product.bestOffer)
-        .sort((a, b) => discountOf(b) - discountOf(a))
-        .slice(0, 3),
-    [products],
-  );
+  const featured = useMemo(() => selectHeroProducts(products), [products]);
 
   return (
-    <section className="border-b border-border bg-white">
-      <div className="mx-auto grid max-w-[1180px] grid-cols-1 overflow-hidden md:grid-cols-[300px_1fr]">
+    <section className="border-b border-border bg-white px-0 py-0">
+      <div className="mx-auto grid max-w-[1180px] grid-cols-1 overflow-hidden bg-white md:grid-cols-[330px_1fr]">
         <div
-          className="relative flex min-h-[220px] items-center overflow-hidden px-8 py-8"
-          style={{ backgroundColor: DARK }}
+          className="relative flex min-h-[300px] items-center overflow-hidden px-9 py-8"
+          style={{ backgroundColor: "black" }}
         >
           <div
             className="pointer-events-none absolute inset-0"
             style={{
-              background: `radial-gradient(100% 80% at 85% 25%, ${alpha(GREEN_GLOW, 0.26)}, transparent 60%)`,
+              background: `radial-gradient(90% 70% at 90% 35%, ${alpha(GREEN_GLOW, 0.18)}, transparent 64%)`,
             }}
           />
           <h1
-            className="relative text-[38px] font-extrabold italic leading-[0.94] tracking-normal text-white"
+            className="relative text-[40px] font-extrabold italic leading-[0.95] tracking-normal text-white"
             data-testid="text-hero-title"
           >
             TÊNIS
@@ -165,7 +212,7 @@ function Hero({ products }: { products: CatalogProduct[] }) {
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-1 bg-muted sm:grid-cols-3">
           {featured.map((product) => (
             <PromoTile key={product.id} product={product} />
           ))}
