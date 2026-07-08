@@ -1,6 +1,34 @@
-node_modules
-dist
+# Dependências
+node_modules/
+
+# Build
+dist/
+
+# Variáveis de ambiente
+.env
+.env.*
+
+# Arquivos temporários
+.agents/
+attached_assets/
+exports/
+
+# Arquivos compactados
+*.zip
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Sistema Operacional
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+Thumbs.db
+
+# VS Code
+.vscode/settings.json
+
+# Codespaces
+.devcontainer/.env
+node_modules
