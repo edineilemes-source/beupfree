@@ -15,7 +15,7 @@ import {
   MultiFilterKey,
   EMPTY_FILTERS,
   applyFilters,
-  computeFacets,
+  computeCrossFacets,
   brandNameOf,
   categoryNameOf,
   discountOf,
@@ -29,7 +29,8 @@ interface ProductsResponse {
 
 type SortMode = "maior-desconto" | "relevantes" | "menor-preco" | "recentes";
 
-const PAGE_SIZE = 12;
+// 21 cards por página no desktop: 7 linhas × 3 colunas.
+const PAGE_SIZE = 21;
 const URL_FILTER_KEYS: MultiFilterKey[] = [
   "marca",
   "desconto",
@@ -78,14 +79,18 @@ function formatBRL(value: number): string {
 }
 
 const HERO_PRIMARY_BRANDS = ["Nike", "Adidas", "Olympikus"];
-const HERO_FALLBACK_BRANDS = ["Asics", "Puma", "Fila"];
 
 function normalizeBrand(value: string): string {
-  return value
+  const normalized = value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+  // Grafia alternativa vista nos dados coletados.
+  return normalized === "olimpikus" ? "olympikus" : normalized;
 }
+
+// Rótulos de "marca não identificada" que não devem aparecer no banner.
+const GENERIC_BRANDS = new Set(["outra", "outras"]);
 
 function selectHeroProducts(products: CatalogProduct[]): CatalogProduct[] {
   const available = products
@@ -109,10 +114,21 @@ function selectHeroProducts(products: CatalogProduct[]): CatalogProduct[] {
     }
   };
 
+  // Um card para a melhor promoção de cada marca-âncora (Nike, Adidas,
+  // Olympikus). Se alguma delas não tiver produto no catálogo no momento,
+  // o espaço é completado abaixo com a melhor oferta de outra marca.
   HERO_PRIMARY_BRANDS.forEach(pickByBrand);
-  HERO_FALLBACK_BRANDS.forEach((brand) => {
-    if (selected.length < 3) pickByBrand(brand);
-  });
+
+  // Preenche os espaços restantes com a melhor oferta de outra marca,
+  // pulando produtos sem marca identificada ("Outra") para o banner
+  // sempre exibir marcas reconhecíveis.
+  for (const product of available) {
+    if (selected.length >= 3) break;
+    if (!usedIds.has(product.id) && !GENERIC_BRANDS.has(normalizeBrand(brandNameOf(product)))) {
+      selected.push(product);
+      usedIds.add(product.id);
+    }
+  }
 
   for (const product of available) {
     if (selected.length >= 3) break;
@@ -137,7 +153,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
       href={product.bestOffer?.affiliateUrl || "#"}
       target="_blank"
       rel="noreferrer"
-      className="group relative flex min-h-[300px] flex-col bg-white p-5 transition-transform hover:-translate-y-0.5"
+      className="group relative flex min-h-[300px] flex-col rounded-md border-2 border-black bg-white p-5 transition-transform hover:-translate-y-0.5"
       data-testid={`hero-promo-${product.id}`}
     >
       {discount > 0 && (
@@ -146,7 +162,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
         </span>
       )}
 
-      <div className="flex h-44 items-center justify-center rounded-sm bg-gradient-to-br from-white to-muted/45">
+      <div className="flex h-44 items-center justify-center bg-white">
         {product.mainImageUrl && (
           <img
             src={product.mainImageUrl}
@@ -212,7 +228,7 @@ function Hero({ products }: { products: CatalogProduct[] }) {
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 gap-1 bg-muted sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 bg-white p-3 sm:grid-cols-3">
           {featured.map((product) => (
             <PromoTile key={product.id} product={product} />
           ))}
@@ -248,7 +264,7 @@ export default function CatalogV2() {
   });
 
   const products = useMemo(() => data?.products ?? [], [data]);
-  const facets = useMemo(() => computeFacets(products), [products]);
+  const facets = useMemo(() => computeCrossFacets(products, filters), [products, filters]);
   const filtered = useMemo(() => applyFilters(products, filters), [products, filters]);
   const sorted = useMemo(() => {
     const next = [...filtered];

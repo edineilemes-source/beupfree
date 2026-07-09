@@ -380,6 +380,61 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Facetas cruzadas: a contagem de cada dimensão considera todos os filtros
+// ativos EXCETO os da própria dimensão (padrão de e-commerce facetado).
+// Ex.: ao marcar "Adidas", os tamanhos mostram só o que existe dentro da
+// Adidas, e as outras marcas mostram quanto cada uma acrescentaria.
+// ---------------------------------------------------------------------------
+
+type FacetItem = { label: string; count: number };
+
+// Garante que valores já selecionados continuem visíveis na lista (com
+// contagem 0) mesmo quando os outros filtros os eliminam — senão o usuário
+// não conseguiria desmarcá-los pela seção.
+function withSelected(list: FacetItem[], selected: string[]): FacetItem[] {
+  const have = new Set(list.map((i) => i.label));
+  const missing = selected
+    .filter((v) => !have.has(v))
+    .map((label) => ({ label, count: 0 }));
+  return missing.length > 0 ? [...list, ...missing] : list;
+}
+
+export function computeCrossFacets(
+  products: CatalogProduct[],
+  filters: CatalogFilters,
+): CatalogFacets {
+  const facetWithout = (key: MultiFilterKey) =>
+    computeFacets(applyFilters(products, { ...filters, [key]: [] }));
+
+  const marca = facetWithout("marca");
+  const desconto = facetWithout("desconto");
+  const frete = facetWithout("frete");
+  const tamanho = facetWithout("tamanho");
+  const genero = facetWithout("genero");
+  const idade = facetWithout("idade");
+  const modalidade = facetWithout("modalidade");
+  const tipo = facetWithout("tipo");
+  const avaliacao = facetWithout("avaliacao");
+  const preco = computeFacets(applyFilters(products, { ...filters, price: null }));
+
+  return {
+    brands: withSelected(marca.brands, filters.marca),
+    desconto: desconto.desconto,
+    frete: frete.frete,
+    sizes: withSelected(tamanho.sizes, filters.tamanho).sort(
+      (a, b) => Number(a.label) - Number(b.label),
+    ),
+    generos: withSelected(genero.generos, filters.genero),
+    idades: withSelected(idade.idades, filters.idade),
+    modalidades: withSelected(modalidade.modalidades, filters.modalidade),
+    tipos: withSelected(tipo.tipos, filters.tipo),
+    avaliacoes: avaliacao.avaliacoes,
+    priceMin: preco.priceMin,
+    priceMax: preco.priceMax,
+  };
+}
+
 export function countActiveFilters(f: CatalogFilters): number {
   return (
     f.marca.length +

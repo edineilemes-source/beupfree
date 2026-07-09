@@ -190,6 +190,9 @@ export default function CatalogFilterSidebar({
   filters.frete.forEach((v) =>
     chips.push({ key: "frete", value: v, label: `Frete: ${v}` }),
   );
+  // O filtro de tipo vem do menu (ex.: Acessórios) e não tem seção própria na
+  // barra; o chip garante que ele fique visível e removível.
+  filters.tipo.forEach((v) => chips.push({ key: "tipo", value: v, label: v }));
 
   return (
     <aside className="w-full flex-shrink-0 md:w-[250px]">
