@@ -188,6 +188,18 @@ export async function runCollectionsJob(
                 sql`UPDATE processed_items SET promotion_type = ${item.promotionType} WHERE content_hash = ${contentHash}`
               );
             }
+            // Refresh freeShipping — o markup do ML mudou e itens antigos
+            // ficaram com free_shipping=false; re-sincroniza a cada coleta.
+            if (processedItem && (processedItem as any).freeShipping !== item.frete_gratis) {
+              await db.execute(
+                sql`UPDATE processed_items SET free_shipping = ${item.frete_gratis} WHERE content_hash = ${contentHash}`
+              );
+            }
+            if (item.externalItemId) {
+              await db.execute(
+                sql`UPDATE offers SET free_shipping = ${item.frete_gratis} WHERE external_id = ${item.externalItemId} AND free_shipping IS DISTINCT FROM ${item.frete_gratis}`
+              );
+            }
           }
 
           collectedCount++;

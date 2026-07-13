@@ -241,13 +241,21 @@ export async function scrapeBrandShopUrl(
         }
 
         // Shipping
+        const cardTextNormalized = card
+          .text()
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
         const shippingText = card
           .find(".poly-component__shipping")
           .text()
           .trim();
         const frete_gratis =
           shippingText.toLowerCase().includes("grátis") ||
-          shippingText.toLowerCase().includes("gratis");
+          shippingText.toLowerCase().includes("gratis") ||
+          cardTextNormalized.includes("frete gratis") ||
+          cardTextNormalized.includes("envio gratis") ||
+          cardTextNormalized.includes("chegara gratis");
 
         const contentHash = makeContentHash(title, preco_atual);
         const dedupeKey = externalItemId || contentHash;

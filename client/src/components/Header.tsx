@@ -1,7 +1,7 @@
 import { Search, User, Heart, ShoppingCart, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { Link } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useSearch } from "wouter";
 import { NEON, DARK, DARK_NAV, alpha } from "@/lib/brand";
 import logoUrl from "@assets/logo_uppulse_hd_transparent.png";
 
@@ -16,7 +16,29 @@ const NAV: { label: string; href: string }[] = [
 ];
 
 export default function Header() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const search = useSearch();
+  const [, setLocation] = useLocation();
+  const urlQuery = new URLSearchParams(search).get("q") ?? "";
+  const [searchQuery, setSearchQuery] = useState(urlQuery);
+
+  // Mantém o campo em sincronia quando a busca é limpa/alterada pela URL
+  useEffect(() => {
+    setSearchQuery(urlQuery);
+  }, [urlQuery]);
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    // Preserva filtros já ativos na URL (marca, gênero etc.) ao buscar.
+    const params = new URLSearchParams(search);
+    if (q) {
+      params.set("q", q);
+    } else {
+      params.delete("q");
+    }
+    const qs = params.toString();
+    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
+  };
 
   return (
     <header className="sticky top-0 z-50">
@@ -46,7 +68,10 @@ export default function Header() {
           </Link>
 
           {/* Search */}
-          <div className="relative order-last w-full min-w-0 flex-1 md:order-none md:w-auto md:max-w-[440px]">
+          <form
+            onSubmit={submitSearch}
+            className="relative order-last w-full min-w-0 flex-1 md:order-none md:w-auto md:max-w-[440px]"
+          >
             <Input
               type="search"
               aria-label="Buscar tênis"
@@ -57,11 +82,15 @@ export default function Header() {
               onChange={(e) => setSearchQuery(e.target.value)}
               data-testid="input-search"
             />
-            <Search
-              className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/80"
-              style={{ color: NEON }}
-            />
-          </div>
+            <button
+              type="submit"
+              aria-label="Buscar"
+              className="absolute right-4 top-1/2 -translate-y-1/2"
+              data-testid="button-search"
+            >
+              <Search className="h-5 w-5" style={{ color: NEON }} />
+            </button>
+          </form>
 
           {/* Account / Favorites / Cart */}
           <div className="ml-auto flex flex-shrink-0 items-center gap-3 text-white sm:gap-5">

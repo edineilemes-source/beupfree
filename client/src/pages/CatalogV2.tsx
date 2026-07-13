@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearch } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import CatalogFilterSidebar from "@/components/CatalogFilterSidebarV2";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Package, Tag, Truck } from "lucide-react";
+import { Loader2, Package, Search, Tag, Truck, X } from "lucide-react";
 import { NEON, DARK, GREEN_GLOW, alpha } from "@/lib/brand";
 import heroBgUrl from "@assets/fundo_rascunho_be_up_1783981500992.png";
 import {
@@ -70,6 +70,20 @@ function filtersFromSearch(search: string): CatalogFilters {
   }
 
   return next;
+}
+
+function normalizeText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+// Busca por texto: todos os termos digitados precisam aparecer no nome ou na
+// marca do produto (sem diferenciar acentos/maiúsculas).
+function matchesQuery(product: CatalogProduct, tokens: string[]): boolean {
+  const haystack = normalizeText(`${product.mainName} ${brandNameOf(product)}`);
+  return tokens.every((token) => haystack.includes(token));
 }
 
 function formatBRL(value: number): string {
@@ -248,6 +262,7 @@ function Hero({ products }: { products: CatalogProduct[] }) {
 
 export default function CatalogV2() {
   const search = useSearch();
+  const [, setLocation] = useLocation();
   const [filters, setFilters] = useState<CatalogFilters>(() =>
     filtersFromSearch(search),
   );
@@ -258,9 +273,25 @@ export default function CatalogV2() {
     setFilters(filtersFromSearch(search));
   }, [search]);
 
+  const query = useMemo(
+    () => (new URLSearchParams(search).get("q") ?? "").trim(),
+    [search],
+  );
+  const queryTokens = useMemo(
+    () => normalizeText(query).split(/\s+/).filter(Boolean),
+    [query],
+  );
+
+  const clearQuery = () => {
+    const params = new URLSearchParams(search);
+    params.delete("q");
+    const qs = params.toString();
+    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
+  };
+
   useEffect(() => {
     setPage(1);
-  }, [filters, sortMode]);
+  }, [filters, sortMode, query]);
 
   const { data, isLoading } = useQuery<ProductsResponse>({
     queryKey: ["/api/products", "catalog-v2"],
@@ -272,8 +303,17 @@ export default function CatalogV2() {
   });
 
   const products = useMemo(() => data?.products ?? [], [data]);
-  const facets = useMemo(() => computeCrossFacets(products, filters), [products, filters]);
-  const filtered = useMemo(() => applyFilters(products, filters), [products, filters]);
+  // A busca por texto restringe o universo de produtos; filtros e contadores
+  // da barra lateral passam a refletir apenas os resultados da busca.
+  const searched = useMemo(
+    () =>
+      queryTokens.length === 0
+        ? products
+        : products.filter((product) => matchesQuery(product, queryTokens)),
+    [products, queryTokens],
+  );
+  const facets = useMemo(() => computeCrossFacets(searched, filters), [searched, filters]);
+  const filtered = useMemo(() => applyFilters(searched, filters), [searched, filters]);
   const sorted = useMemo(() => {
     const next = [...filtered];
 
@@ -328,12 +368,26 @@ export default function CatalogV2() {
       <main className="flex-1">
         <div className="w-full px-4 pt-5">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
-            <h2 className="flex items-center gap-2 text-xl font-extrabold" data-testid="text-catalog-title">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                <Tag className="h-3.5 w-3.5" />
-              </span>
-              Produtos com desconto
-            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="flex items-center gap-2 text-xl font-extrabold" data-testid="text-catalog-title">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                  <Tag className="h-3.5 w-3.5" />
+                </span>
+                {query ? `Resultados para "${query}"` : "Produtos com desconto"}
+              </h2>
+              {query && (
+                <button
+                  type="button"
+                  onClick={clearQuery}
+                  className="flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover-elevate active-elevate-2"
+                  data-testid="button-clear-search"
+                >
+                  <Search className="h-3 w-3 text-muted-foreground" />
+                  {query}
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
 
             <div className="flex flex-wrap items-center gap-4">
               <p className="text-xs text-muted-foreground" data-testid="text-catalog-count">

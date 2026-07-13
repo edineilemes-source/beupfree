@@ -48,40 +48,27 @@ export default function ProductCard({
     return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   };
 
+  const timeAgo = getTimeAgoText(lastSeenAt);
+
   return (
     <Card
-      className="flex flex-col overflow-hidden transition-shadow hover:shadow-md"
+      className="flex flex-col overflow-hidden bg-white transition-shadow hover:shadow-sm dark:bg-card"
       data-testid={`card-product-${id}`}
     >
       {/* Image area */}
-      <div className={`relative bg-muted/40 p-4 ${soldOut ? "opacity-60" : ""}`}>
-        <div className="absolute left-3 top-3 z-10 flex flex-col gap-1">
-          {soldOut ? (
+      <div className={`relative bg-white p-5 dark:bg-card ${soldOut ? "opacity-60" : ""}`}>
+        {soldOut && (
+          <div className="absolute left-3 top-3 z-10">
             <Badge
               variant="outline"
-              className="bg-background/80 backdrop-blur-sm text-muted-foreground"
+              className="bg-background/80 text-muted-foreground backdrop-blur-sm"
               data-testid={`badge-soldout-${id}`}
             >
-              <PackageX className="w-3 h-3 mr-1" />
+              <PackageX className="mr-1 h-3 w-3" />
               Esgotado
             </Badge>
-          ) : (
-            category && (
-              <Badge
-                className="bg-accent text-accent-foreground border-accent-border"
-                data-testid={`badge-category-${id}`}
-              >
-                {category}
-              </Badge>
-            )
-          )}
-          {!soldOut && freeShipping && (
-            <Badge className="bg-primary text-primary-foreground border-primary-border" data-testid={`badge-shipping-${id}`}>
-              <Truck className="w-3 h-3 mr-1" />
-              Frete Grátis
-            </Badge>
-          )}
-        </div>
+          </div>
+        )}
 
         {!soldOut && computedDiscount > 0 && (
           <div className="absolute right-3 top-3 z-10">
@@ -100,12 +87,13 @@ export default function ProductCard({
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
-        {brand && (
-          <span className="text-xs text-muted-foreground" data-testid={`text-brand-${id}`}>
-            {brand}
-          </span>
-        )}
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-1">
+        <span
+          className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+          data-testid={`text-brand-${id}`}
+        >
+          {[brand, category].filter(Boolean).join(" · ")}
+        </span>
         <h3
           className="mt-1 line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug"
           data-testid={`text-product-name-${id}`}
@@ -113,16 +101,26 @@ export default function ProductCard({
           {name}
         </h3>
 
-        <div className="mt-2">
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
+          <p className="text-lg font-bold" data-testid={`text-price-${id}`}>
+            R$ {safePrice.toFixed(2)}
+          </p>
           {safeOldPrice && safeOldPrice > safePrice && (
             <p className="text-xs text-muted-foreground line-through" data-testid={`text-old-price-${id}`}>
               R$ {safeOldPrice.toFixed(2)}
             </p>
           )}
-          <p className="text-xl font-extrabold" data-testid={`text-price-${id}`}>
-            R$ {safePrice.toFixed(2)}
-          </p>
         </div>
+
+        {!soldOut && freeShipping && (
+          <p
+            className="mt-1 flex items-center gap-1 text-xs font-semibold text-primary"
+            data-testid={`badge-shipping-${id}`}
+          >
+            <Truck className="h-3.5 w-3.5" />
+            Frete grátis
+          </p>
+        )}
 
         <Button
           className="mt-3 w-full gap-2"
@@ -145,10 +143,7 @@ export default function ProductCard({
         </Button>
 
         <p className="mt-2 text-center text-[10px] text-muted-foreground" data-testid={`text-updated-${id}`}>
-          Atualizado {getTimeAgoText(lastSeenAt)}
-        </p>
-        <p className="text-center text-[10px] text-muted-foreground" data-testid={`text-ml-badge-${id}`}>
-          Parceiro Oficial Mercado Livre
+          {timeAgo ? `Atualizado ${timeAgo} · ` : ""}Parceiro Oficial Mercado Livre
         </p>
       </div>
     </Card>
