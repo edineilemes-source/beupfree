@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Package, Tag, Truck } from "lucide-react";
 import { NEON, DARK, GREEN_GLOW, alpha } from "@/lib/brand";
+import heroBgUrl from "@assets/fundo_rascunho_be_up_1783981500992.png";
 import {
   CatalogProduct,
   CatalogFilters,
@@ -204,8 +205,15 @@ function Hero({ products }: { products: CatalogProduct[] }) {
   const featured = useMemo(() => selectHeroProducts(products), [products]);
 
   return (
-    <section className="border-b border-border bg-white px-0 py-0">
-      <div className="mx-auto grid max-w-[1180px] grid-cols-1 overflow-hidden bg-white md:grid-cols-[330px_1fr]">
+    <section
+      className="border-b border-border px-0 py-0"
+      style={{
+        backgroundImage: `url(${heroBgUrl})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="grid w-full grid-cols-1 gap-4 p-4 md:grid-cols-[330px_1fr] md:gap-5 md:p-6">
         <div
           className="relative flex min-h-[300px] items-center overflow-hidden px-9 py-8"
           style={{ backgroundColor: "black" }}
@@ -228,7 +236,7 @@ function Hero({ products }: { products: CatalogProduct[] }) {
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 bg-white p-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:gap-5">
           {featured.map((product) => (
             <PromoTile key={product.id} product={product} />
           ))}
@@ -318,7 +326,7 @@ export default function CatalogV2() {
       <Hero products={products} />
 
       <main className="flex-1">
-        <div className="container mx-auto px-4 pt-5">
+        <div className="w-full px-4 pt-5">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
             <h2 className="flex items-center gap-2 text-xl font-extrabold" data-testid="text-catalog-title">
               <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
@@ -349,7 +357,7 @@ export default function CatalogV2() {
           </div>
         </div>
 
-        <div className="container mx-auto flex flex-col gap-5 px-4 pb-8 md:flex-row">
+        <div className="flex w-full flex-col gap-5 px-4 pb-8 md:flex-row">
           {!isLoading && products.length > 0 && (
             <CatalogFilterSidebar
               facets={facets}

@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Link } from "wouter";
 import { NEON, DARK, DARK_NAV, alpha } from "@/lib/brand";
-import logoUrl from "@assets/logo_UpPulse_transparent.png";
+import logoUrl from "@assets/logo_uppulse_hd_transparent.png";
 
 const SEARCH_BORDER = "hsl(160 55% 38%)";
 
@@ -29,7 +29,7 @@ export default function Header() {
             background: `linear-gradient(115deg, transparent 50%, ${alpha(NEON, 0.08)} 54%, transparent 58%), linear-gradient(115deg, transparent 66%, ${alpha(NEON, 0.06)} 70%, transparent 74%), linear-gradient(115deg, transparent 82%, ${alpha(NEON, 0.05)} 86%, transparent 90%)`,
           }}
         />
-        <div className="container relative mx-auto flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
+        <div className="relative flex w-full flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
           {/* Logo */}
           <Link href="/">
             <div
@@ -39,7 +39,7 @@ export default function Header() {
               <img
                 src={logoUrl}
                 alt="UpPulse - Tênis esportivos em promoção"
-                className="h-14 w-auto sm:h-16"
+                className="h-16 w-auto sm:h-20"
                 data-testid="img-logo"
               />
             </div>
@@ -110,7 +110,7 @@ export default function Header() {
 
       {/* Dark green nav */}
       <nav style={{ backgroundColor: DARK_NAV }}>
-        <div className="container mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-3 text-[13px] font-semibold uppercase tracking-wide sm:justify-between sm:gap-x-4 md:px-8">
+        <div className="flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-3 text-[13px] font-semibold uppercase tracking-wide sm:justify-between sm:gap-x-4 md:px-8">
           {NAV.map((item) => (
             <Link key={item.label} href={item.href}>
               <span
