@@ -39,7 +39,7 @@ export default function Header() {
               <img
                 src={logoUrl}
                 alt="UpPulse - Tênis esportivos em promoção"
-                className="h-16 w-auto sm:h-20"
+                className="h-24 w-auto sm:h-32 md:h-40"
                 data-testid="img-logo"
               />
             </div>
