@@ -7,8 +7,9 @@ import ProductCard from "@/components/ProductCard";
 import CatalogFilterSidebar from "@/components/CatalogFilterSidebarV2";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Package, Tag } from "lucide-react";
-import { NEON } from "@/lib/brand";
+import { Loader2, Package, Tag, Truck } from "lucide-react";
+import { NEON, DARK, GREEN_GLOW, alpha } from "@/lib/brand";
+import heroBgUrl from "@assets/fundo_rascunho_be_up_1783981500992.png";
 import {
   CatalogProduct,
   CatalogFilters,
@@ -71,40 +72,175 @@ function filtersFromSearch(search: string): CatalogFilters {
   return next;
 }
 
-const MARQUEE_REPEATS = 8;
+function formatBRL(value: number): string {
+  return value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
 
-function PromoMarquee() {
+const HERO_PRIMARY_BRANDS = ["Nike", "Adidas", "Olympikus"];
+
+function normalizeBrand(value: string): string {
+  const normalized = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  // Grafia alternativa vista nos dados coletados.
+  return normalized === "olimpikus" ? "olympikus" : normalized;
+}
+
+// Rótulos de "marca não identificada" que não devem aparecer no banner.
+const GENERIC_BRANDS = new Set(["outra", "outras"]);
+
+function selectHeroProducts(products: CatalogProduct[]): CatalogProduct[] {
+  const available = products
+    .filter((product) => product.mainImageUrl && product.bestOffer && discountOf(product) > 0)
+    .sort((a, b) => discountOf(b) - discountOf(a));
+
+  const selected: CatalogProduct[] = [];
+  const usedIds = new Set<string>();
+
+  const pickByBrand = (brand: string) => {
+    const normalized = normalizeBrand(brand);
+    const product = available.find(
+      (item) =>
+        !usedIds.has(item.id) &&
+        normalizeBrand(brandNameOf(item)).includes(normalized),
+    );
+
+    if (product) {
+      selected.push(product);
+      usedIds.add(product.id);
+    }
+  };
+
+  // Um card para a melhor promoção de cada marca-âncora (Nike, Adidas,
+  // Olympikus). Se alguma delas não tiver produto no catálogo no momento,
+  // o espaço é completado abaixo com a melhor oferta de outra marca.
+  HERO_PRIMARY_BRANDS.forEach(pickByBrand);
+
+  // Preenche os espaços restantes com a melhor oferta de outra marca,
+  // pulando produtos sem marca identificada ("Outra") para o banner
+  // sempre exibir marcas reconhecíveis.
+  for (const product of available) {
+    if (selected.length >= 3) break;
+    if (!usedIds.has(product.id) && !GENERIC_BRANDS.has(normalizeBrand(brandNameOf(product)))) {
+      selected.push(product);
+      usedIds.add(product.id);
+    }
+  }
+
+  for (const product of available) {
+    if (selected.length >= 3) break;
+    if (!usedIds.has(product.id)) {
+      selected.push(product);
+      usedIds.add(product.id);
+    }
+  }
+
+  return selected.slice(0, 3);
+}
+
+function PromoTile({ product }: { product: CatalogProduct }) {
+  const price = priceOf(product);
+  const oldPrice = product.bestOffer?.originalPrice
+    ? parseFloat(product.bestOffer.originalPrice)
+    : null;
+  const discount = discountOf(product);
+
+  return (
+    <a
+      href={product.bestOffer?.affiliateUrl || "#"}
+      target="_blank"
+      rel="noreferrer"
+      className="group relative flex min-h-[300px] flex-col rounded-md border-2 border-black bg-white p-5 transition-transform hover:-translate-y-0.5"
+      data-testid={`hero-promo-${product.id}`}
+    >
+      {discount > 0 && (
+        <span className="absolute left-5 top-[54%] z-10 rounded-sm bg-destructive px-2 py-1 text-xs font-bold text-destructive-foreground shadow-sm">
+          -{discount}%
+        </span>
+      )}
+
+      <div className="flex h-44 items-center justify-center bg-white">
+        {product.mainImageUrl && (
+          <img
+            src={product.mainImageUrl}
+            alt={product.mainName}
+            className="h-40 w-full object-contain transition-transform group-hover:scale-105"
+          />
+        )}
+      </div>
+
+      <div className="mt-7">
+        <p className="text-sm font-extrabold uppercase text-foreground">
+          {brandNameOf(product)}
+        </p>
+        <p className="mt-2 line-clamp-2 min-h-[36px] text-xs font-semibold uppercase leading-snug text-foreground">
+          {product.mainName}
+        </p>
+        <div className="mt-3 flex flex-wrap items-end gap-2">
+          <span className="text-lg font-extrabold text-primary">
+            {formatBRL(price)}
+          </span>
+          {oldPrice && oldPrice > price && (
+            <span className="text-[11px] text-muted-foreground line-through">
+              {formatBRL(oldPrice)}
+            </span>
+          )}
+        </div>
+        {product.bestOffer?.freeShipping && (
+          <span className="mt-3 inline-flex items-center gap-1 rounded-full border border-primary px-2.5 py-1 text-[11px] font-bold uppercase text-primary">
+            <Truck className="h-3.5 w-3.5" />
+            Frete grátis
+          </span>
+        )}
+      </div>
+    </a>
+  );
+}
+
+function Hero({ products }: { products: CatalogProduct[] }) {
+  const featured = useMemo(() => selectHeroProducts(products), [products]);
+
   return (
     <section
-      className="overflow-hidden border-b border-border"
-      style={{ backgroundColor: "black" }}
-      aria-label="Tênis esportivos em promoção"
-      data-testid="marquee-promo"
+      className="border-b border-border px-0 py-0"
+      style={{
+        backgroundImage: `url(${heroBgUrl})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
     >
-      <div className="marquee-track flex w-max items-center py-3.5">
-        {[0, 1].map((half) => (
+      <div className="grid w-full grid-cols-1 gap-4 p-4 md:grid-cols-[330px_1fr] md:gap-5 md:p-6">
+        <div
+          className="relative flex min-h-[300px] items-center overflow-hidden px-9 py-8"
+          style={{ backgroundColor: "black" }}
+        >
           <div
-            key={half}
-            className="flex items-center"
-            aria-hidden={half === 1}
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: `radial-gradient(90% 70% at 90% 35%, ${alpha(GREEN_GLOW, 0.18)}, transparent 64%)`,
+            }}
+          />
+          <h1
+            className="relative text-[40px] font-extrabold italic leading-[0.95] tracking-normal text-white"
+            data-testid="text-hero-title"
           >
-            {Array.from({ length: MARQUEE_REPEATS }).map((_, index) => (
-              <span
-                key={index}
-                className="flex items-center whitespace-nowrap text-xl font-extrabold italic tracking-wide text-white md:text-2xl"
-              >
-                <span className="px-6">
-                  TÊNIS <span style={{ color: NEON }}>ESPORTIVOS</span> EM
-                  PROMOÇÃO
-                </span>
-                <span
-                  className="h-2 w-2 flex-shrink-0 rounded-full"
-                  style={{ backgroundColor: NEON }}
-                />
-              </span>
-            ))}
-          </div>
-        ))}
+            TÊNIS
+            <br />
+            <span style={{ color: NEON }}>ESPORTIVOS</span>
+            <br />
+            EM PROMOÇÃO
+          </h1>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:gap-5">
+          {featured.map((product) => (
+            <PromoTile key={product.id} product={product} />
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -187,7 +323,7 @@ export default function CatalogV2() {
     <div className="flex min-h-screen flex-col bg-muted/35">
       <Header />
 
-      <PromoMarquee />
+      <Hero products={products} />
 
       <main className="flex-1">
         <div className="w-full px-4 pt-5">
