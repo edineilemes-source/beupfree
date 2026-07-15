@@ -239,10 +239,20 @@ function parsePage(
     const avaliacao_media = parseRating(ratingText);
     const qtd_avaliacoes = parseReviewCount(reviewsText);
 
+    // ML trocou o markup: ".poly-component__shipping" sumiu e o frete grátis
+    // agora aparece em spans "polylabel". Detecta pelo texto do card inteiro.
     const shippingText = card.find(".poly-component__shipping").text().trim();
+    const cardTextNormalized = card
+      .text()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
     const frete_gratis =
       shippingText.toLowerCase().includes("grátis") ||
-      shippingText.toLowerCase().includes("gratis");
+      shippingText.toLowerCase().includes("gratis") ||
+      cardTextNormalized.includes("frete gratis") ||
+      cardTextNormalized.includes("envio gratis") ||
+      cardTextNormalized.includes("chegara gratis");
     const parcelas = card.find(".poly-price__installments").text().trim();
 
     const promotionType = detectPromotionType(card);

@@ -1,21 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearch } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import CatalogFilterSidebar from "@/components/CatalogFilterSidebarV2";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Package, Tag, Truck } from "lucide-react";
+import { Loader2, Package, Search, Tag, Truck, X } from "lucide-react";
 import { NEON, DARK, GREEN_GLOW, alpha } from "@/lib/brand";
+import heroBgUrl from "@assets/fundo_rascunho_be_up_1783981500992.png";
 import {
   CatalogProduct,
   CatalogFilters,
   MultiFilterKey,
   EMPTY_FILTERS,
   applyFilters,
-  computeFacets,
+  computeCrossFacets,
   brandNameOf,
   categoryNameOf,
   discountOf,
@@ -29,7 +30,8 @@ interface ProductsResponse {
 
 type SortMode = "maior-desconto" | "relevantes" | "menor-preco" | "recentes";
 
-const PAGE_SIZE = 12;
+// 21 cards por página no desktop: 7 linhas × 3 colunas.
+const PAGE_SIZE = 21;
 const URL_FILTER_KEYS: MultiFilterKey[] = [
   "marca",
   "desconto",
@@ -70,6 +72,20 @@ function filtersFromSearch(search: string): CatalogFilters {
   return next;
 }
 
+function normalizeText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+// Busca por texto: todos os termos digitados precisam aparecer no nome ou na
+// marca do produto (sem diferenciar acentos/maiúsculas).
+function matchesQuery(product: CatalogProduct, tokens: string[]): boolean {
+  const haystack = normalizeText(`${product.mainName} ${brandNameOf(product)}`);
+  return tokens.every((token) => haystack.includes(token));
+}
+
 function formatBRL(value: number): string {
   return value.toLocaleString("pt-BR", {
     style: "currency",
@@ -78,14 +94,18 @@ function formatBRL(value: number): string {
 }
 
 const HERO_PRIMARY_BRANDS = ["Nike", "Adidas", "Olympikus"];
-const HERO_FALLBACK_BRANDS = ["Asics", "Puma", "Fila"];
 
 function normalizeBrand(value: string): string {
-  return value
+  const normalized = value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+  // Grafia alternativa vista nos dados coletados.
+  return normalized === "olimpikus" ? "olympikus" : normalized;
 }
+
+// Rótulos de "marca não identificada" que não devem aparecer no banner.
+const GENERIC_BRANDS = new Set(["outra", "outras"]);
 
 function selectHeroProducts(products: CatalogProduct[]): CatalogProduct[] {
   const available = products
@@ -109,10 +129,21 @@ function selectHeroProducts(products: CatalogProduct[]): CatalogProduct[] {
     }
   };
 
+  // Um card para a melhor promoção de cada marca-âncora (Nike, Adidas,
+  // Olympikus). Se alguma delas não tiver produto no catálogo no momento,
+  // o espaço é completado abaixo com a melhor oferta de outra marca.
   HERO_PRIMARY_BRANDS.forEach(pickByBrand);
-  HERO_FALLBACK_BRANDS.forEach((brand) => {
-    if (selected.length < 3) pickByBrand(brand);
-  });
+
+  // Preenche os espaços restantes com a melhor oferta de outra marca,
+  // pulando produtos sem marca identificada ("Outra") para o banner
+  // sempre exibir marcas reconhecíveis.
+  for (const product of available) {
+    if (selected.length >= 3) break;
+    if (!usedIds.has(product.id) && !GENERIC_BRANDS.has(normalizeBrand(brandNameOf(product)))) {
+      selected.push(product);
+      usedIds.add(product.id);
+    }
+  }
 
   for (const product of available) {
     if (selected.length >= 3) break;
@@ -137,7 +168,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
       href={product.bestOffer?.affiliateUrl || "#"}
       target="_blank"
       rel="noreferrer"
-      className="group relative flex min-h-[300px] flex-col bg-white p-5 transition-transform hover:-translate-y-0.5"
+      className="group relative flex min-h-[300px] flex-col rounded-md border-2 border-black bg-white p-5 transition-transform hover:-translate-y-0.5"
       data-testid={`hero-promo-${product.id}`}
     >
       {discount > 0 && (
@@ -146,7 +177,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
         </span>
       )}
 
-      <div className="flex h-44 items-center justify-center rounded-sm bg-gradient-to-br from-white to-muted/45">
+      <div className="flex h-44 items-center justify-center bg-white">
         {product.mainImageUrl && (
           <img
             src={product.mainImageUrl}
@@ -188,8 +219,15 @@ function Hero({ products }: { products: CatalogProduct[] }) {
   const featured = useMemo(() => selectHeroProducts(products), [products]);
 
   return (
-    <section className="border-b border-border bg-white px-0 py-0">
-      <div className="mx-auto grid max-w-[1180px] grid-cols-1 overflow-hidden bg-white md:grid-cols-[330px_1fr]">
+    <section
+      className="border-b border-border px-0 py-0"
+      style={{
+        backgroundImage: `url(${heroBgUrl})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="grid w-full grid-cols-1 gap-4 p-4 md:grid-cols-[330px_1fr] md:gap-5 md:p-6">
         <div
           className="relative flex min-h-[300px] items-center overflow-hidden px-9 py-8"
           style={{ backgroundColor: "black" }}
@@ -212,7 +250,7 @@ function Hero({ products }: { products: CatalogProduct[] }) {
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 gap-1 bg-muted sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:gap-5">
           {featured.map((product) => (
             <PromoTile key={product.id} product={product} />
           ))}
@@ -224,6 +262,7 @@ function Hero({ products }: { products: CatalogProduct[] }) {
 
 export default function CatalogV2() {
   const search = useSearch();
+  const [, setLocation] = useLocation();
   const [filters, setFilters] = useState<CatalogFilters>(() =>
     filtersFromSearch(search),
   );
@@ -234,9 +273,25 @@ export default function CatalogV2() {
     setFilters(filtersFromSearch(search));
   }, [search]);
 
+  const query = useMemo(
+    () => (new URLSearchParams(search).get("q") ?? "").trim(),
+    [search],
+  );
+  const queryTokens = useMemo(
+    () => normalizeText(query).split(/\s+/).filter(Boolean),
+    [query],
+  );
+
+  const clearQuery = () => {
+    const params = new URLSearchParams(search);
+    params.delete("q");
+    const qs = params.toString();
+    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
+  };
+
   useEffect(() => {
     setPage(1);
-  }, [filters, sortMode]);
+  }, [filters, sortMode, query]);
 
   const { data, isLoading } = useQuery<ProductsResponse>({
     queryKey: ["/api/products", "catalog-v2"],
@@ -248,8 +303,17 @@ export default function CatalogV2() {
   });
 
   const products = useMemo(() => data?.products ?? [], [data]);
-  const facets = useMemo(() => computeFacets(products), [products]);
-  const filtered = useMemo(() => applyFilters(products, filters), [products, filters]);
+  // A busca por texto restringe o universo de produtos; filtros e contadores
+  // da barra lateral passam a refletir apenas os resultados da busca.
+  const searched = useMemo(
+    () =>
+      queryTokens.length === 0
+        ? products
+        : products.filter((product) => matchesQuery(product, queryTokens)),
+    [products, queryTokens],
+  );
+  const facets = useMemo(() => computeCrossFacets(searched, filters), [searched, filters]);
+  const filtered = useMemo(() => applyFilters(searched, filters), [searched, filters]);
   const sorted = useMemo(() => {
     const next = [...filtered];
 
@@ -302,14 +366,28 @@ export default function CatalogV2() {
       <Hero products={products} />
 
       <main className="flex-1">
-        <div className="container mx-auto px-4 pt-5">
+        <div className="w-full px-4 pt-5">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
-            <h2 className="flex items-center gap-2 text-xl font-extrabold" data-testid="text-catalog-title">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                <Tag className="h-3.5 w-3.5" />
-              </span>
-              Produtos com desconto
-            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="flex items-center gap-2 text-xl font-extrabold" data-testid="text-catalog-title">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                  <Tag className="h-3.5 w-3.5" />
+                </span>
+                {query ? `Resultados para "${query}"` : "Produtos com desconto"}
+              </h2>
+              {query && (
+                <button
+                  type="button"
+                  onClick={clearQuery}
+                  className="flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover-elevate active-elevate-2"
+                  data-testid="button-clear-search"
+                >
+                  <Search className="h-3 w-3 text-muted-foreground" />
+                  {query}
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
 
             <div className="flex flex-wrap items-center gap-4">
               <p className="text-xs text-muted-foreground" data-testid="text-catalog-count">
@@ -333,7 +411,7 @@ export default function CatalogV2() {
           </div>
         </div>
 
-        <div className="container mx-auto flex flex-col gap-5 px-4 pb-8 md:flex-row">
+        <div className="flex w-full flex-col gap-5 px-4 pb-8 md:flex-row">
           {!isLoading && products.length > 0 && (
             <CatalogFilterSidebar
               facets={facets}

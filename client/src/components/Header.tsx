@@ -1,9 +1,9 @@
 import { Search, User, Heart, ShoppingCart, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { Link } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useSearch } from "wouter";
 import { NEON, DARK, DARK_NAV, alpha } from "@/lib/brand";
-import logoUrl from "@assets/logo_UpPulse_transparent.png";
+import logoUrl from "@assets/logo_uppulse_hd_transparent.png";
 
 const SEARCH_BORDER = "hsl(160 55% 38%)";
 
@@ -16,7 +16,29 @@ const NAV: { label: string; href: string }[] = [
 ];
 
 export default function Header() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const search = useSearch();
+  const [, setLocation] = useLocation();
+  const urlQuery = new URLSearchParams(search).get("q") ?? "";
+  const [searchQuery, setSearchQuery] = useState(urlQuery);
+
+  // Mantém o campo em sincronia quando a busca é limpa/alterada pela URL
+  useEffect(() => {
+    setSearchQuery(urlQuery);
+  }, [urlQuery]);
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    // Preserva filtros já ativos na URL (marca, gênero etc.) ao buscar.
+    const params = new URLSearchParams(search);
+    if (q) {
+      params.set("q", q);
+    } else {
+      params.delete("q");
+    }
+    const qs = params.toString();
+    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
+  };
 
   return (
     <header className="sticky top-0 z-50">
@@ -29,7 +51,7 @@ export default function Header() {
             background: `linear-gradient(115deg, transparent 50%, ${alpha(NEON, 0.08)} 54%, transparent 58%), linear-gradient(115deg, transparent 66%, ${alpha(NEON, 0.06)} 70%, transparent 74%), linear-gradient(115deg, transparent 82%, ${alpha(NEON, 0.05)} 86%, transparent 90%)`,
           }}
         />
-        <div className="container relative mx-auto flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
+        <div className="relative flex w-full flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
           {/* Logo */}
           <Link href="/">
             <div
@@ -39,14 +61,17 @@ export default function Header() {
               <img
                 src={logoUrl}
                 alt="UpPulse - Tênis esportivos em promoção"
-                className="h-14 w-auto sm:h-16"
+                className="h-24 w-auto sm:h-32 md:h-40"
                 data-testid="img-logo"
               />
             </div>
           </Link>
 
           {/* Search */}
-          <div className="relative order-last w-full min-w-0 flex-1 md:order-none md:w-auto md:max-w-[440px]">
+          <form
+            onSubmit={submitSearch}
+            className="relative order-last w-full min-w-0 flex-1 md:order-none md:w-auto md:max-w-[440px]"
+          >
             <Input
               type="search"
               aria-label="Buscar tênis"
@@ -57,11 +82,15 @@ export default function Header() {
               onChange={(e) => setSearchQuery(e.target.value)}
               data-testid="input-search"
             />
-            <Search
-              className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/80"
-              style={{ color: NEON }}
-            />
-          </div>
+            <button
+              type="submit"
+              aria-label="Buscar"
+              className="absolute right-4 top-1/2 -translate-y-1/2"
+              data-testid="button-search"
+            >
+              <Search className="h-5 w-5" style={{ color: NEON }} />
+            </button>
+          </form>
 
           {/* Account / Favorites / Cart */}
           <div className="ml-auto flex flex-shrink-0 items-center gap-3 text-white sm:gap-5">
@@ -110,7 +139,7 @@ export default function Header() {
 
       {/* Dark green nav */}
       <nav style={{ backgroundColor: DARK_NAV }}>
-        <div className="container mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-3 text-[13px] font-semibold uppercase tracking-wide sm:justify-between sm:gap-x-4 md:px-8">
+        <div className="flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-3 text-[13px] font-semibold uppercase tracking-wide sm:justify-between sm:gap-x-4 md:px-8">
           {NAV.map((item) => (
             <Link key={item.label} href={item.href}>
               <span

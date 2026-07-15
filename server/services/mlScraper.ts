@@ -122,9 +122,17 @@ async function scrapeUrl(source: { name: string; url: string }): Promise<Scraped
     const reviewCount = parseReviewCount(reviewsText);
 
     const shippingText = card.find(".poly-component__shipping").text().trim();
+    const cardTextNormalized = card
+      .text()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
     const freeShipping =
       shippingText.toLowerCase().includes("grátis") ||
-      shippingText.toLowerCase().includes("gratis");
+      shippingText.toLowerCase().includes("gratis") ||
+      cardTextNormalized.includes("frete gratis") ||
+      cardTextNormalized.includes("envio gratis") ||
+      cardTextNormalized.includes("chegara gratis");
 
     const installments = card
       .find(".poly-price__installments")

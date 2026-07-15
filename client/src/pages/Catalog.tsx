@@ -7,7 +7,7 @@ import ProductCard from "@/components/ProductCard";
 import CatalogFilterSidebar from "@/components/CatalogFilterSidebar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Package, Tag, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Package, Tag } from "lucide-react";
 import { NEON, DARK, GREEN_GLOW, alpha } from "@/lib/brand";
 import {
   CatalogProduct,
@@ -15,7 +15,7 @@ import {
   MultiFilterKey,
   EMPTY_FILTERS,
   applyFilters,
-  computeFacets,
+  computeCrossFacets,
   brandNameOf,
   categoryNameOf,
 } from "@/lib/catalogFilters";
@@ -67,35 +67,13 @@ function filtersFromSearch(search: string): CatalogFilters {
   return next;
 }
 
-const PAGE_SIZE = 60;
+// 21 cards por página no desktop: 7 linhas × 3 colunas.
+const PAGE_SIZE = 21;
 
-function Hero({ images }: { images: string[] }) {
-  // Agrupa as imagens dos produtos em "slides" de 3 tênis cada, para o carrossel.
-  const pages = useMemo(() => {
-    const groups: string[][] = [];
-    for (let i = 0; i < images.length; i += 3) {
-      groups.push(images.slice(i, i + 3));
-    }
-    return groups.slice(0, 5);
-  }, [images]);
+// Marcas-âncora dos 3 cards principais do banner, nesta ordem.
+const ANCHOR_HERO_BRANDS = ["Nike", "Adidas", "Olympikus"];
 
-  const count = Math.max(pages.length, 1);
-  const [page, setPage] = useState(0);
-
-  useEffect(() => {
-    if (page >= count) setPage(0);
-  }, [count, page]);
-
-  useEffect(() => {
-    if (count <= 1) return;
-    const t = setInterval(() => setPage((p) => (p + 1) % count), 5000);
-    return () => clearInterval(t);
-  }, [count]);
-
-  const shoes = pages[page] ?? [];
-  const goPrev = () => setPage((p) => (p - 1 + count) % count);
-  const goNext = () => setPage((p) => (p + 1) % count);
-
+function Hero({ products }: { products: CatalogProduct[] }) {
   return (
     <section className="relative overflow-hidden" style={{ backgroundColor: DARK }}>
       {/* green wash */}
@@ -127,87 +105,43 @@ function Hero({ images }: { images: string[] }) {
           </h1>
         </div>
 
-        {shoes.length > 0 && (
-          <div
-            className="relative hidden flex-1 items-end justify-center sm:flex"
-            style={{ minHeight: 240 }}
-          >
-            {/* stage glow */}
-            <div
-              className="absolute bottom-8 left-1/2 h-12 w-[88%] -translate-x-1/2 rounded-[50%]"
-              style={{
-                background: `radial-gradient(ellipse at center, ${NEON} 0%, ${alpha(NEON, 0)} 70%)`,
-                filter: "blur(14px)",
-                opacity: 0.55,
-              }}
-            />
-            {/* stage rim light */}
-            <div
-              className="absolute bottom-10 left-1/2 h-[3px] w-[66%] -translate-x-1/2 rounded-full"
-              style={{
-                background: NEON,
-                boxShadow: `0 0 16px 2px ${NEON}`,
-                opacity: 0.9,
-              }}
-            />
-            <div className="relative flex items-end justify-center gap-2 pb-10">
-              {shoes.map((src, i) => (
+        {products.length > 0 && (
+          <div className="hidden flex-1 items-center justify-center gap-4 sm:flex">
+            {products.map((p, i) => (
+              <a
+                key={p.id}
+                href={p.bestOffer?.affiliateUrl || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`relative flex flex-col items-center rounded-md border-2 border-black bg-white p-3 shadow-lg ${
+                  i === 1 ? "w-48 lg:w-56" : "w-40 lg:w-44"
+                }`}
+                data-testid={`card-hero-${p.id}`}
+              >
+                {p.bestOffer?.discountPercent ? (
+                  <span
+                    className="absolute right-2 top-2 rounded bg-black px-1.5 py-0.5 text-[11px] font-bold text-white"
+                    data-testid={`text-hero-discount-${p.id}`}
+                  >
+                    -{p.bestOffer.discountPercent}%
+                  </span>
+                ) : null}
                 <img
-                  key={`${page}-${i}`}
-                  src={src}
-                  alt=""
-                  className={`object-contain drop-shadow-2xl ${
-                    i === 1 ? "h-36 w-44 sm:h-44 sm:w-56" : "h-28 w-36 sm:h-32 sm:w-44"
-                  } ${i === 0 ? "-rotate-6" : i === 2 ? "rotate-6" : ""}`}
+                  src={p.mainImageUrl || ""}
+                  alt={p.mainName}
+                  className={`w-full object-contain ${i === 1 ? "h-32 lg:h-36" : "h-24 lg:h-28"}`}
                 />
-              ))}
-            </div>
+                <span
+                  className="mt-2 max-w-full truncate text-xs font-bold uppercase tracking-wide text-black"
+                  data-testid={`text-hero-brand-${p.id}`}
+                >
+                  {brandNameOf(p)}
+                </span>
+              </a>
+            ))}
           </div>
         )}
       </div>
-
-      {/* prev / next arrows */}
-      {count > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={goPrev}
-            aria-label="Anterior"
-            data-testid="button-hero-prev"
-            className="absolute left-2 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full sm:flex"
-            style={{ border: `2px solid ${NEON}`, color: NEON, backgroundColor: alpha(DARK, 0.8) }}
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={goNext}
-            aria-label="Próximo"
-            data-testid="button-hero-next"
-            className="absolute right-2 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full sm:flex"
-            style={{ border: `2px solid ${NEON}`, color: NEON, backgroundColor: alpha(DARK, 0.8) }}
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        </>
-      )}
-
-      {/* dots */}
-      {count > 1 && (
-        <div className="absolute bottom-3 left-1/2 z-10 hidden -translate-x-1/2 gap-2 sm:flex">
-          {pages.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setPage(i)}
-              aria-label={`Ir para slide ${i + 1}`}
-              data-testid={`dot-hero-${i}`}
-              className="h-2.5 w-2.5 rounded-full transition-all"
-              style={{ backgroundColor: i === page ? NEON : "rgba(255,255,255,0.4)" }}
-            />
-          ))}
-        </div>
-      )}
     </section>
   );
 }
@@ -242,14 +176,43 @@ export default function Catalog() {
   });
 
   const products = useMemo(() => data?.products ?? [], [data]);
-  const facets = useMemo(() => computeFacets(products), [products]);
+  const facets = useMemo(() => computeCrossFacets(products, filters), [products, filters]);
   const filtered = useMemo(() => applyFilters(products, filters), [products, filters]);
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
-  const heroImages = useMemo(
-    () => products.map((p) => p.mainImageUrl).filter((x): x is string => !!x).slice(0, 15),
-    [products],
-  );
+  // Os 3 cards principais do banner: a melhor promoção de cada marca-âncora
+  // (Nike, Adidas, Olympikus). Se alguma delas não tiver produto no catálogo
+  // no momento, o espaço é completado com a melhor oferta de outra marca.
+  const heroProducts = useMemo(() => {
+    const sorted = products
+      .filter((p) => !!p.mainImageUrl)
+      .sort(
+        (a, b) =>
+          (b.bestOffer?.discountPercent || 0) - (a.bestOffer?.discountPercent || 0),
+      );
+    const picked: CatalogProduct[] = [];
+    for (const brand of ANCHOR_HERO_BRANDS) {
+      const best = sorted.find((p) => brandNameOf(p) === brand);
+      if (best) picked.push(best);
+    }
+    // Completa com a melhor oferta de outra marca, evitando produtos sem
+    // marca identificada ("Outra"/"Outras") no banner.
+    const generic = new Set(["outra", "outras"]);
+    for (const p of sorted) {
+      if (picked.length >= 3) break;
+      if (
+        !picked.some((x) => x.id === p.id) &&
+        !generic.has(brandNameOf(p).toLowerCase())
+      ) {
+        picked.push(p);
+      }
+    }
+    for (const p of sorted) {
+      if (picked.length >= 3) break;
+      if (!picked.some((x) => x.id === p.id)) picked.push(p);
+    }
+    return picked.slice(0, 3);
+  }, [products]);
 
   const toggle = (key: MultiFilterKey, value: string) => {
     setFilters((prev) => {
@@ -272,7 +235,7 @@ export default function Catalog() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <Hero images={heroImages} />
+      <Hero products={heroProducts} />
 
       <main className="flex-1">
         {/* Catalog heading */}
