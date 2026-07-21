@@ -205,7 +205,31 @@ export function priceOf(p: CatalogProduct): number {
 }
 
 export function discountOf(p: CatalogProduct): number {
-  return p.bestOffer?.discountPercent ?? 0;
+  const informedDiscount = p.bestOffer?.discountPercent;
+  if (
+    typeof informedDiscount === "number" &&
+    Number.isFinite(informedDiscount) &&
+    informedDiscount > 0
+  ) {
+    return Math.min(100, Math.round(informedDiscount));
+  }
+
+  const currentPrice = priceOf(p);
+  const originalPrice = Number(p.bestOffer?.originalPrice);
+  if (
+    !Number.isFinite(currentPrice) ||
+    !Number.isFinite(originalPrice) ||
+    currentPrice <= 0 ||
+    originalPrice <= 0 ||
+    originalPrice <= currentPrice
+  ) {
+    return 0;
+  }
+
+  const calculatedDiscount = Math.round(
+    ((originalPrice - currentPrice) / originalPrice) * 100,
+  );
+  return calculatedDiscount > 0 ? Math.min(100, calculatedDiscount) : 0;
 }
 
 export function ratingOf(p: CatalogProduct): number | null {

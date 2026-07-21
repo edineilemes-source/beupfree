@@ -18,7 +18,11 @@ const NAV: { label: string; href: string }[] = [
 export default function Header() {
   const search = useSearch();
   const [, setLocation] = useLocation();
-  const urlQuery = new URLSearchParams(search).get("q") ?? "";
+  const searchParams = new URLSearchParams(search);
+  const officialQuery = searchParams.get("busca");
+  const urlQuery = officialQuery?.trim()
+    ? officialQuery
+    : searchParams.get("q") ?? "";
   const [searchQuery, setSearchQuery] = useState(urlQuery);
 
   // Mantém o campo em sincronia quando a busca é limpa/alterada pela URL
@@ -32,10 +36,11 @@ export default function Header() {
     // Preserva filtros já ativos na URL (marca, gênero etc.) ao buscar.
     const params = new URLSearchParams(search);
     if (q) {
-      params.set("q", q);
+      params.set("busca", q);
     } else {
-      params.delete("q");
+      params.delete("busca");
     }
+    params.delete("q");
     const qs = params.toString();
     setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
   };

@@ -168,15 +168,9 @@ function PromoTile({ product }: { product: CatalogProduct }) {
       href={product.bestOffer?.affiliateUrl || "#"}
       target="_blank"
       rel="noreferrer"
-      className="group relative flex min-h-[300px] flex-col rounded-md border-2 border-black bg-white p-5 transition-transform hover:-translate-y-0.5"
+      className="group flex min-h-[340px] flex-col rounded-md border-2 border-black bg-white p-5 transition-transform hover:-translate-y-0.5"
       data-testid={`hero-promo-${product.id}`}
     >
-      {discount > 0 && (
-        <span className="absolute left-5 top-[54%] z-10 rounded-sm bg-destructive px-2 py-1 text-xs font-bold text-destructive-foreground shadow-sm">
-          -{discount}%
-        </span>
-      )}
-
       <div className="flex h-44 items-center justify-center bg-white">
         {product.mainImageUrl && (
           <img
@@ -187,14 +181,21 @@ function PromoTile({ product }: { product: CatalogProduct }) {
         )}
       </div>
 
-      <div className="mt-7">
+      <div className="mt-4 flex flex-1 flex-col">
+        {discount > 0 && (
+          <div className="mb-2">
+            <span className="inline-flex rounded-sm bg-destructive px-2 py-1 text-xs font-bold text-destructive-foreground shadow-sm">
+              -{discount}%
+            </span>
+          </div>
+        )}
         <p className="text-sm font-extrabold uppercase text-foreground">
           {brandNameOf(product)}
         </p>
         <p className="mt-2 line-clamp-2 min-h-[36px] text-xs font-semibold uppercase leading-snug text-foreground">
           {product.mainName}
         </p>
-        <div className="mt-3 flex flex-wrap items-end gap-2">
+        <div className="mt-auto flex flex-wrap items-end gap-2 pt-3">
           <span className="text-lg font-extrabold text-primary">
             {formatBRL(price)}
           </span>
@@ -273,10 +274,11 @@ export default function CatalogV2() {
     setFilters(filtersFromSearch(search));
   }, [search]);
 
-  const query = useMemo(
-    () => (new URLSearchParams(search).get("q") ?? "").trim(),
-    [search],
-  );
+  const query = useMemo(() => {
+    const params = new URLSearchParams(search);
+    const officialQuery = params.get("busca");
+    return (officialQuery?.trim() ? officialQuery : params.get("q") ?? "").trim();
+  }, [search]);
   const queryTokens = useMemo(
     () => normalizeText(query).split(/\s+/).filter(Boolean),
     [query],
@@ -284,6 +286,7 @@ export default function CatalogV2() {
 
   const clearQuery = () => {
     const params = new URLSearchParams(search);
+    params.delete("busca");
     params.delete("q");
     const qs = params.toString();
     setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
@@ -465,7 +468,7 @@ export default function CatalogV2() {
                           ? parseFloat(product.bestOffer.originalPrice)
                           : undefined
                       }
-                      discount={product.bestOffer?.discountPercent || undefined}
+                      discount={discountOf(product) || undefined}
                       image={product.mainImageUrl || ""}
                       category={categoryNameOf(product)}
                       affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
