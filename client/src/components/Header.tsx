@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { NEON, DARK, DARK_NAV, alpha } from "@/lib/brand";
 import logoUrl from "@assets/logo_uppulse_hd_transparent.png";
+import FavoritesDrawer from "@/components/FavoritesDrawer";
+import { useFavorites } from "@/context/FavoritesContext";
 
 const SEARCH_BORDER = "hsl(160 55% 38%)";
 
@@ -16,6 +18,7 @@ const NAV: { label: string; href: string }[] = [
 ];
 
 export default function Header() {
+  const { favorites } = useFavorites();
   const search = useSearch();
   const [, setLocation] = useLocation();
   const searchParams = new URLSearchParams(search);
@@ -24,6 +27,7 @@ export default function Header() {
     ? officialQuery
     : searchParams.get("q") ?? "";
   const [searchQuery, setSearchQuery] = useState(urlQuery);
+  const [favoritesOpen, setFavoritesOpen] = useState(false);
 
   // Mantém o campo em sincronia quando a busca é limpa/alterada pela URL
   useEffect(() => {
@@ -106,13 +110,25 @@ export default function Header() {
               <User className="h-6 w-6" />
               <span className="text-[11px] font-medium">Entrar</span>
             </div>
-            <div
-              className="flex flex-col items-center gap-1 px-2 py-1"
+            <button
+              type="button"
+              aria-label={`Abrir Favoritos, ${favorites.length} ${favorites.length === 1 ? "produto salvo" : "produtos salvos"}`}
+              onClick={() => setFavoritesOpen(true)}
+              className="flex flex-col items-center gap-1 rounded-md px-2 py-1 hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               data-testid="item-favoritos"
             >
-              <Heart className="h-6 w-6" />
+              <span className="relative">
+                <Heart className="h-6 w-6" />
+                <span
+                  className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-black"
+                  style={{ backgroundColor: NEON }}
+                  data-testid="text-favorites-count"
+                >
+                  {favorites.length}
+                </span>
+              </span>
               <span className="text-[11px] font-medium">Favoritos</span>
-            </div>
+            </button>
             <div
               className="flex flex-col items-center gap-1 px-2 py-1"
               data-testid="item-carrinho"
@@ -166,6 +182,7 @@ export default function Header() {
           </Link>
         </div>
       </nav>
+      <FavoritesDrawer open={favoritesOpen} onOpenChange={setFavoritesOpen} />
     </header>
   );
 }

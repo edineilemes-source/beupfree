@@ -22,6 +22,9 @@ import {
   discountOf,
   priceOf,
 } from "@/lib/catalogFilters";
+import FavoriteButton from "@/components/FavoriteButton";
+import { useFavorites } from "@/context/FavoritesContext";
+import type { FavoriteProduct } from "@/types/favorites";
 
 interface ProductsResponse {
   total: number;
@@ -162,16 +165,31 @@ function PromoTile({ product }: { product: CatalogProduct }) {
     ? parseFloat(product.bestOffer.originalPrice)
     : null;
   const discount = discountOf(product);
+  const favoriteProduct: FavoriteProduct = {
+    id: product.id,
+    name: product.mainName,
+    brand: brandNameOf(product),
+    price,
+    oldPrice: oldPrice ?? undefined,
+    discount,
+    image: product.mainImageUrl || "",
+    category: categoryNameOf(product),
+    affiliateUrl: product.bestOffer?.affiliateUrl || "#",
+  };
 
   return (
-    <a
-      href={product.bestOffer?.affiliateUrl || "#"}
-      target="_blank"
-      rel="noreferrer"
-      className="group flex min-h-[340px] flex-col rounded-md border-2 border-black bg-white p-5 transition-transform hover:-translate-y-0.5"
+    <div
+      className="group relative min-h-[340px] rounded-md border-2 border-black bg-white transition-transform hover:-translate-y-0.5"
       data-testid={`hero-promo-${product.id}`}
     >
-      <div className="flex h-44 items-center justify-center bg-white">
+      <FavoriteButton product={favoriteProduct} className="absolute right-3 top-3 z-20" />
+      <a
+        href={product.bestOffer?.affiliateUrl || "#"}
+        target="_blank"
+        rel="noreferrer"
+        className="flex min-h-[336px] flex-col p-5"
+      >
+      <div className="flex h-44 items-center justify-center bg-white pr-8">
         {product.mainImageUrl && (
           <img
             src={product.mainImageUrl}
@@ -212,7 +230,8 @@ function PromoTile({ product }: { product: CatalogProduct }) {
           </span>
         )}
       </div>
-    </a>
+      </a>
+    </div>
   );
 }
 
@@ -262,6 +281,7 @@ function Hero({ products }: { products: CatalogProduct[] }) {
 }
 
 export default function CatalogV2() {
+  const { registerProducts } = useFavorites();
   const search = useSearch();
   const [, setLocation] = useLocation();
   const [filters, setFilters] = useState<CatalogFilters>(() =>
@@ -306,6 +326,27 @@ export default function CatalogV2() {
   });
 
   const products = useMemo(() => data?.products ?? [], [data]);
+  const favoriteProducts = useMemo<FavoriteProduct[]>(
+    () =>
+      products.map((product) => ({
+        id: product.id,
+        name: product.mainName,
+        brand: brandNameOf(product),
+        price: priceOf(product),
+        oldPrice: product.bestOffer?.originalPrice
+          ? parseFloat(product.bestOffer.originalPrice)
+          : undefined,
+        discount: discountOf(product),
+        image: product.mainImageUrl || "",
+        category: categoryNameOf(product),
+        affiliateUrl: product.bestOffer?.affiliateUrl || "#",
+      })),
+    [products],
+  );
+
+  useEffect(() => {
+    registerProducts(favoriteProducts);
+  }, [favoriteProducts, registerProducts]);
   // A busca por texto restringe o universo de produtos; filtros e contadores
   // da barra lateral passam a refletir apenas os resultados da busca.
   const searched = useMemo(

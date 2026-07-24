@@ -8,6 +8,7 @@ import Marca from "@/pages/Marca";
 import AdminTriagem from "@/pages/AdminTriagem";
 import NotFound from "@/pages/not-found";
 import CatalogV2 from "@/pages/CatalogV2";
+import { FavoritesProvider } from "@/context/FavoritesContext";
 
 function Router() {
   return (
@@ -28,8 +29,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <FavoritesProvider>
+          <Toaster />
+          <Router />
+        </FavoritesProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

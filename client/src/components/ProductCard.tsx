@@ -2,6 +2,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Truck, PackageX } from "lucide-react";
+import FavoriteButton from "@/components/FavoriteButton";
+import type { FavoriteProduct } from "@/types/favorites";
 
 interface ProductCardProps {
   id: string;
@@ -35,6 +37,18 @@ export default function ProductCard({
   const safePrice = typeof price === "number" && !isNaN(price) ? price : 0;
   const safeOldPrice = typeof oldPrice === "number" && !isNaN(oldPrice) ? oldPrice : undefined;
   const computedDiscount = discount || (safeOldPrice && safeOldPrice > safePrice ? Math.round(((safeOldPrice - safePrice) / safeOldPrice) * 100) : 0);
+  const favoriteProduct: FavoriteProduct = {
+    id,
+    name,
+    brand,
+    price: safePrice,
+    oldPrice: safeOldPrice,
+    discount: computedDiscount,
+    image,
+    category,
+    affiliateUrl,
+    soldOut,
+  };
 
   const getTimeAgoText = (date: Date | string | undefined) => {
     if (!date) return "";
@@ -71,12 +85,17 @@ export default function ProductCard({
         )}
 
         {!soldOut && computedDiscount > 0 && (
-          <div className="absolute right-3 top-3 z-10">
+          <div className="absolute left-3 top-3 z-10">
             <Badge variant="destructive" data-testid={`badge-discount-${id}`}>
               -{computedDiscount}%
             </Badge>
           </div>
         )}
+
+        <FavoriteButton
+          product={favoriteProduct}
+          className="absolute right-3 top-3 z-20"
+        />
 
         <img
           src={image}
