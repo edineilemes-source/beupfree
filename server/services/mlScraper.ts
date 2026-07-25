@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import type { ProductColorInput } from "@shared/colorNormalization";
 
 const AFFILIATE_CODE = "14610626";
 
@@ -10,6 +11,7 @@ const SOURCES = [
 ];
 
 export interface ScrapedProduct {
+  externalItemId: string | null;
   nome: string;
   marca: string;
   preco_atual: number;
@@ -23,6 +25,20 @@ export interface ScrapedProduct {
   frete_gratis: boolean;
   parcelas: string;
   fonte: string;
+  colors?: ProductColorInput[];
+  colorAudit?: {
+    attributes: Array<{ id: string; name: string; value_name: string | null }>;
+    variations: Array<{
+      id: number;
+      attribute_combinations: Array<{ id: string; name: string; value_name: string | null }>;
+    }>;
+  };
+}
+
+function extractExternalId(url: string): string | null {
+  const match = url.match(/MLB[A-Z]?-?\d+/i);
+  if (!match) return null;
+  return match[0].replace(/-/g, "").replace(/^MLB[A-Z]/i, (value) => `MLB${value.slice(4)}`);
 }
 
 function addAffiliateCode(url: string): string {
@@ -140,6 +156,7 @@ async function scrapeUrl(source: { name: string; url: string }): Promise<Scraped
       .trim();
 
     products.push({
+      externalItemId: extractExternalId(cleanLink),
       nome: title,
       marca: brand || "N/A",
       preco_atual: currentPrice,

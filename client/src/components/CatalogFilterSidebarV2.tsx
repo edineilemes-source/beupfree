@@ -179,6 +179,10 @@ export default function CatalogFilterSidebar({
 
   const chips: { key: MultiFilterKey; value: string; label: string }[] = [];
   filters.marca.forEach((v) => chips.push({ key: "marca", value: v, label: v }));
+  filters.cor.forEach((v) => {
+    const color = facets.colors.find((item) => item.value === v);
+    chips.push({ key: "cor", value: v, label: `Cor: ${color?.label ?? v}` });
+  });
   filters.tamanho.forEach((v) =>
     chips.push({ key: "tamanho", value: v, label: `Tamanho ${v}` }),
   );
@@ -304,6 +308,24 @@ export default function CatalogFilterSidebar({
             </button>
           )}
         </Section>
+
+        {/* Cor: exibida somente quando produtos carregados têm primaryColor. */}
+        {facets.colors.length > 0 && (
+          <Section title="Cor">
+            <div className="space-y-0.5">
+              {facets.colors.map((color) => (
+                <CheckRow
+                  key={color.value}
+                  label={color.label}
+                  count={color.count}
+                  checked={filters.cor.includes(color.value)}
+                  onToggle={() => onToggle("cor", color.value)}
+                  testId={`filter-cor-${color.value}`}
+                />
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* Tamanho */}
         {facets.sizes.length > 0 && (

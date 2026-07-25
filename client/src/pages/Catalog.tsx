@@ -45,6 +45,7 @@ function filtersFromSearch(search: string): CatalogFilters {
   const params = new URLSearchParams(search);
   const next: CatalogFilters = {
     marca: [],
+    cor: [],
     desconto: [],
     frete: [],
     tamanho: [],
@@ -317,6 +318,8 @@ export default function Catalog() {
                     category={categoryNameOf(product)}
                     affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
                     freeShipping={product.bestOffer?.freeShipping || false}
+                    averageRating={product.averageRating}
+                    totalReviews={product.totalReviews}
                     lastSeenAt={product.bestOffer?.lastSeenAt}
                   />
                   ))}

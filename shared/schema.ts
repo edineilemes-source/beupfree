@@ -9,6 +9,8 @@ import {
   timestamp, 
   jsonb,
   index,
+  uniqueIndex,
+  check,
   pgEnum
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
@@ -153,6 +155,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     references: [categories.id]
   }),
   images: many(productImages),
+  colors: many(productColors),
   offers: many(offers)
 }));
 
@@ -177,6 +180,33 @@ export const productImagesRelations = relations(productImages, ({ one }) => ({
     fields: [productImages.productId],
     references: [products.id]
   })
+}));
+
+// ============================================
+// CORES DE PRODUTO - atributos confiáveis por origem
+// ============================================
+
+export const productColors = pgTable("product_colors", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id, { onDelete: 'cascade' }),
+  colorName: varchar("color_name", { length: 120 }).notNull(),
+  normalizedColor: varchar("normalized_color", { length: 120 }).notNull(),
+  source: varchar("source", { length: 60 }).notNull(),
+  confidence: decimal("confidence", { precision: 4, scale: 3 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("uq_product_colors_product_normalized").on(table.productId, table.normalizedColor),
+  index("idx_product_colors_product").on(table.productId),
+  index("idx_product_colors_normalized").on(table.normalizedColor),
+  check("chk_product_colors_confidence", sql`${table.confidence} >= 0 AND ${table.confidence} <= 1`),
+]);
+
+export const productColorsRelations = relations(productColors, ({ one }) => ({
+  product: one(products, {
+    fields: [productColors.productId],
+    references: [products.id],
+  }),
 }));
 
 // ============================================
@@ -500,6 +530,10 @@ export type Product = typeof products.$inferSelect;
 export const insertProductImageSchema = createInsertSchema(productImages).omit({ id: true, createdAt: true });
 export type InsertProductImage = z.infer<typeof insertProductImageSchema>;
 export type ProductImage = typeof productImages.$inferSelect;
+
+export const insertProductColorSchema = createInsertSchema(productColors).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertProductColor = z.infer<typeof insertProductColorSchema>;
+export type ProductColor = typeof productColors.$inferSelect;
 
 export const insertMarketplaceSchema = createInsertSchema(marketplaces).omit({ id: true, createdAt: true });
 export type InsertMarketplace = z.infer<typeof insertMarketplaceSchema>;

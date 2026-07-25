@@ -70,6 +70,7 @@ export interface IStorage {
   hasBeenTriaged(contentHash: string): Promise<boolean>;
 
   createRawCollectedItem(item: InsertRawCollectedItem): Promise<RawCollectedItem>;
+  getRawCollectedItem(id: string): Promise<RawCollectedItem | undefined>;
   getRawCollectedItemByHash(hash: string): Promise<RawCollectedItem | undefined>;
 
   createProcessedItem(item: InsertProcessedItem): Promise<ProcessedItem>;
@@ -377,6 +378,11 @@ export class DatabaseStorage implements IStorage {
   async createRawCollectedItem(item: InsertRawCollectedItem): Promise<RawCollectedItem> {
     const [created] = await db.insert(rawCollectedItems).values(item).returning();
     return created;
+  }
+
+  async getRawCollectedItem(id: string): Promise<RawCollectedItem | undefined> {
+    const [item] = await db.select().from(rawCollectedItems).where(eq(rawCollectedItems.id, id));
+    return item || undefined;
   }
 
   async getRawCollectedItemByHash(hash: string): Promise<RawCollectedItem | undefined> {

@@ -2,6 +2,7 @@ import { storage } from "../storage";
 import { scrapeAllSources } from "../services/mlScraper";
 import { detectBrand, detectCategory, ensureDefaultMarketplace, syncBrands, syncCategories } from "../services/productSync";
 import crypto from "crypto";
+import { mercadoLivreService } from "../services/mercadolivre";
 
 const AFFILIATE_CODE = "14610626";
 
@@ -52,6 +53,29 @@ export async function runCollectJob(): Promise<{
   try {
     const scrapeResult = await scrapeAllSources();
 
+    const externalIds = scrapeResult.produtos
+      .map((produto) => produto.externalItemId)
+      .filter((id): id is string => Boolean(id));
+    if (externalIds.length > 0) {
+      const enrichment = await mercadoLivreService.getProductDetailsBatched(externalIds);
+      const detailsById = new Map(enrichment.products.map((detail) => [detail.id, detail]));
+      for (const produto of scrapeResult.produtos) {
+        if (!produto.externalItemId) continue;
+        const detail = detailsById.get(produto.externalItemId);
+        if (!detail) continue;
+        produto.colors = mercadoLivreService.extractOfficialColors(detail);
+        produto.colorAudit = {
+          attributes: (detail.attributes ?? []).filter((attribute) => attribute.id === "COLOR"),
+          variations: (detail.variations ?? []).map((variation) => ({
+            id: variation.id,
+            attribute_combinations: (variation.attribute_combinations ?? [])
+              .filter((attribute) => attribute.id === "COLOR"),
+          })).filter((variation) => variation.attribute_combinations.length > 0),
+        };
+      }
+      errors += enrichment.failedIds.length;
+    }
+
     for (const produto of scrapeResult.produtos) {
       try {
         const nome = produto.nome || "";
@@ -72,14 +96,18 @@ export async function runCollectJob(): Promise<{
 
         const rawItem = await storage.createRawCollectedItem({
           batchId: batch.id,
-          externalId: null,
+          externalId: produto.externalItemId,
           rawTitle: nome,
           rawPrice: precoAtual ? String(precoAtual) : null,
           rawOriginalPrice: precoOriginal ? String(precoOriginal) : null,
           rawImageUrl: imagem,
           rawUrl: url || linkAfiliado,
           rawDiscount: descontoPercent || null,
-          rawData: produto as any,
+          rawData: {
+            ...produto,
+            marketplace_colors: produto.colors ?? [],
+            marketplace_color_audit: produto.colorAudit ?? null,
+          } as any,
           contentHash: hash,
         });
         collected++;
@@ -99,7 +127,7 @@ export async function runCollectJob(): Promise<{
           imageUrl: imagem,
           sourceUrl: url,
           affiliateUrl: finalAffiliateUrl,
-          externalId: null,
+          externalId: produto.externalItemId,
           freeShipping: freteGratis,
           contentHash: hash,
           isDuplicate: false,

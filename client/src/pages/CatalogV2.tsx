@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
 import Header from "@/components/Header";
@@ -7,7 +7,7 @@ import ProductCard from "@/components/ProductCard";
 import CatalogFilterSidebar from "@/components/CatalogFilterSidebarV2";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Package, Search, Tag, Truck, X } from "lucide-react";
+import { Loader2, Package, Search, Tag, X } from "lucide-react";
 import { NEON, DARK, GREEN_GLOW, alpha } from "@/lib/brand";
 import heroBgUrl from "@assets/fundo_rascunho_be_up_1783981500992.png";
 import {
@@ -21,10 +21,13 @@ import {
   categoryNameOf,
   discountOf,
   priceOf,
+  normalizeColor,
 } from "@/lib/catalogFilters";
 import FavoriteButton from "@/components/FavoriteButton";
 import { useFavorites } from "@/context/FavoritesContext";
 import type { FavoriteProduct } from "@/types/favorites";
+import ProductBadges from "@/components/ProductBadges";
+import { getProductBadges } from "@/lib/productBadges";
 
 interface ProductsResponse {
   total: number;
@@ -37,6 +40,7 @@ type SortMode = "maior-desconto" | "relevantes" | "menor-preco" | "recentes";
 const PAGE_SIZE = 21;
 const URL_FILTER_KEYS: MultiFilterKey[] = [
   "marca",
+  "cor",
   "desconto",
   "frete",
   "tamanho",
@@ -51,6 +55,7 @@ function filtersFromSearch(search: string): CatalogFilters {
   const params = new URLSearchParams(search);
   const next: CatalogFilters = {
     marca: [],
+    cor: [],
     desconto: [],
     frete: [],
     tamanho: [],
@@ -69,6 +74,11 @@ function filtersFromSearch(search: string): CatalogFilters {
         .split(",")
         .map((value) => value.trim())
         .filter(Boolean);
+      if (key === "cor") {
+        next.cor = next.cor
+          .map((value) => normalizeColor(value)?.value)
+          .filter((value): value is string => Boolean(value));
+      }
     }
   }
 
@@ -175,13 +185,30 @@ function PromoTile({ product }: { product: CatalogProduct }) {
     image: product.mainImageUrl || "",
     category: categoryNameOf(product),
     affiliateUrl: product.bestOffer?.affiliateUrl || "#",
+    marketplaceName: product.bestOffer?.marketplaceName ?? undefined,
+    sellerName: product.bestOffer?.sellerName ?? undefined,
+    freeShipping: product.bestOffer?.freeShipping ?? false,
+    averageRating: product.averageRating,
+    totalReviews: product.totalReviews,
   };
+  const badges = getProductBadges(favoriteProduct);
+  const offerSource = [product.bestOffer?.marketplaceName?.trim(), product.bestOffer?.sellerName?.trim()]
+    .filter(Boolean)
+    .join(" · ");
+  const ratingText = product.averageRating != null && product.averageRating > 0
+    ? `⭐ ${product.averageRating.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}${product.totalReviews ? ` (${product.totalReviews.toLocaleString("pt-BR")})` : ""}`
+    : "";
 
   return (
     <div
       className="group relative min-h-[340px] rounded-md border-2 border-black bg-white transition-transform hover:-translate-y-0.5"
       data-testid={`hero-promo-${product.id}`}
     >
+      {discount > 0 && (
+        <span className="absolute left-3 top-3 z-20 text-sm font-extrabold text-red-600">
+          -{discount}%
+        </span>
+      )}
       <FavoriteButton product={favoriteProduct} className="absolute right-3 top-3 z-20" />
       <a
         href={product.bestOffer?.affiliateUrl || "#"}
@@ -200,13 +227,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
       </div>
 
       <div className="mt-4 flex flex-1 flex-col">
-        {discount > 0 && (
-          <div className="mb-2">
-            <span className="inline-flex rounded-sm bg-destructive px-2 py-1 text-xs font-bold text-destructive-foreground shadow-sm">
-              -{discount}%
-            </span>
-          </div>
-        )}
+        <ProductBadges badges={badges} productId={product.id} className="mb-2" />
         <p className="text-sm font-extrabold uppercase text-foreground">
           {brandNameOf(product)}
         </p>
@@ -224,10 +245,15 @@ function PromoTile({ product }: { product: CatalogProduct }) {
           )}
         </div>
         {product.bestOffer?.freeShipping && (
-          <span className="mt-3 inline-flex items-center gap-1 rounded-full border border-primary px-2.5 py-1 text-[11px] font-bold uppercase text-primary">
-            <Truck className="h-3.5 w-3.5" />
-            Frete grátis
-          </span>
+          <p className="mt-2 text-xs font-semibold text-emerald-700">🚚 Frete grátis</p>
+        )}
+        {offerSource && (
+          <p className="mt-1 truncate text-xs text-muted-foreground" title={offerSource}>
+            {offerSource}
+          </p>
+        )}
+        {ratingText && (
+          <p className="mt-1 text-xs font-medium">{ratingText}</p>
         )}
       </div>
       </a>
@@ -289,6 +315,8 @@ export default function CatalogV2() {
   );
   const [page, setPage] = useState(1);
   const [sortMode, setSortMode] = useState<SortMode>("maior-desconto");
+  const resultsStartRef = useRef<HTMLDivElement>(null);
+  const scrollAfterPageChangeRef = useRef(false);
 
   useEffect(() => {
     setFilters(filtersFromSearch(search));
@@ -316,6 +344,34 @@ export default function CatalogV2() {
     setPage(1);
   }, [filters, sortMode, query]);
 
+  useEffect(() => {
+    if (!scrollAfterPageChangeRef.current) return;
+    scrollAfterPageChangeRef.current = false;
+    const animationFrame = window.requestAnimationFrame(() => {
+      const resultsStart = resultsStartRef.current;
+      if (!resultsStart) return;
+
+      const stickyHeader = document.querySelector<HTMLElement>("header.sticky");
+      const headerHeight = stickyHeader?.getBoundingClientRect().height ?? 0;
+      const resultsPosition = resultsStart.getBoundingClientRect().top + window.scrollY;
+      const visualGap = 16;
+
+      window.scrollTo({
+        top: Math.max(0, resultsPosition - headerHeight - visualGap),
+        behavior: "smooth",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [page]);
+
+  const goToPage = (nextPage: number) => {
+    const boundedPage = Math.max(1, Math.min(totalPages, nextPage));
+    if (boundedPage === page) return;
+    scrollAfterPageChangeRef.current = true;
+    setPage(boundedPage);
+  };
+
   const { data, isLoading } = useQuery<ProductsResponse>({
     queryKey: ["/api/products", "catalog-v2"],
     queryFn: async () => {
@@ -340,6 +396,11 @@ export default function CatalogV2() {
         image: product.mainImageUrl || "",
         category: categoryNameOf(product),
         affiliateUrl: product.bestOffer?.affiliateUrl || "#",
+        marketplaceName: product.bestOffer?.marketplaceName ?? undefined,
+        sellerName: product.bestOffer?.sellerName ?? undefined,
+        freeShipping: product.bestOffer?.freeShipping ?? false,
+        averageRating: product.averageRating,
+        totalReviews: product.totalReviews,
       })),
     [products],
   );
@@ -389,19 +450,32 @@ export default function CatalogV2() {
   const toggle = (key: MultiFilterKey, value: string) => {
     setFilters((prev) => {
       const list = prev[key];
-      return {
+      const next = {
         ...prev,
         [key]: list.includes(value)
           ? list.filter((item) => item !== value)
           : [...list, value],
       };
+      const params = new URLSearchParams(search);
+      const values = next[key];
+      if (values.length > 0) params.set(key, values.join(","));
+      else params.delete(key);
+      const qs = params.toString();
+      setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
+      return next;
     });
   };
 
   const setPrice = (price: [number, number] | null) =>
     setFilters((prev) => ({ ...prev, price }));
 
-  const clearAll = () => setFilters(EMPTY_FILTERS);
+  const clearAll = () => {
+    const params = new URLSearchParams(search);
+    URL_FILTER_KEYS.forEach((key) => params.delete(key));
+    const qs = params.toString();
+    setFilters(EMPTY_FILTERS);
+    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/35">
@@ -466,7 +540,7 @@ export default function CatalogV2() {
             />
           )}
 
-          <div className="min-w-0 flex-1">
+          <div ref={resultsStartRef} className="min-w-0 flex-1">
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -513,7 +587,11 @@ export default function CatalogV2() {
                       image={product.mainImageUrl || ""}
                       category={categoryNameOf(product)}
                       affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
+                      marketplaceName={product.bestOffer?.marketplaceName ?? undefined}
+                      sellerName={product.bestOffer?.sellerName ?? undefined}
                       freeShipping={product.bestOffer?.freeShipping || false}
+                      averageRating={product.averageRating}
+                      totalReviews={product.totalReviews}
                       lastSeenAt={product.bestOffer?.lastSeenAt}
                     />
                   ))}
@@ -525,7 +603,7 @@ export default function CatalogV2() {
                       variant="outline"
                       size="sm"
                       disabled={page === 1}
-                      onClick={() => setPage((current) => Math.max(1, current - 1))}
+                      onClick={() => goToPage(page - 1)}
                       data-testid="button-page-prev"
                     >
                       Anterior
@@ -535,7 +613,7 @@ export default function CatalogV2() {
                         key={pageNumber}
                         variant={page === pageNumber ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setPage(pageNumber)}
+                        onClick={() => goToPage(pageNumber)}
                         data-testid={`button-page-${pageNumber}`}
                       >
                         {pageNumber}
@@ -545,7 +623,7 @@ export default function CatalogV2() {
                       variant="outline"
                       size="sm"
                       disabled={page >= totalPages}
-                      onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                      onClick={() => goToPage(page + 1)}
                       data-testid="button-page-next"
                     >
                       Próxima

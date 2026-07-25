@@ -13,5 +13,11 @@ export interface FavoriteProduct {
   image: string;
   category: string;
   affiliateUrl: string;
+  marketplaceName?: string;
+  sellerName?: string;
+  freeShipping?: boolean;
+  averageRating?: number | null;
+  totalReviews?: number;
+  promotionType?: string;
   soldOut?: boolean;
 }

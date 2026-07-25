@@ -1,6 +1,8 @@
-import { ExternalLink, PackageX, Trash2 } from "lucide-react";
+import { ExternalLink, Heart, PackageX, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { FavoriteProduct, FavoriteReference } from "@/types/favorites";
+import ProductBadges from "@/components/ProductBadges";
+import { getProductBadges } from "@/lib/productBadges";
 
 interface FavoriteItemProps {
   favorite: FavoriteReference;
@@ -46,8 +48,22 @@ export default function FavoriteItem({
     );
   }
 
+  const badges = getProductBadges(product);
+  const offerSource = [product.marketplaceName?.trim(), product.sellerName?.trim()]
+    .filter(Boolean)
+    .join(" · ");
+  const ratingText = product.averageRating != null && product.averageRating > 0
+    ? `⭐ ${product.averageRating.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}${product.totalReviews ? ` (${product.totalReviews.toLocaleString("pt-BR")})` : ""}`
+    : "";
+
   return (
-    <article className="rounded-lg border border-border p-3" data-testid={`favorite-item-${product.id}`}>
+    <article className="relative rounded-lg border border-border p-3" data-testid={`favorite-item-${product.id}`}>
+      {product.discount > 0 && (
+        <span className="absolute left-3 top-3 z-10 text-xs font-extrabold text-red-600">
+          -{product.discount}%
+        </span>
+      )}
+      <Heart className="absolute right-3 top-3 z-10 h-4 w-4 fill-current text-red-600" aria-hidden="true" />
       <div className="flex gap-3">
         <div className="flex h-20 w-20 flex-none items-center justify-center overflow-hidden rounded-md bg-white">
           {product.image ? (
@@ -57,7 +73,7 @@ export default function FavoriteItem({
           )}
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pr-5">
           <p className="text-xs font-semibold uppercase text-muted-foreground">
             {product.brand}
           </p>
@@ -66,12 +82,22 @@ export default function FavoriteItem({
           </h3>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="font-bold">{formatPrice(product.price)}</span>
-            {product.discount > 0 && (
-              <span className="rounded-sm bg-destructive px-1.5 py-0.5 text-xs font-bold text-destructive-foreground">
-                -{product.discount}%
+            {product.oldPrice && product.oldPrice > product.price && (
+              <span className="text-xs text-muted-foreground line-through">
+                {formatPrice(product.oldPrice)}
               </span>
             )}
           </div>
+          {product.freeShipping && (
+            <p className="mt-2 text-xs font-semibold text-emerald-700">🚚 Frete grátis</p>
+          )}
+          {offerSource && (
+            <p className="mt-1 truncate text-xs text-muted-foreground" title={offerSource}>
+              {offerSource}
+            </p>
+          )}
+          {ratingText && <p className="mt-1 text-xs font-medium">{ratingText}</p>}
+          <ProductBadges badges={badges} productId={product.id} className="mt-2" />
         </div>
       </div>
 

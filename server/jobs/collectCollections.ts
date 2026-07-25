@@ -3,9 +3,10 @@ import { scrapeCollectionUrl } from "../services/mlCollectionsCollector";
 import { upsertMembership, deactivateByBatch } from "../usecases/upsertMembership";
 import { detectBrand, detectCategory, ensureDefaultMarketplace, resolveBrandId, resolveCategoryId } from "../services/productSync";
 import { evaluateAutoApproval } from "../services/autoApprove";
+import { mercadoLivreService } from "../services/mercadolivre";
 import crypto from "crypto";
 import { db } from "../db";
-import { products, offers, productImages, collectionSources } from "@shared/schema";
+import { products, offers, productImages, collectionSources, rawCollectedItems } from "@shared/schema";
 import { eq, ne, sql } from "drizzle-orm";
 
 const AFFILIATE_CODE = "14610626";
@@ -109,6 +110,34 @@ export async function runCollectionsJob(
       const scrapeResult = await scrapeCollectionUrl(source.url!, source.name);
       const { items, errors: scrapeErrors } = scrapeResult;
 
+      // Enriquecimento oficial é best-effort: falhas não interrompem a coleta HTML.
+      const externalIds = items
+        .map((item) => item.externalItemId)
+        .filter((id): id is string => Boolean(id));
+      if (externalIds.length > 0) {
+        const enrichment = await mercadoLivreService.getProductDetailsBatched(externalIds);
+        const detailsById = new Map(enrichment.products.map((detail) => [detail.id, detail]));
+        for (const item of items) {
+          if (!item.externalItemId) continue;
+          const detail = detailsById.get(item.externalItemId);
+          if (!detail) continue;
+          item.colors = mercadoLivreService.extractOfficialColors(detail);
+          item.colorAudit = {
+            attributes: (detail.attributes ?? []).filter((attribute) => attribute.id === "COLOR"),
+            variations: (detail.variations ?? []).map((variation) => ({
+              id: variation.id,
+              attribute_combinations: (variation.attribute_combinations ?? [])
+                .filter((attribute) => attribute.id === "COLOR"),
+            })).filter((variation) => variation.attribute_combinations.length > 0),
+          };
+        }
+        if (enrichment.failedIds.length > 0) {
+          result.errors.push(
+            `[${source.name}] Enriquecimento de cor falhou para ${enrichment.failedIds.length} itens; coleta principal preservada.`,
+          );
+        }
+      }
+
       if (scrapeErrors.length > 0) {
         result.errors.push(...scrapeErrors.map((e) => `[${source.name}] ${e}`));
       }
@@ -148,6 +177,8 @@ export async function runCollectionsJob(
                 frete_gratis: item.frete_gratis,
                 parcelas: item.parcelas,
                 fonte: item.fonte,
+                marketplace_colors: item.colors ?? [],
+                marketplace_color_audit: item.colorAudit ?? null,
               },
               contentHash,
             });
@@ -180,6 +211,14 @@ export async function runCollectionsJob(
               promotionType: item.promotionType,
             });
           } else {
+            if (item.colors || item.colorAudit) {
+              await db.update(rawCollectedItems).set({
+                rawData: sql`COALESCE(${rawCollectedItems.rawData}, '{}'::jsonb) || ${JSON.stringify({
+                  marketplace_colors: item.colors ?? [],
+                  marketplace_color_audit: item.colorAudit ?? null,
+                })}::jsonb`,
+              }).where(eq(rawCollectedItems.id, existingRaw.id));
+            }
             // Previously collected — retrieve existing processed item
             processedItem = await storage.getProcessedItemByContentHash(contentHash);
             // Refresh promotionType (item may have moved between sections)
@@ -247,6 +286,9 @@ export async function runCollectionsJob(
                     averageRating: item.avaliacao_media != null ? String(item.avaliacao_media) : null,
                     totalReviews: item.qtd_avaliacoes ?? 0,
                   }).returning().then(r => r[0]);
+
+                  // Persistência temporariamente desativada até a migration de
+                  // product_colors ser liberada.
 
                   await db.insert(offers).values({
                     productId: product.id,

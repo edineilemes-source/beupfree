@@ -1,8 +1,12 @@
+import { normalizeColorName, translateColorName } from "@shared/colorNormalization";
+
 export interface CatalogBestOffer {
   currentPrice: string;
   originalPrice: string | null;
   discountPercent: number | null;
   affiliateUrl: string;
+  marketplaceName?: string | null;
+  sellerName?: string | null;
   freeShipping: boolean;
   lastSeenAt?: string;
 }
@@ -11,6 +15,13 @@ export interface CatalogProduct {
   id: string;
   mainName: string;
   mainImageUrl: string | null;
+  primaryColor: string | null;
+  colors?: Array<{
+    name: string;
+    normalized: string;
+    source?: "title_inference" | "marketplace_attribute" | "marketplace_variation";
+    confidence?: number;
+  }>;
   brand: { name: string; slug?: string } | null;
   category: { name: string; slug?: string } | null;
   averageRating: number | null;
@@ -20,6 +31,7 @@ export interface CatalogProduct {
 
 export type MultiFilterKey =
   | "marca"
+  | "cor"
   | "desconto"
   | "frete"
   | "tamanho"
@@ -31,6 +43,7 @@ export type MultiFilterKey =
 
 export interface CatalogFilters {
   marca: string[];
+  cor: string[];
   desconto: string[];
   frete: string[];
   tamanho: string[];
@@ -44,6 +57,7 @@ export interface CatalogFilters {
 
 export const EMPTY_FILTERS: CatalogFilters = {
   marca: [],
+  cor: [],
   desconto: [],
   frete: [],
   tamanho: [],
@@ -81,6 +95,37 @@ export function brandNameOf(p: CatalogProduct): string {
 
 export function categoryNameOf(p: CatalogProduct): string {
   return p.category?.name || "Calçados";
+}
+
+export interface NormalizedColor {
+  value: string;
+  label: string;
+}
+
+export function normalizeColor(value: string | null | undefined): NormalizedColor | null {
+  const label = translateColorName(value);
+  if (!label) return null;
+  const normalized = normalizeColorName(label);
+  if (!normalized) return null;
+  return {
+    value: normalized,
+    label,
+  };
+}
+
+export function colorsOf(p: CatalogProduct): NormalizedColor[] {
+  const colors = new Map<string, NormalizedColor>();
+  for (const color of p.colors ?? []) {
+    const translated = normalizeColor(color.name || color.normalized);
+    if (!translated) continue;
+    colors.set(translated.value, translated);
+  }
+  // Compatibilidade enquanto registros antigos ainda não passaram pelo backfill.
+  if (colors.size === 0) {
+    const legacy = normalizeColor(p.primaryColor);
+    if (legacy) colors.set(legacy.value, legacy);
+  }
+  return Array.from(colors.values());
 }
 
 // ---------------------------------------------------------------------------
@@ -266,6 +311,10 @@ export function applyFilters(products: CatalogProduct[], f: CatalogFilters): Cat
     if (f.marca.length > 0) {
       if (!f.marca.includes(brandNameOf(p))) return false;
     }
+    if (f.cor.length > 0) {
+      const colors = colorsOf(p);
+      if (!colors.some((color) => f.cor.includes(color.value))) return false;
+    }
     if (!matchesDesconto(p, f.desconto)) return false;
     if (!matchesFrete(p, f.frete)) return false;
     if (f.tamanho.length > 0) {
@@ -297,6 +346,7 @@ export function applyFilters(products: CatalogProduct[], f: CatalogFilters): Cat
 
 export interface CatalogFacets {
   brands: { label: string; count: number }[];
+  colors: { value: string; label: string; count: number }[];
   desconto: Record<string, number>;
   frete: { Sim: number; Não: number };
   sizes: { label: string; count: number }[];
@@ -315,6 +365,7 @@ const TIPO_ORDER = ["Calçados", "Acessórios"];
 
 export function computeFacets(products: CatalogProduct[]): CatalogFacets {
   const brandCounts = new Map<string, number>();
+  const colorCounts = new Map<string, { label: string; count: number }>();
   const sizeCounts = new Map<string, number>();
   const generoCounts = new Map<string, number>();
   const idadeCounts = new Map<string, number>();
@@ -333,6 +384,14 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
 
   for (const p of products) {
     bump(brandCounts, brandNameOf(p));
+    const colors = colorsOf(p);
+    for (const color of colors) {
+      const current = colorCounts.get(color.value);
+      colorCounts.set(color.value, {
+        label: current?.label ?? color.label,
+        count: (current?.count ?? 0) + 1,
+      });
+    }
 
     const d = discountOf(p);
     for (const bucket of DESCONTO_BUCKETS) {
@@ -372,6 +431,9 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
   const brands = Array.from(brandCounts.entries())
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
+  const colors = Array.from(colorCounts.entries())
+    .map(([value, item]) => ({ value, ...item }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "pt-BR"));
 
   const sizes = Array.from(sizeCounts.entries())
     .map(([label, count]) => ({ label, count }))
@@ -391,6 +453,7 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
 
   return {
     brands,
+    colors,
     desconto,
     frete,
     sizes,
@@ -432,6 +495,7 @@ export function computeCrossFacets(
     computeFacets(applyFilters(products, { ...filters, [key]: [] }));
 
   const marca = facetWithout("marca");
+  const cor = facetWithout("cor");
   const desconto = facetWithout("desconto");
   const frete = facetWithout("frete");
   const tamanho = facetWithout("tamanho");
@@ -444,6 +508,7 @@ export function computeCrossFacets(
 
   return {
     brands: withSelected(marca.brands, filters.marca),
+    colors: cor.colors,
     desconto: desconto.desconto,
     frete: frete.frete,
     sizes: withSelected(tamanho.sizes, filters.tamanho).sort(
@@ -462,6 +527,7 @@ export function computeCrossFacets(
 export function countActiveFilters(f: CatalogFilters): number {
   return (
     f.marca.length +
+    f.cor.length +
     f.desconto.length +
     f.frete.length +
     f.tamanho.length +

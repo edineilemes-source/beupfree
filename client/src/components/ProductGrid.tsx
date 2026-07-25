@@ -21,6 +21,8 @@ interface ProductFromAPI {
   mainImageUrl: string | null;
   brand: { name: string } | null;
   category: { name: string } | null;
+  averageRating: number | null;
+  totalReviews: number;
   bestOffer: BestOffer | null;
   offersCount: number;
 }
@@ -100,6 +102,8 @@ export default function ProductGrid() {
               category={product.category?.name || ""}
               affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
               freeShipping={product.bestOffer?.freeShipping || false}
+              averageRating={product.averageRating}
+              totalReviews={product.totalReviews}
               lastSeenAt={product.bestOffer?.lastSeenAt}
             />
           ))}

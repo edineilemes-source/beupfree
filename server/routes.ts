@@ -21,6 +21,7 @@ import { registerAdminCollectionsRoutes } from "./routes/adminCollections";
 import brandSectionsRouter from "./routes/brandSections";
 import dealSectionsRouter from "./routes/dealSections";
 import { startScheduler } from "./jobs/scheduler";
+import { extractAttributesFromTitle } from "@shared/attribute-extraction";
 
 const ML_CLIENT_ID = process.env.ML_CLIENT_ID;
 const ML_CLIENT_SECRET = process.env.ML_CLIENT_SECRET;
@@ -187,6 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           averageRating: (processed as any).detectedRating ?? null,
           totalReviews: (processed as any).detectedReviews ?? 0,
         });
+        // Temporariamente desativado até a migration de product_colors ser liberada.
 
         const marketplaceId = await ensureDefaultMarketplace();
         const offer = await storage.createOffer({
@@ -281,6 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         averageRating: (processed as any).detectedRating ?? null,
         totalReviews: (processed as any).detectedReviews ?? 0,
       });
+      // Temporariamente desativado até a migration de product_colors ser liberada.
 
       const marketplaceId = await ensureDefaultMarketplace();
 
@@ -367,19 +370,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pool.query(`
           SELECT
             p.id, p.main_name, p.main_image_url, p.catalog_status, p.slug, p.created_at,
-            p.average_rating, p.total_reviews,
+            p.average_rating, p.total_reviews, p.primary_color,
             b.name AS brand_name, b.slug AS brand_slug,
             c.name AS category_name, c.slug AS category_slug,
             o.id AS offer_id, o.current_price, o.original_price,
             o.discount_percent, o.affiliate_url, o.free_shipping, o.last_seen_at,
+            o.seller_name, o.marketplace_name,
             COALESCE(oc.cnt, 0) AS offers_count
           FROM products p
           LEFT JOIN brands b ON b.id = p.brand_id
           LEFT JOIN categories c ON c.id = p.main_category_id
           LEFT JOIN LATERAL (
-            SELECT * FROM offers
-            WHERE product_id = p.id AND status = 'active'
-            ORDER BY discount_percent DESC NULLS LAST, current_price ASC
+            SELECT offer.*, marketplace.name AS marketplace_name
+            FROM offers offer
+            LEFT JOIN marketplaces marketplace ON marketplace.id = offer.marketplace_id
+            WHERE offer.product_id = p.id AND offer.status = 'active'
+            ORDER BY offer.discount_percent DESC NULLS LAST, offer.current_price ASC
             LIMIT 1
           ) o ON true
           LEFT JOIN (
@@ -406,6 +412,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: row.id,
           mainName: row.main_name,
           mainImageUrl: row.main_image_url,
+          primaryColor: row.primary_color,
+          colors: (extractAttributesFromTitle(row.main_name).attributes.color ?? []).map((color) => ({
+            name: color.label,
+            normalized: color.value,
+            source: color.source,
+            confidence: color.confidence,
+          })),
           catalogStatus: row.catalog_status,
           slug: row.slug,
           brand: row.brand_name ? { name: row.brand_name, slug: row.brand_slug } : null,
@@ -419,6 +432,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             originalPrice: row.original_price,
             discountPercent: row.discount_percent != null ? parseInt(String(row.discount_percent)) : null,
             affiliateUrl: row.affiliate_url,
+            marketplaceName: row.marketplace_name,
+            sellerName: row.seller_name,
             freeShipping: row.free_shipping ?? false,
             lastSeenAt: row.last_seen_at,
             formattedPrice: `R$ ${currentPrice.toFixed(2).replace(".", ",")}`,

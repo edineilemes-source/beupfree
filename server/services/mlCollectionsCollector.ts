@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import type { ProductColorInput } from "@shared/colorNormalization";
 
 const AFFILIATE_CODE = "14610626";
 
@@ -36,6 +37,14 @@ export interface CollectedItem {
   fonte: string;
   contentHash: string;
   promotionType: PromotionType;
+  colors?: ProductColorInput[];
+  colorAudit?: {
+    attributes: Array<{ id: string; name: string; value_name: string | null }>;
+    variations: Array<{
+      id: number;
+      attribute_combinations: Array<{ id: string; name: string; value_name: string | null }>;
+    }>;
+  };
 }
 
 // ============ HELPERS ============

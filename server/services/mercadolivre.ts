@@ -1,3 +1,9 @@
+import {
+  cleanOfficialColorName,
+  normalizeColorName,
+  type ProductColorInput,
+} from "@shared/colorNormalization";
+
 const ML_API_BASE = "https://api.mercadolibre.com";
 const ML_SITE_ID = "MLB"; // Brasil
 
@@ -84,6 +90,14 @@ export interface MLProductDetails {
     id: string;
     name: string;
     value_name: string;
+  }>;
+  variations?: Array<{
+    id: number;
+    attribute_combinations?: Array<{
+      id: string;
+      name: string;
+      value_name: string | null;
+    }>;
   }>;
   shipping: {
     free_shipping: boolean;
@@ -237,6 +251,48 @@ class MercadoLivreService {
     return response.filter(r => r.code === 200).map(r => r.body);
   }
 
+  async getProductDetailsBatched(
+    productIds: string[],
+    options: { batchSize?: number; concurrency?: number } = {},
+  ): Promise<{ products: MLProductDetails[]; failedIds: string[] }> {
+    const ids = Array.from(new Set(productIds.filter(Boolean)));
+    const batchSize = Math.min(20, Math.max(1, options.batchSize ?? 20));
+    const concurrency = Math.min(4, Math.max(1, options.concurrency ?? 3));
+    const batches: string[][] = [];
+    for (let index = 0; index < ids.length; index += batchSize) {
+      batches.push(ids.slice(index, index + batchSize));
+    }
+
+    const products: MLProductDetails[] = [];
+    const failedIds: string[] = [];
+    let nextBatch = 0;
+    const worker = async () => {
+      while (nextBatch < batches.length) {
+        const batch = batches[nextBatch++];
+        try {
+          const query = `${batch.join(",")}&include_attributes=all`;
+          const response = await this.fetchApi<Array<{ code: number; body: MLProductDetails }>>(
+            `/items?ids=${query}`,
+          );
+          const successfulIds = new Set<string>();
+          for (const result of response) {
+            if (result.code === 200 && result.body?.id) {
+              products.push(result.body);
+              successfulIds.add(result.body.id);
+            }
+          }
+          failedIds.push(...batch.filter((id) => !successfulIds.has(id)));
+        } catch (error) {
+          console.error(`[MercadoLivre] Falha ao enriquecer lote de ${batch.length} itens:`, error);
+          failedIds.push(...batch);
+        }
+      }
+    };
+
+    await Promise.all(Array.from({ length: Math.min(concurrency, batches.length) }, worker));
+    return { products, failedIds };
+  }
+
   async getCategories(): Promise<MLCategory[]> {
     return this.fetchApi<MLCategory[]>(`/sites/${ML_SITE_ID}/categories`);
   }
@@ -343,6 +399,29 @@ class MercadoLivreService {
       attr => attr.id === "COLOR" || attr.name === "Cor"
     );
     return colorAttr?.value_name || null;
+  }
+
+  extractOfficialColors(product: MLProductDetails): ProductColorInput[] {
+    const colors = new Map<string, ProductColorInput>();
+    const add = (value: unknown, source: ProductColorInput["source"]) => {
+      const name = cleanOfficialColorName(value);
+      const normalized = normalizeColorName(name);
+      if (!name || !normalized) return;
+      const existing = colors.get(normalized);
+      if (!existing || source === "marketplace_variation") {
+        colors.set(normalized, { name, normalized, source, confidence: 1 });
+      }
+    };
+
+    product.attributes?.forEach((attribute) => {
+      if (attribute.id === "COLOR") add(attribute.value_name, "marketplace_attribute");
+    });
+    product.variations?.forEach((variation) => {
+      variation.attribute_combinations?.forEach((attribute) => {
+        if (attribute.id === "COLOR") add(attribute.value_name, "marketplace_variation");
+      });
+    });
+    return Array.from(colors.values());
   }
 
   getHighQualityImage(thumbnail: string): string {

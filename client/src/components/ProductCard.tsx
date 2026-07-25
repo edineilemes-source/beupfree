@@ -1,8 +1,10 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Truck, PackageX } from "lucide-react";
+import { ExternalLink, PackageX } from "lucide-react";
 import FavoriteButton from "@/components/FavoriteButton";
+import ProductBadges from "@/components/ProductBadges";
+import { getProductBadges } from "@/lib/productBadges";
 import type { FavoriteProduct } from "@/types/favorites";
 
 interface ProductCardProps {
@@ -15,7 +17,12 @@ interface ProductCardProps {
   image: string;
   category: string;
   affiliateUrl: string;
+  marketplaceName?: string;
+  sellerName?: string;
   freeShipping?: boolean;
+  averageRating?: number | null;
+  totalReviews?: number;
+  promotionType?: string;
   lastSeenAt?: Date | string;
   soldOut?: boolean;
 }
@@ -30,7 +37,12 @@ export default function ProductCard({
   image,
   category,
   affiliateUrl,
+  marketplaceName,
+  sellerName,
   freeShipping,
+  averageRating,
+  totalReviews,
+  promotionType,
   lastSeenAt,
   soldOut = false,
 }: ProductCardProps) {
@@ -47,8 +59,21 @@ export default function ProductCard({
     image,
     category,
     affiliateUrl,
+    marketplaceName,
+    sellerName,
+    freeShipping,
+    averageRating,
+    totalReviews,
+    promotionType,
     soldOut,
   };
+  const badges = getProductBadges({
+    discount: computedDiscount,
+    freeShipping,
+    averageRating,
+    totalReviews,
+    promotionType,
+  });
 
   const getTimeAgoText = (date: Date | string | undefined) => {
     if (!date) return "";
@@ -63,6 +88,10 @@ export default function ProductCard({
   };
 
   const timeAgo = getTimeAgoText(lastSeenAt);
+  const offerSource = [marketplaceName?.trim(), sellerName?.trim()].filter(Boolean).join(" · ");
+  const ratingText = averageRating != null && averageRating > 0
+    ? `⭐ ${averageRating.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}${totalReviews ? ` (${totalReviews.toLocaleString("pt-BR")})` : ""}`
+    : "";
 
   return (
     <Card
@@ -85,11 +114,12 @@ export default function ProductCard({
         )}
 
         {!soldOut && computedDiscount > 0 && (
-          <div className="absolute left-3 top-3 z-10">
-            <Badge variant="destructive" data-testid={`badge-discount-${id}`}>
-              -{computedDiscount}%
-            </Badge>
-          </div>
+          <span
+            className="absolute left-3 top-3 z-10 text-sm font-extrabold text-red-600"
+            data-testid={`text-discount-${id}`}
+          >
+            -{computedDiscount}%
+          </span>
         )}
 
         <FavoriteButton
@@ -111,7 +141,7 @@ export default function ProductCard({
           className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
           data-testid={`text-brand-${id}`}
         >
-          {[brand, category].filter(Boolean).join(" · ")}
+          {brand}
         </span>
         <h3
           className="mt-1 line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug"
@@ -131,15 +161,25 @@ export default function ProductCard({
           )}
         </div>
 
-        {!soldOut && freeShipping && (
+        {freeShipping && (
+          <p className="mt-2 text-xs font-semibold text-emerald-700">🚚 Frete grátis</p>
+        )}
+        {offerSource && (
           <p
-            className="mt-1 flex items-center gap-1 text-xs font-semibold text-primary"
-            data-testid={`badge-shipping-${id}`}
+            className="mt-1 truncate text-xs text-muted-foreground"
+            data-testid={`text-offer-source-${id}`}
+            title={offerSource}
           >
-            <Truck className="h-3.5 w-3.5" />
-            Frete grátis
+            {offerSource}
           </p>
         )}
+        {ratingText && (
+          <p className="mt-1 text-xs font-medium" data-testid={`text-rating-${id}`}>
+            {ratingText}
+          </p>
+        )}
+
+        <ProductBadges badges={badges} productId={id} className="mt-2" />
 
         <Button
           className="mt-3 w-full gap-2"
@@ -156,13 +196,13 @@ export default function ProductCard({
           ) : (
             <>
               <ExternalLink className="h-4 w-4" />
-              Ver no Mercado Livre
+              Ver oferta
             </>
           )}
         </Button>
 
         <p className="mt-2 text-center text-[10px] text-muted-foreground" data-testid={`text-updated-${id}`}>
-          {timeAgo ? `Atualizado ${timeAgo} · ` : ""}Parceiro Oficial Mercado Livre
+          {timeAgo ? `Atualizado ${timeAgo}` : ""}
         </p>
       </div>
     </Card>
