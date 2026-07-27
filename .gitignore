@@ -12,6 +12,9 @@ dist/
 .agents/
 attached_assets/
 exports/
+test-results/
+playwright-report/
+*.webm
 
 # Arquivos compactados
 *.zip
