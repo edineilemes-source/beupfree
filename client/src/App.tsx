@@ -9,6 +9,7 @@ import AdminTriagem from "@/pages/AdminTriagem";
 import NotFound from "@/pages/not-found";
 import CatalogV2 from "@/pages/CatalogV2";
 import { FavoritesProvider } from "@/context/FavoritesContext";
+import { ComparisonProvider } from "@/context/ComparisonContext";
 
 function Router() {
   return (
@@ -29,10 +30,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <FavoritesProvider>
-          <Toaster />
-          <Router />
-        </FavoritesProvider>
+        <ComparisonProvider>
+          <FavoritesProvider>
+            <Toaster />
+            <Router />
+          </FavoritesProvider>
+        </ComparisonProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
