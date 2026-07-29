@@ -11,6 +11,7 @@ import CatalogV2 from "@/pages/CatalogV2";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { ComparisonProvider } from "@/context/ComparisonContext";
 import ComparisonTray from "@/components/ComparisonTray";
+import Comparison from "@/pages/Comparison";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/admin/triagem" component={AdminTriagem} />
       <Route path="/triagem" component={AdminTriagem} />
       <Route path="/catalogo-v2" component={CatalogV2} />
+      <Route path="/comparar" component={Comparison} />
       <Route component={NotFound} />
     </Switch>
   );

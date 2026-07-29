@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { PackageX, X } from "lucide-react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useComparison } from "@/context/ComparisonContext";
 import type { ComparableProduct } from "@/types/comparison";
@@ -52,6 +53,7 @@ export default function ComparisonTray() {
     clearComparison,
     removeFromComparison,
   } = useComparison();
+  const [, setLocation] = useLocation();
 
   if (comparisonCount === 0) return null;
 
@@ -92,9 +94,7 @@ export default function ComparisonTray() {
             <Button
               type="button"
               disabled={comparisonCount < 2}
-              onClick={() => {
-                // Ponto de integração futuro: navegar para a página de comparação.
-              }}
+              onClick={() => setLocation("/comparar")}
               aria-label="Comparar produtos selecionados"
               title={comparisonCount < 2
                 ? "Selecione pelo menos 2 produtos para comparar"
