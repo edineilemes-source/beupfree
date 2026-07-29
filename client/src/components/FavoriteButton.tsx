@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useFavorites } from "@/context/FavoritesContext";
 import type { FavoriteProduct } from "@/types/favorites";
@@ -9,9 +10,14 @@ interface FavoriteButtonProps {
 }
 
 export default function FavoriteButton({ product, className }: FavoriteButtonProps) {
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const { isFavorite, registerProducts, toggleFavorite } = useFavorites();
   const active = isFavorite(product.id);
   const label = active ? "Remover dos Favoritos" : "Adicionar aos Favoritos";
+  const productSignature = JSON.stringify(product);
+
+  useEffect(() => {
+    registerProducts([product]);
+  }, [productSignature, registerProducts]);
 
   return (
     <button
