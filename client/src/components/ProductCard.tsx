@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, PackageX } from "lucide-react";
 import FavoriteButton from "@/components/FavoriteButton";
+import CompareButton from "@/components/CompareButton";
 import ProductBadges from "@/components/ProductBadges";
 import { getProductBadges } from "@/lib/productBadges";
 import { toFavoriteProduct } from "@/lib/favoriteProductAdapter";
+import { toComparableProduct } from "@/lib/comparisonProductAdapter";
 
 interface ProductCardProps {
   id: string;
@@ -62,6 +64,23 @@ export default function ProductCard({
     averageRating,
     totalReviews,
     promotionType,
+    soldOut,
+  });
+  const comparableProduct = toComparableProduct({
+    id,
+    name,
+    image,
+    brand,
+    category,
+    price,
+    oldPrice,
+    discount,
+    affiliateUrl,
+    marketplaceName,
+    sellerName,
+    freeShipping,
+    averageRating,
+    totalReviews,
     soldOut,
   });
   const safePrice = favoriteProduct.price;
@@ -125,6 +144,10 @@ export default function ProductCard({
         <FavoriteButton
           product={favoriteProduct}
           className="absolute right-3 top-3 z-20"
+        />
+        <CompareButton
+          product={comparableProduct}
+          className="absolute right-3 top-14 z-20"
         />
 
         <img

@@ -16,6 +16,26 @@ import type {
   ProductSummary,
 } from "@/types/products";
 
+export interface ComparisonProductCardSource {
+  id: string;
+  name: string;
+  image: string;
+  brand: string;
+  category: string;
+  price: number;
+  oldPrice?: number;
+  discount?: number;
+  affiliateUrl: string;
+  marketplaceName?: string;
+  sellerName?: string;
+  freeShipping?: boolean;
+  averageRating?: number | null;
+  totalReviews?: number;
+  soldOut?: boolean;
+}
+
+export type ComparisonProductSource = CatalogProduct | ComparisonProductCardSource;
+
 function finiteNumber(value: unknown): number | undefined {
   if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
   if (typeof value !== "string" || value.trim() === "") return undefined;
@@ -166,10 +186,84 @@ function offerSummary(offer: CatalogBestOffer): OfferSummary {
   };
 }
 
+function cardProductSummary(source: ComparisonProductCardSource): ProductSummary {
+  const rating = positiveNumber(source.averageRating);
+  const reviewCount = finiteNumber(source.totalReviews);
+  const brandName = nonEmpty(source.brand);
+  const categoryName = nonEmpty(source.category);
+
+  return {
+    id: source.id,
+    title: source.name,
+    imageUrl: nonEmpty(source.image),
+    brand: brandName ? { name: brandName } : undefined,
+    category: categoryName ? { name: categoryName } : undefined,
+    rating,
+    reviewCount: reviewCount != null && reviewCount >= 0
+      ? Math.trunc(reviewCount)
+      : undefined,
+    attributes: {},
+  };
+}
+
+function cardOfferSummary(source: ComparisonProductCardSource): OfferSummary | undefined {
+  const currentPrice = positiveNumber(source.price);
+  const originalPrice = positiveNumber(source.oldPrice);
+  const informedDiscount = finiteNumber(source.discount);
+  const validInformedDiscount = informedDiscount != null &&
+    informedDiscount >= 0 && informedDiscount <= 100
+    ? informedDiscount
+    : undefined;
+  const calculatedDiscount = validInformedDiscount == null &&
+    currentPrice != null && originalPrice != null && originalPrice > currentPrice
+    ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
+    : undefined;
+  const offerUrl = nonEmpty(source.affiliateUrl);
+  const validOfferUrl = offerUrl === "#" ? undefined : offerUrl;
+  const marketplaceName = nonEmpty(source.marketplaceName);
+  const sellerName = nonEmpty(source.sellerName);
+  const hasOffer = currentPrice != null || originalPrice != null ||
+    validInformedDiscount != null || calculatedDiscount != null ||
+    validOfferUrl != null || marketplaceName != null || sellerName != null ||
+    source.soldOut === true;
+
+  if (!hasOffer) return undefined;
+
+  return {
+    marketplaceName,
+    sellerName,
+    currentPrice,
+    originalPrice,
+    discountPercent: validInformedDiscount ?? calculatedDiscount,
+    discountSource: validInformedDiscount != null
+      ? "informed"
+      : calculatedDiscount != null
+        ? "calculated"
+        : undefined,
+    freeShipping: typeof source.freeShipping === "boolean"
+      ? source.freeShipping
+      : undefined,
+    offerUrl: validOfferUrl,
+    availability: source.soldOut ? "sold_out" : "unknown",
+  };
+}
+
+function isCatalogProduct(source: ComparisonProductSource): source is CatalogProduct {
+  return "mainName" in source;
+}
+
 export function toComparableProduct(
-  source: CatalogProduct,
+  source: ComparisonProductSource,
   selectedAt = new Date().toISOString(),
 ): ComparableProduct {
+  if (!isCatalogProduct(source)) {
+    return {
+      product: cardProductSummary(source),
+      selectedOffer: cardOfferSummary(source),
+      selectedAt,
+    };
+  }
+
   return {
     product: productSummary(source),
     selectedOffer: source.bestOffer ? offerSummary(source.bestOffer) : undefined,
