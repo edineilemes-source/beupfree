@@ -1,6 +1,7 @@
 import { normalizeColorName, translateColorName } from "@shared/colorNormalization";
 
 export interface CatalogBestOffer {
+  id?: string;
   currentPrice: string;
   originalPrice: string | null;
   discountPercent: number | null;
