@@ -10,6 +10,7 @@ import NotFound from "@/pages/not-found";
 import CatalogV2 from "@/pages/CatalogV2";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { ComparisonProvider } from "@/context/ComparisonContext";
+import ComparisonTray from "@/components/ComparisonTray";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function App() {
             <Toaster />
             <Router />
           </FavoritesProvider>
+          <ComparisonTray />
         </ComparisonProvider>
       </TooltipProvider>
     </QueryClientProvider>

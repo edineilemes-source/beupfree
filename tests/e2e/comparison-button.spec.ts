@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
   }, [COMPARISON_STORAGE_KEY, FAVORITES_STORAGE_KEY]);
 });
 
-test("adiciona e remove um produto da comparação pelo card", async ({ page }) => {
+test("exibe o tray e remove um produto pela barra", async ({ page }) => {
   await page.goto("/catalogo");
 
   const card = page
@@ -25,19 +25,53 @@ test("adiciona e remove um produto da comparação pelo card", async ({ page }) 
   await expect(button).toHaveAccessibleName("Comparar");
   await expect(button).toHaveAttribute("aria-pressed", "false");
   await expect(favoriteButton).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("comparison-tray")).toHaveCount(0);
 
   await button.click();
   await expect(button).toHaveAccessibleName("Remover da comparação");
   await expect(button).toHaveAttribute("aria-pressed", "true");
   await expect(favoriteButton).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("comparison-tray")).toBeVisible();
+  await expect(page.getByTestId("comparison-tray-count")).toHaveText(
+    "Comparando 1 de 3 produtos",
+  );
+  await expect(page.getByTestId("button-open-comparison")).toBeDisabled();
 
-  await button.click();
+  await page.locator('[data-testid^="button-remove-comparison-"]').click();
   await expect(button).toHaveAccessibleName("Comparar");
   await expect(button).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("comparison-tray")).toHaveCount(0);
 
   await favoriteButton.click();
   await expect(favoriteButton).toHaveAttribute("aria-pressed", "true");
   await expect(button).toHaveAttribute("aria-pressed", "false");
+});
+
+test("habilita comparar com dois produtos e permite limpar", async ({ page }) => {
+  await page.goto("/catalogo");
+
+  const cards = page
+    .getByTestId("grid-catalog-products")
+    .locator('[data-testid^="card-product-"]');
+  await expect(cards.nth(1)).toBeVisible();
+
+  await cards.nth(0).locator('[data-testid^="button-compare-"]').click();
+  await expect(page.getByTestId("button-open-comparison")).toBeDisabled();
+
+  await cards.nth(1).locator('[data-testid^="button-compare-"]').click();
+  await expect(page.getByTestId("comparison-tray-count")).toHaveText(
+    "Comparando 2 de 3 produtos",
+  );
+  await expect(page.getByTestId("button-open-comparison")).toBeEnabled();
+
+  await page.getByTestId("button-clear-comparison").click();
+  await expect(page.getByTestId("comparison-tray")).toHaveCount(0);
+  await expect(
+    cards.nth(0).locator('[data-testid^="button-compare-"]'),
+  ).toHaveAttribute("aria-pressed", "false");
+  await expect(
+    cards.nth(1).locator('[data-testid^="button-compare-"]'),
+  ).toHaveAttribute("aria-pressed", "false");
 });
 
 test("mantém o quarto produto fora da comparação ao atingir o limite", async ({ page }) => {
