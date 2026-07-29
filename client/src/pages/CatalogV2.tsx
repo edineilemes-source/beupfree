@@ -26,6 +26,7 @@ import {
 import FavoriteButton from "@/components/FavoriteButton";
 import { useFavorites } from "@/context/FavoritesContext";
 import type { FavoriteProduct } from "@/types/favorites";
+import { toFavoriteProduct } from "@/lib/favoriteProductAdapter";
 import ProductBadges from "@/components/ProductBadges";
 import { getProductBadges } from "@/lib/productBadges";
 
@@ -175,22 +176,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
     ? parseFloat(product.bestOffer.originalPrice)
     : null;
   const discount = discountOf(product);
-  const favoriteProduct: FavoriteProduct = {
-    id: product.id,
-    name: product.mainName,
-    brand: brandNameOf(product),
-    price,
-    oldPrice: oldPrice ?? undefined,
-    discount,
-    image: product.mainImageUrl || "",
-    category: categoryNameOf(product),
-    affiliateUrl: product.bestOffer?.affiliateUrl || "#",
-    marketplaceName: product.bestOffer?.marketplaceName ?? undefined,
-    sellerName: product.bestOffer?.sellerName ?? undefined,
-    freeShipping: product.bestOffer?.freeShipping ?? false,
-    averageRating: product.averageRating,
-    totalReviews: product.totalReviews,
-  };
+  const favoriteProduct = toFavoriteProduct(product);
   const badges = getProductBadges(favoriteProduct);
   const offerSource = [product.bestOffer?.marketplaceName?.trim(), product.bestOffer?.sellerName?.trim()]
     .filter(Boolean)
@@ -383,25 +369,7 @@ export default function CatalogV2() {
 
   const products = useMemo(() => data?.products ?? [], [data]);
   const favoriteProducts = useMemo<FavoriteProduct[]>(
-    () =>
-      products.map((product) => ({
-        id: product.id,
-        name: product.mainName,
-        brand: brandNameOf(product),
-        price: priceOf(product),
-        oldPrice: product.bestOffer?.originalPrice
-          ? parseFloat(product.bestOffer.originalPrice)
-          : undefined,
-        discount: discountOf(product),
-        image: product.mainImageUrl || "",
-        category: categoryNameOf(product),
-        affiliateUrl: product.bestOffer?.affiliateUrl || "#",
-        marketplaceName: product.bestOffer?.marketplaceName ?? undefined,
-        sellerName: product.bestOffer?.sellerName ?? undefined,
-        freeShipping: product.bestOffer?.freeShipping ?? false,
-        averageRating: product.averageRating,
-        totalReviews: product.totalReviews,
-      })),
+    () => products.map(toFavoriteProduct),
     [products],
   );
 

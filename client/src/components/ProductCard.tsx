@@ -5,7 +5,7 @@ import { ExternalLink, PackageX } from "lucide-react";
 import FavoriteButton from "@/components/FavoriteButton";
 import ProductBadges from "@/components/ProductBadges";
 import { getProductBadges } from "@/lib/productBadges";
-import type { FavoriteProduct } from "@/types/favorites";
+import { toFavoriteProduct } from "@/lib/favoriteProductAdapter";
 
 interface ProductCardProps {
   id: string;
@@ -46,16 +46,13 @@ export default function ProductCard({
   lastSeenAt,
   soldOut = false,
 }: ProductCardProps) {
-  const safePrice = typeof price === "number" && !isNaN(price) ? price : 0;
-  const safeOldPrice = typeof oldPrice === "number" && !isNaN(oldPrice) ? oldPrice : undefined;
-  const computedDiscount = discount || (safeOldPrice && safeOldPrice > safePrice ? Math.round(((safeOldPrice - safePrice) / safeOldPrice) * 100) : 0);
-  const favoriteProduct: FavoriteProduct = {
+  const favoriteProduct = toFavoriteProduct({
     id,
     name,
     brand,
-    price: safePrice,
-    oldPrice: safeOldPrice,
-    discount: computedDiscount,
+    price,
+    oldPrice,
+    discount,
     image,
     category,
     affiliateUrl,
@@ -66,7 +63,10 @@ export default function ProductCard({
     totalReviews,
     promotionType,
     soldOut,
-  };
+  });
+  const safePrice = favoriteProduct.price;
+  const safeOldPrice = favoriteProduct.oldPrice;
+  const computedDiscount = favoriteProduct.discount;
   const badges = getProductBadges({
     discount: computedDiscount,
     freeShipping,
