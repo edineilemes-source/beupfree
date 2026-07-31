@@ -17,6 +17,7 @@ function average(values: number[]): number {
 function normalizeAnalyzerResult(result: AnalyzerResult): AnalyzerResult {
   return {
     ...result,
+    criterionId: result.criterionId,
     score: normalizeMetric(result.score),
     confidence: normalizeMetric(result.confidence),
     reasons: [...result.reasons],

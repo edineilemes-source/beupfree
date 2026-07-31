@@ -1,6 +1,10 @@
 export { DecisionEngine } from "./core/DecisionEngine";
+export { CriteriaRegistry } from "./models/CriteriaRegistry";
 export type { Analyzer } from "./analyzers/Analyzer";
 export type { AnalyzerResult } from "./models/AnalyzerResult";
+export type { Criterion } from "./models/Criterion";
+export type { CriterionEvaluation } from "./models/CriterionEvaluation";
+export type { CriterionWeight } from "./models/CriterionWeight";
 export type { DecisionCandidate } from "./models/DecisionCandidate";
 export type { DecisionContext } from "./models/DecisionContext";
 export type { DecisionResult } from "./models/DecisionResult";

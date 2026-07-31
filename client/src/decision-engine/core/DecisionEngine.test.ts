@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  CriteriaRegistry,
   DecisionEngine,
   type Analyzer,
   type AnalyzerResult,
+  type Criterion,
   type DecisionCandidate,
   type DecisionContext,
 } from "../index";
@@ -21,8 +23,55 @@ function result(
   reasons: string[] = [],
   warnings: string[] = [],
 ): AnalyzerResult {
-  return { analyzerId, candidateId, score, confidence, reasons, warnings };
+  return {
+    analyzerId,
+    criterionId: `${analyzerId}-criterion`,
+    candidateId,
+    score,
+    confidence,
+    reasons,
+    warnings,
+  };
 }
+
+const criterion: Criterion = {
+  id: "quality",
+  name: "Quality",
+  description: "A domain-independent quality criterion.",
+  category: "general",
+  enabled: true,
+};
+
+test("registers and retrieves criteria", () => {
+  const registry = new CriteriaRegistry();
+
+  registry.register(criterion);
+
+  assert.equal(registry.has(criterion.id), true);
+  assert.equal(registry.get(criterion.id), criterion);
+  assert.deepEqual(registry.getAll(), [criterion]);
+});
+
+test("unregisters criteria", () => {
+  const registry = new CriteriaRegistry();
+  registry.register(criterion);
+
+  assert.equal(registry.unregister(criterion.id), true);
+  assert.equal(registry.unregister(criterion.id), false);
+  assert.equal(registry.has(criterion.id), false);
+  assert.equal(registry.get(criterion.id), undefined);
+});
+
+test("rejects duplicate criterion identities", () => {
+  const registry = new CriteriaRegistry();
+  registry.register(criterion);
+
+  assert.throws(
+    () => registry.register({ ...criterion, name: "Duplicate" }),
+    /Criterion already registered: quality/,
+  );
+  assert.deepEqual(registry.getAll(), [criterion]);
+});
 
 test("returns zeroed results when there are no analyzers", async () => {
   const results = await new DecisionEngine().evaluate({ candidates });
@@ -37,9 +86,10 @@ test("returns zeroed results when there are no analyzers", async () => {
   })));
 });
 
-test("executes one analyzer", async () => {
+test("executes one analyzer and propagates its criterion to the decision result", async () => {
   const analyzer: Analyzer = {
     id: "one",
+    criterionId: "one-criterion",
     analyze: (candidate) => result("one", candidate.id, 70, 80),
   };
 
@@ -50,16 +100,19 @@ test("executes one analyzer", async () => {
   assert.equal(decision.score, 70);
   assert.equal(decision.confidence, 80);
   assert.equal(decision.analyzerResults.length, 1);
+  assert.equal(decision.analyzerResults[0].criterionId, analyzer.criterionId);
 });
 
 test("averages multiple analyzers and consolidates reasons and warnings", async () => {
   const analyzers: Analyzer[] = [
     {
       id: "first",
+      criterionId: "first-criterion",
       analyze: (candidate) => result("first", candidate.id, 40, 60, ["reason 1"], []),
     },
     {
       id: "second",
+      criterionId: "second-criterion",
       analyze: (candidate) => result("second", candidate.id, 80, 100, ["reason 2"], ["warning"]),
     },
   ];
@@ -77,6 +130,7 @@ test("averages multiple analyzers and consolidates reasons and warnings", async 
 test("supports asynchronous analyzers", async () => {
   const analyzer: Analyzer = {
     id: "async",
+    criterionId: "async-criterion",
     analyze: async (candidate) => result("async", candidate.id, 55, 65),
   };
 
@@ -90,6 +144,7 @@ test("supports asynchronous analyzers", async () => {
 test("sorts candidates from highest to lowest score", async () => {
   const analyzer: Analyzer = {
     id: "ranking",
+    criterionId: "ranking-criterion",
     analyze: (candidate) => result(
       "ranking",
       candidate.id,
@@ -106,6 +161,7 @@ test("sorts candidates from highest to lowest score", async () => {
 test("clamps finite metrics outside the accepted range", async () => {
   const analyzer: Analyzer = {
     id: "bounds",
+    criterionId: "bounds-criterion",
     analyze: (candidate) => result("bounds", candidate.id, 150, -10),
   };
 
@@ -120,8 +176,16 @@ test("clamps finite metrics outside the accepted range", async () => {
 
 test("replaces NaN and infinite metrics with zero", async () => {
   const analyzers: Analyzer[] = [
-    { id: "nan", analyze: (candidate) => result("nan", candidate.id, Number.NaN, Infinity) },
-    { id: "infinite", analyze: (candidate) => result("infinite", candidate.id, -Infinity, 50) },
+    {
+      id: "nan",
+      criterionId: "nan-criterion",
+      analyze: (candidate) => result("nan", candidate.id, Number.NaN, Infinity),
+    },
+    {
+      id: "infinite",
+      criterionId: "infinite-criterion",
+      analyze: (candidate) => result("infinite", candidate.id, -Infinity, 50),
+    },
   ];
 
   const [decision] = await new DecisionEngine(analyzers).evaluate({
@@ -136,7 +200,11 @@ test("replaces NaN and infinite metrics with zero", async () => {
 
 test("does not mutate candidates, context, analyzers, or analyzer results", async () => {
   const analyzerOutput = result("immutable", "a", 140, 75, ["kept"], ["kept"]);
-  const analyzer: Analyzer = { id: "immutable", analyze: () => analyzerOutput };
+  const analyzer: Analyzer = {
+    id: "immutable",
+    criterionId: "immutable-criterion",
+    analyze: () => analyzerOutput,
+  };
   const context: DecisionContext = {
     candidates: [{ ...candidates[0], attributes: { ...candidates[0].attributes } }],
     preferences: { mode: "test" },

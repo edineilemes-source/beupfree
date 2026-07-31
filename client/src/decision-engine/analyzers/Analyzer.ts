@@ -8,6 +8,7 @@ export interface Analyzer<
   TContext extends DecisionContext<TCandidate> = DecisionContext<TCandidate>,
 > {
   readonly id: string;
+  readonly criterionId: string;
   analyze(
     candidate: TCandidate,
     context: TContext,

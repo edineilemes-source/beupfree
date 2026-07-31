@@ -12,11 +12,23 @@ critérios de decisão sem acoplar o núcleo à origem dos dados.
 
 ## Fluxo
 
-`dados normalizados → analisadores → agregação → explicação`
+```text
+Decision Engine
+    → Criteria
+    → Analyzers
+    → Criterion Evaluations
+    → Aggregation
+    → Decision Result
+```
 
-Cada analisador, síncrono ou assíncrono, produz uma pontuação, uma confiança e explicações.
-O motor limita pontuações e confianças ao intervalo de 0 a 100, calcula médias simples por
-candidato, consolida motivos e alertas e ordena o resultado pela maior pontuação.
+`Criterion` identifica uma dimensão de decisão sem incorporar seu peso. Cada analisador
+síncrono ou assíncrono declara o critério que atende e produz uma avaliação desse critério
+para um candidato. O motor limita pontuações e confianças ao intervalo de 0 a 100, calcula
+médias simples por candidato, consolida motivos e alertas e ordena o resultado pela maior
+pontuação.
+
+`CriteriaRegistry` oferece um catálogo instanciável de critérios. `CriterionWeight` modela
+pesos configuráveis para estratégias futuras, mas nenhum peso participa da agregação atual.
 
 ## Regras de dependência
 
@@ -42,8 +54,10 @@ import {
 
 const analyzer: Analyzer = {
   id: "example",
+  criterionId: "example-criterion",
   analyze: (candidate) => ({
     analyzerId: "example",
+    criterionId: "example-criterion",
     candidateId: candidate.id,
     score: 80,
     confidence: 90,
