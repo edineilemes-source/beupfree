@@ -512,6 +512,22 @@ export const adminUsers = pgTable("admin_users", {
 });
 
 // ============================================
+// USERS (clientes; independente de admin_users)
+// ============================================
+
+export const users = pgTable("users", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("uq_users_email_lower").on(sql`lower(${table.email})`),
+]);
+
+// ============================================
 // ZOD SCHEMAS & TYPES
 // ============================================
 
@@ -594,3 +610,7 @@ export type SystemSetting = typeof systemSettings.$inferSelect;
 export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({ id: true, createdAt: true });
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type AdminUser = typeof adminUsers.$inferSelect;
+
+export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;

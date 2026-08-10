@@ -22,12 +22,19 @@ import brandSectionsRouter from "./routes/brandSections";
 import dealSectionsRouter from "./routes/dealSections";
 import { startScheduler } from "./jobs/scheduler";
 import { extractAttributesFromTitle } from "@shared/attribute-extraction";
+import { authSession } from "./auth/session";
+import { createAuthRouter } from "./auth/routes";
+import { userRepository } from "./auth/userRepository";
 
 const ML_CLIENT_ID = process.env.ML_CLIENT_ID;
 const ML_CLIENT_SECRET = process.env.ML_CLIENT_SECRET;
 const REPLIT_DEV_DOMAIN = process.env.REPLIT_DEV_DOMAIN;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.set("trust proxy", 1);
+  app.use(authSession());
+  app.use("/api/auth", createAuthRouter(userRepository));
+
   // ============ MERCADO LIVRE OAUTH ============
 
   app.get("/api/ml/auth", (req, res) => {
