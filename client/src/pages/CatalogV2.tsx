@@ -416,22 +416,20 @@ export default function CatalogV2() {
   );
 
   const toggle = (key: MultiFilterKey, value: string) => {
-    setFilters((prev) => {
-      const list = prev[key];
-      const next = {
-        ...prev,
-        [key]: list.includes(value)
-          ? list.filter((item) => item !== value)
-          : [...list, value],
-      };
-      const params = new URLSearchParams(search);
-      const values = next[key];
-      if (values.length > 0) params.set(key, values.join(","));
-      else params.delete(key);
-      const qs = params.toString();
-      setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
-      return next;
-    });
+    const list = filters[key];
+    const next = {
+      ...filters,
+      [key]: list.includes(value)
+        ? list.filter((item) => item !== value)
+        : [...list, value],
+    };
+    setFilters(next);
+    const params = new URLSearchParams(search);
+    const values = next[key];
+    if (values.length > 0) params.set(key, values.join(","));
+    else params.delete(key);
+    const qs = params.toString();
+    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
   };
 
   const setPrice = (price: [number, number] | null) =>
