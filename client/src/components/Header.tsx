@@ -6,6 +6,8 @@ import { NEON, DARK, DARK_NAV, alpha } from "@/lib/brand";
 import logoUrl from "@assets/logo_uppulse_hd_transparent.png";
 import FavoritesDrawer from "@/components/FavoritesDrawer";
 import { useFavorites } from "@/context/FavoritesContext";
+import { useAuth } from "@/context/AuthContext";
+import AuthDialog from "@/components/AuthDialog";
 
 const SEARCH_BORDER = "hsl(160 55% 38%)";
 
@@ -19,6 +21,7 @@ const NAV: { label: string; href: string }[] = [
 
 export default function Header() {
   const { favorites } = useFavorites();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const search = useSearch();
   const [, setLocation] = useLocation();
   const searchParams = new URLSearchParams(search);
@@ -28,11 +31,19 @@ export default function Header() {
     : searchParams.get("q") ?? "";
   const [searchQuery, setSearchQuery] = useState(urlQuery);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authInitialMode, setAuthInitialMode] = useState<"login" | "register">("login");
 
   // Mantém o campo em sincronia quando a busca é limpa/alterada pela URL
   useEffect(() => {
     setSearchQuery(urlQuery);
   }, [urlQuery]);
+
+  useEffect(() => {
+    const openRegister = () => { setAuthInitialMode("register"); setAuthOpen(true); };
+    window.addEventListener("beupfree:open-auth-register", openRegister);
+    return () => window.removeEventListener("beupfree:open-auth-register", openRegister);
+  }, []);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,13 +114,40 @@ export default function Header() {
 
           {/* Account / Favorites / Cart */}
           <div className="ml-auto flex flex-shrink-0 items-center gap-3 text-white sm:gap-5">
-            <div
-              className="flex flex-col items-center gap-1 px-2 py-1"
-              data-testid="item-entrar"
-            >
-              <User className="h-6 w-6" />
-              <span className="text-[11px] font-medium">Entrar</span>
-            </div>
+            {isLoading ? (
+              <div className="flex min-w-[54px] flex-col items-center gap-1 px-2 py-1" aria-live="polite">
+                <User className="h-6 w-6 opacity-50" />
+                <span className="sr-only">Verificando sessão</span>
+                <span aria-hidden="true" className="h-3 w-10 animate-pulse rounded bg-white/20" />
+              </div>
+            ) : isAuthenticated ? (
+              <div className="flex items-center gap-1">
+                <div className="flex max-w-28 flex-col items-center gap-1 px-1 py-1" data-testid="item-usuario">
+                  <User className="h-6 w-6" />
+                  <span className="max-w-full truncate text-[11px] font-medium" title={user?.name}>
+                    Olá, {user?.name}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void logout()}
+                  className="rounded-md px-2 py-1 text-xs font-medium hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  data-testid="button-sair"
+                >
+                  Sair
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setAuthInitialMode("login"); setAuthOpen(true); }}
+                className="flex flex-col items-center gap-1 rounded-md px-2 py-1 hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                data-testid="item-entrar"
+              >
+                <User className="h-6 w-6" />
+                <span className="text-[11px] font-medium">Entrar</span>
+              </button>
+            )}
             <button
               type="button"
               aria-label={`Abrir Favoritos, ${favorites.length} ${favorites.length === 1 ? "produto salvo" : "produtos salvos"}`}
@@ -183,6 +221,7 @@ export default function Header() {
         </div>
       </nav>
       <FavoritesDrawer open={favoritesOpen} onOpenChange={setFavoritesOpen} />
+      <AuthDialog open={authOpen} onOpenChange={setAuthOpen} initialMode={authInitialMode} />
     </header>
   );
 }

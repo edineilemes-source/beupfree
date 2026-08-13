@@ -14,7 +14,7 @@ declare module "express-session" {
 
 const credentialsSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
-  password: z.string().min(10).max(128),
+  password: z.string().min(8).max(128),
 });
 
 const registrationSchema = credentialsSchema.extend({

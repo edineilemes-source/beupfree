@@ -10,6 +10,7 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  primaryKey,
   check,
   pgEnum
 } from "drizzle-orm/pg-core";
@@ -527,6 +528,16 @@ export const users = pgTable("users", {
   uniqueIndex("uq_users_email_lower").on(sql`lower(${table.email})`),
 ]);
 
+// Favoritos pertencem à conta; a chave composta torna inserções idempotentes.
+export const userFavorites = pgTable("user_favorites", {
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.userId, table.productId] }),
+  index("idx_user_favorites_user_created").on(table.userId, table.createdAt),
+]);
+
 // ============================================
 // ZOD SCHEMAS & TYPES
 // ============================================
@@ -614,3 +625,4 @@ export type AdminUser = typeof adminUsers.$inferSelect;
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type UserFavorite = typeof userFavorites.$inferSelect;

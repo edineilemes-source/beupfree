@@ -103,7 +103,7 @@ describe("customer authentication API", () => {
   it("rejects invalid passwords", async () => {
     const short = await request("/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ name: "Nome", email: "short@example.com", password: "short" }),
+      body: JSON.stringify({ name: "Nome", email: "short@example.com", password: "1234567" }),
     });
     const long = await request("/api/auth/register", {
       method: "POST",
@@ -111,6 +111,18 @@ describe("customer authentication API", () => {
     });
     assert.equal(short.status, 400);
     assert.equal(long.status, 400);
+  });
+
+  it("accepts a password with exactly 8 characters", async () => {
+    const response = await request("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Nome",
+        email: `eight-${crypto.randomUUID()}@example.com`,
+        password: "12345678",
+      }),
+    });
+    assert.equal(response.status, 201);
   });
 
   it("logs in with valid credentials and returns public data", async () => {

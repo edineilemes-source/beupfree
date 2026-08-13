@@ -1,6 +1,8 @@
 import type { FavoriteReference } from "@/types/favorites";
 
-export const FAVORITES_STORAGE_KEY = "beupfree:favorites:v1";
+export const anonymousFavoritesKey = "beupfree:favorites:v1";
+export const FAVORITES_STORAGE_KEY = anonymousFavoritesKey;
+export const userFavoritesKey = (userId: string) => `beupfree:favorites:user:${userId}:v1`;
 
 function isFavoriteReference(value: unknown): value is FavoriteReference {
   if (!value || typeof value !== "object") return false;
@@ -14,11 +16,11 @@ function isFavoriteReference(value: unknown): value is FavoriteReference {
   );
 }
 
-export function readFavorites(): FavoriteReference[] {
+export function readFavorites(key = anonymousFavoritesKey): FavoriteReference[] {
   if (typeof window === "undefined") return [];
 
   try {
-    const raw = window.localStorage.getItem(FAVORITES_STORAGE_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return [];
 
     const parsed: unknown = JSON.parse(raw);
@@ -36,11 +38,11 @@ export function readFavorites(): FavoriteReference[] {
   }
 }
 
-export function writeFavorites(favorites: FavoriteReference[]): void {
+export function writeFavorites(favorites: FavoriteReference[], key = anonymousFavoritesKey): void {
   if (typeof window === "undefined") return;
 
   try {
-    window.localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
+    window.localStorage.setItem(key, JSON.stringify(favorites));
   } catch {
     // A sessão continua funcional quando o navegador bloqueia o armazenamento.
   }

@@ -214,6 +214,14 @@ describe("auth integration with real PostgreSQL", { concurrency: false }, () => 
     assert.equal(Object.values(row).includes(testPassword), false);
   });
 
+  it("rejects 7 characters and accepts exactly 8 characters", async () => {
+    const rejected = await register(http, uniqueEmail("seven"), { password: "1234567" });
+    assert.equal(rejected.status, 400);
+
+    const accepted = await register(http, uniqueEmail("eight"), { password: "12345678" });
+    assert.equal(accepted.status, 201);
+  });
+
   it("enforces case-insensitive email uniqueness in PostgreSQL", async () => {
     const localPart = `${emailPrefix}-Case-${crypto.randomUUID()}`;
     assert.equal((await register(http, `${localPart}@example.test`)).status, 201);
@@ -359,7 +367,7 @@ describe("auth integration with real PostgreSQL", { concurrency: false }, () => 
     const cases: Array<{ body?: string; contentType?: string }> = [
       { body: JSON.stringify({ name: " ", email: uniqueEmail("empty-name"), password: testPassword }) },
       { body: JSON.stringify({ name: "Name", email: "invalid", password: testPassword }) },
-      { body: JSON.stringify({ name: "Name", email: uniqueEmail("short"), password: "short" }) },
+      { body: JSON.stringify({ name: "Name", email: uniqueEmail("short"), password: "1234567" }) },
       { body: JSON.stringify({ name: "Name", email: uniqueEmail("long"), password: "x".repeat(129) }) },
       {},
       { body: JSON.stringify({ unexpected: { nested: true } }) },
