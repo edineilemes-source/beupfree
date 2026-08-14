@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import {
   ArrowLeft, RefreshCw, Check, X, Loader2, Package,
   TrendingDown, Truck, ExternalLink, Filter, CheckSquare, Square,
-  ChevronDown, ChevronRight, Zap, Sun
+  ChevronDown, ChevronRight, Zap, Sun, ListPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -467,6 +467,12 @@ export default function AdminTriagem() {
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <Link href="/admin/curadoria/listas">
+                <Button variant="outline" size="sm" data-testid="link-curation-sources">
+                  <ListPlus className="w-4 h-4 mr-1.5" />
+                  Listas de Curadoria
+                </Button>
+              </Link>
               <Badge variant="outline" data-testid="badge-pending-count">
                 <Package className="w-3 h-3 mr-1" />
                 {total} pendentes

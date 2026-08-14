@@ -27,6 +27,8 @@ import { createAuthRouter } from "./auth/routes";
 import { userRepository } from "./auth/userRepository";
 import { createFavoritesRouter } from "./favorites/routes";
 import { favoritesRepository } from "./favorites/repository";
+import { createCurationSourcesRouter } from "./curationSources/routes";
+import { curationSourcesRepository } from "./curationSources/repository";
 
 const ML_CLIENT_ID = process.env.ML_CLIENT_ID;
 const ML_CLIENT_SECRET = process.env.ML_CLIENT_SECRET;
@@ -37,6 +39,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(authSession());
   app.use("/api/auth", createAuthRouter(userRepository));
   app.use("/api/favorites", createFavoritesRouter(favoritesRepository));
+  // Segue o padrão administrativo atual, que ainda não possui autorização própria.
+  app.use("/api/admin/curation-sources", createCurationSourcesRouter(curationSourcesRepository));
 
   // ============ MERCADO LIVRE OAUTH ============
 

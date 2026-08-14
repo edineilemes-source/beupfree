@@ -55,6 +55,21 @@ export const collectionStatusEnum = pgEnum('collection_status', [
   'partial'
 ]);
 
+export const curationSourceTypeEnum = pgEnum('curation_source_type', [
+  'promotion',
+  'brand',
+  'category',
+  'outlet',
+  'campaign',
+  'other'
+]);
+
+export const curationSourceStatusEnum = pgEnum('curation_source_status', [
+  'active',
+  'inactive',
+  'ended'
+]);
+
 // ============================================
 // MARCAS
 // ============================================
@@ -282,6 +297,37 @@ export const collectionSources = pgTable("collection_sources", {
   lastRunAt: timestamp("last_run_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Fontes cadastradas manualmente pela curadoria. Não implica coleta automática.
+export const curationSources = pgTable("curation_sources", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 200 }).notNull(),
+  marketplaceId: varchar("marketplace_id", { length: 36 }).notNull().references(() => marketplaces.id),
+  url: text("url").notNull(),
+  sourceType: curationSourceTypeEnum("source_type").notNull(),
+  status: curationSourceStatusEnum("status").notNull().default('active'),
+  priority: integer("priority").notNull().default(0),
+  startsAt: timestamp("starts_at"),
+  endsAt: timestamp("ends_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_curation_sources_status").on(table.status),
+  index("idx_curation_sources_marketplace").on(table.marketplaceId),
+  index("idx_curation_sources_type").on(table.sourceType),
+  index("idx_curation_sources_priority").on(table.priority),
+  check("chk_curation_sources_priority", sql`${table.priority} >= 0`),
+  check("chk_curation_sources_url", sql`${table.url} ~* '^https?://[^[:space:]]+$'`),
+  check("chk_curation_sources_dates", sql`${table.startsAt} IS NULL OR ${table.endsAt} IS NULL OR ${table.endsAt} >= ${table.startsAt}`),
+]);
+
+export const curationSourcesRelations = relations(curationSources, ({ one }) => ({
+  marketplace: one(marketplaces, {
+    fields: [curationSources.marketplaceId],
+    references: [marketplaces.id],
+  }),
+}));
 
 // ============================================
 // MEMBERSHIPS DE COLEÇÃO (rastreia itens por fonte)
@@ -573,6 +619,32 @@ export type Offer = typeof offers.$inferSelect;
 export const insertCollectionSourceSchema = createInsertSchema(collectionSources).omit({ id: true, createdAt: true });
 export type InsertCollectionSource = z.infer<typeof insertCollectionSourceSchema>;
 export type CollectionSource = typeof collectionSources.$inferSelect;
+
+const optionalDate = z.coerce.date().nullable().optional();
+const curationSourceFieldsSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  marketplaceId: z.string().uuid(),
+  url: z.string().trim().url().refine((value) => value.startsWith("http://") || value.startsWith("https://"), "URL deve usar HTTP ou HTTPS"),
+  sourceType: z.enum(['promotion', 'brand', 'category', 'outlet', 'campaign', 'other']),
+  status: z.enum(['active', 'inactive', 'ended']).default('active'),
+  priority: z.coerce.number().int().min(0).default(0),
+  startsAt: optionalDate,
+  endsAt: optionalDate,
+  notes: z.string().trim().max(5000).nullable().optional(),
+});
+const validCurationDateRange = (value: { startsAt?: Date | null; endsAt?: Date | null }) =>
+  !value.startsAt || !value.endsAt || value.endsAt >= value.startsAt;
+export const insertCurationSourceSchema = curationSourceFieldsSchema.refine(validCurationDateRange, {
+  message: "Data final não pode ser anterior à inicial",
+  path: ["endsAt"],
+});
+export const updateCurationSourceSchema = curationSourceFieldsSchema.partial().refine(validCurationDateRange, {
+  message: "Data final não pode ser anterior à inicial",
+  path: ["endsAt"],
+});
+export type InsertCurationSource = z.infer<typeof insertCurationSourceSchema>;
+export type UpdateCurationSource = z.infer<typeof updateCurationSourceSchema>;
+export type CurationSource = typeof curationSources.$inferSelect;
 
 export const insertCollectionMembershipSchema = createInsertSchema(collectionMemberships).omit({ id: true, firstSeenAt: true, lastSeenAt: true });
 export type InsertCollectionMembership = z.infer<typeof insertCollectionMembershipSchema>;
