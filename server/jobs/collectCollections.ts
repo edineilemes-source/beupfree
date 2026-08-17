@@ -63,6 +63,9 @@ export interface CollectCollectionsResult {
   totalNew: number;
   totalDeactivated: number;
   totalAutoApproved: number;
+  totalRawFound: number;
+  totalParsed: number;
+  totalIngestion: number;
   errors: string[];
 }
 
@@ -75,6 +78,9 @@ export async function runCollectionsJob(
     totalNew: 0,
     totalDeactivated: 0,
     totalAutoApproved: 0,
+    totalRawFound: 0,
+    totalParsed: 0,
+    totalIngestion: 0,
     errors: [],
   };
 
@@ -108,7 +114,12 @@ export async function runCollectionsJob(
 
     try {
       const scrapeResult = await scrapeCollectionUrl(source.url!, source.name);
-      const { items, errors: scrapeErrors } = scrapeResult;
+      const { items, errors: scrapeErrors, rawCardsFound } = scrapeResult;
+      result.totalRawFound += rawCardsFound;
+      result.totalParsed += items.length;
+      if (scrapeErrors.length > 0 && items.length === 0) {
+        throw new Error(scrapeErrors[0]);
+      }
 
       // Enriquecimento oficial é best-effort: falhas não interrompem a coleta HTML.
       const externalIds = items
@@ -387,6 +398,7 @@ export async function runCollectionsJob(
       }
 
       result.totalCollected += collectedCount;
+      result.totalIngestion += collectedCount;
       result.totalNew += newCount;
       result.totalDeactivated += deactivated;
       result.totalAutoApproved += autoApprovedCount;
@@ -401,13 +413,14 @@ export async function runCollectionsJob(
       await storage.updateCollectionSource(source.id, { lastRunAt: new Date() });
 
       console.log(
-        `[CollectCollections] ${source.name}: ${collectedCount} coletados, ${newCount} novos (${autoApprovedCount} auto-aprovados), ${deactivated} desativados`
+        `[CollectCollections] source=${source.id} provider=mercadolivre url=${source.url ? new URL(source.url).origin + new URL(source.url).pathname : "[missing]"} raw=${rawCardsFound} parsed=${items.length} ingestion=${collectedCount} created=${newCount} updated=unknown ignored=${Math.max(0, items.length - newCount)} autoApproved=${autoApprovedCount} deactivated=${deactivated}`
       );
     } catch (err: unknown) {
       const message = errorDetails(err);
       result.errors.push(`[${source.name}] Falha na coleta: ${message}`);
       await storage.updateCollectionBatch(batch.id, {
         status: "failed",
+        totalErrors: 1,
         finishedAt: new Date(),
         errorLog: message,
       });

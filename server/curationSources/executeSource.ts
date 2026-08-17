@@ -39,6 +39,7 @@ export function createSourceExecutor(repository: CurationSourcesRepository, reso
     if (!collector) throw new SourceExecutionError("unsupported_provider", "Coleta ainda não disponível para este provedor.");
 
     runningSources.add(sourceId);
+    console.log(`[CurationSources] execute source=${source.id} provider=${source.marketplaceSlug} url=${new URL(source.url).origin + new URL(source.url).pathname}`);
     const run = await repository.createRun(sourceId, triggerType);
     try {
       const result = await collector.collect(source);

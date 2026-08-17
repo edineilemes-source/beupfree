@@ -66,8 +66,22 @@ function isBlocked(html: string): boolean {
   return (
     lower.includes("access denied") ||
     lower.includes("pardon our interruption") ||
+    lower.includes("account-verification") ||
     lower.includes("captcha") && lower.includes("verify")
   );
+}
+
+function sanitizeUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    url.username = "";
+    url.password = "";
+    url.hash = "";
+    for (const key of Array.from(url.searchParams.keys())) url.searchParams.set(key, "[redacted]");
+    return url.toString();
+  } catch {
+    return "[invalid-url]";
+  }
 }
 
 function addAffiliateCode(url: string): string {
@@ -128,7 +142,9 @@ function errorDetails(error: unknown): string {
 }
 
 // ============ HTTP CLIENT ============
-async function fetchWithRetry(url: string, attempt = 1): Promise<string> {
+type FetchPageResult = { html: string; status: number; finalUrl: string };
+
+async function fetchWithRetry(url: string, attempt = 1): Promise<FetchPageResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), HTTP_TIMEOUT_MS);
 
@@ -150,9 +166,12 @@ async function fetchWithRetry(url: string, attempt = 1): Promise<string> {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const html = await res.text();
-    if (isBlocked(html)) throw new Error("Blocked or empty response from ML");
+    const finalPath = new URL(res.url).pathname;
+    if (finalPath.includes("/account-verification") || isBlocked(html)) {
+      throw new Error(`Mercado Livre retornou verificação/bloqueio (HTTP ${res.status}, destino ${sanitizeUrl(res.url)})`);
+    }
 
-    return html;
+    return { html, status: res.status, finalUrl: res.url };
   } catch (err: any) {
     clearTimeout(timeout);
     const message = errorDetails(err);
@@ -181,15 +200,14 @@ function detectPromotionType(card: cheerio.Cheerio<any>): PromotionType {
   return "general";
 }
 
-function buildPageUrl(baseUrl: string, page: number): string {
-  if (page <= 1) return baseUrl;
-  // Strip any existing &page=N or ?page=N
-  const cleaned = baseUrl.replace(/([?&])page=\d+&?/i, "$1").replace(/[?&]$/, "");
-  const sep = cleaned.includes("?") ? "&" : "?";
-  return `${cleaned}${sep}page=${page}`;
+export function buildCollectionPageUrl(baseUrl: string, page: number): string {
+  const url = new URL(baseUrl);
+  if (page <= 1) url.searchParams.delete("page");
+  else url.searchParams.set("page", String(page));
+  return url.toString();
 }
 
-function parsePage(
+export function parseCollectionPage(
   html: string,
   sourceName: string
 ): { items: CollectedItem[]; hasNextPage: boolean; totalCards: number } {
@@ -305,32 +323,52 @@ function parsePage(
   return { items, hasNextPage, totalCards };
 }
 
+function hasExplicitEmptyState(html: string): boolean {
+  const $ = cheerio.load(html);
+  const text = $("main, .ui-search-rescue, .ui-search-search-result").text()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return text.includes("nao encontramos produtos") ||
+    text.includes("nao ha produtos") ||
+    text.includes("nenhum produto encontrado");
+}
+
 // ============ MAIN: paginated scraper ============
 export async function scrapeCollectionUrl(
   sourceUrl: string,
   sourceName: string
-): Promise<{ items: CollectedItem[]; errors: string[] }> {
+): Promise<{ items: CollectedItem[]; errors: string[]; rawCardsFound: number; pagesFetched: number }> {
   const errors: string[] = [];
   const allItems: CollectedItem[] = [];
   const globalSeen = new Set<string>();
   let previousPageHash = "";
+  let rawCardsFound = 0;
+  let pagesFetched = 0;
 
   for (let page = 1; page <= MAX_PAGES; page++) {
-    const url = buildPageUrl(sourceUrl, page);
+    const url = buildCollectionPageUrl(sourceUrl, page);
 
-    let html: string;
+    let response: FetchPageResult;
     try {
-      html = await fetchWithRetry(url);
+      response = await fetchWithRetry(url);
     } catch (err: unknown) {
       errors.push(`Página ${page}: ${errorDetails(err)}`);
       break; // can't continue paginating if a page fails
     }
 
-    const { items, hasNextPage, totalCards } = parsePage(html, sourceName);
+    pagesFetched++;
+    const { items, hasNextPage, totalCards } = parseCollectionPage(response.html, sourceName);
+    rawCardsFound += totalCards;
+    console.log(
+      `[MLCollector] request=${sanitizeUrl(url)} status=${response.status} final=${sanitizeUrl(response.finalUrl)} bytes=${response.html.length} rawCards=${totalCards} parsed=${items.length}`
+    );
 
     // Hard stop only when the page itself has no product cards at all (real end of list)
     if (totalCards === 0) {
-      console.log(`[MLCollector] ${sourceName} page ${page}: no cards on page → stop`);
+      if (!hasExplicitEmptyState(response.html)) {
+        errors.push(`Página ${page}: resposta HTTP válida, mas o markup não contém cards de produto reconhecíveis nem um estado vazio explícito.`);
+      }
       break;
     }
 
@@ -375,5 +413,5 @@ export async function scrapeCollectionUrl(
     return (b.qtd_avaliacoes || 0) - (a.qtd_avaliacoes || 0);
   });
 
-  return { items: allItems, errors };
+  return { items: allItems, errors, rawCardsFound, pagesFetched };
 }
