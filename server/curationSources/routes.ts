@@ -5,6 +5,8 @@ import {
   updateCurationSourceSchema,
 } from "@shared/schema";
 import type { CurationSourcesRepository } from "./repository";
+import { createSourceExecutor, SourceExecutionError } from "./executeSource";
+import { providerIsSupported } from "./collectorResolver";
 
 const filtersSchema = z.object({
   status: z.enum(["active", "inactive", "ended"]).optional(),
@@ -16,8 +18,11 @@ function validationError(error: z.ZodError) {
   return { error: "Dados inválidos", issues: error.flatten().fieldErrors };
 }
 
-export function createCurationSourcesRouter(repository: CurationSourcesRepository) {
+type ExecuteSource = ReturnType<typeof createSourceExecutor>;
+
+export function createCurationSourcesRouter(repository: CurationSourcesRepository, providedExecutor?: ExecuteSource) {
   const router = Router();
+  const executeSource = providedExecutor ?? createSourceExecutor(repository);
 
   router.get("/marketplaces", async (_req, res, next) => {
     try {
@@ -36,7 +41,16 @@ export function createCurationSourcesRouter(repository: CurationSourcesRepositor
         marketplaceId: parsed.data.marketplace,
         sourceType: parsed.data.source_type,
       });
-      res.json({ sources, activeCount: sources.filter((source) => source.status === "active").length });
+      const runs = await repository.latestRuns(sources.map((source) => source.id));
+      const operational = await Promise.all(sources.map((source) => repository.findOperationalById(source.id)));
+      res.json({
+        sources: sources.map((source, index) => ({
+          ...source,
+          collectorSupported: operational[index] ? providerIsSupported(operational[index]!.marketplaceSlug) : false,
+          lastRun: runs.get(source.id) ?? null,
+        })),
+        activeCount: sources.filter((source) => source.status === "active").length,
+      });
     } catch (error) {
       next(error);
     }
@@ -74,6 +88,18 @@ export function createCurationSourcesRouter(repository: CurationSourcesRepositor
       res.json(source);
     } catch (error) {
       next(error);
+    }
+  });
+
+  router.post("/:id/collect", async (req, res, next) => {
+    try {
+      res.json(await executeSource(req.params.id, "manual"));
+    } catch (error) {
+      if (!(error instanceof SourceExecutionError)) return next(error);
+      const status = error.code === "not_found" ? 404
+        : error.code === "already_running" ? 409
+        : error.code === "collection_failed" ? 502 : 422;
+      res.status(status).json({ error: error.message, code: error.code });
     }
   });
 

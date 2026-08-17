@@ -6,6 +6,7 @@ import express from "express";
 import pg from "pg";
 import { createCurationSourcesRouter } from "./routes";
 import { curationSourcesRepository } from "./repository";
+import { createSourceExecutor } from "./executeSource";
 
 const { Pool } = pg;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -18,11 +19,13 @@ const valid = (overrides: Record<string, unknown> = {}) => ({ name: `${runId}-fo
 
 describe("curation sources integration with real PostgreSQL", { concurrency: false }, () => {
   before(async () => {
-    const schema = await pool.query("SELECT to_regclass('public.curation_sources')::text AS table_name");
+    const schema = await pool.query("SELECT to_regclass('public.curation_sources')::text AS table_name, to_regclass('public.curation_source_runs')::text AS runs_table");
     assert.equal(schema.rows[0]?.table_name, "curation_sources", "aplique migrations/0004_curation_sources.sql");
+    assert.equal(schema.rows[0]?.runs_table, "curation_source_runs", "aplique migrations/0005_curation_source_runs.sql");
     const marketplace = await pool.query<{ id: string }>("INSERT INTO marketplaces(name, slug, base_url) VALUES($1,$2,$3) RETURNING id", [`${runId}-marketplace`, runId, "https://example.test"]);
     marketplaceId = marketplace.rows[0].id;
-    const app = express(); app.use(express.json()); app.use("/api/admin/curation-sources", createCurationSourcesRouter(curationSourcesRepository));
+    const executor = createSourceExecutor(curationSourcesRepository, () => ({ collect: async () => ({ itemsFound: 7, itemsCreated: 2, itemsUpdated: null, itemsIgnored: 5, errors: 0 }) }));
+    const app = express(); app.use(express.json()); app.use("/api/admin/curation-sources", createCurationSourcesRouter(curationSourcesRepository, executor));
     server = createServer(app); await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
     const address = server.address(); if (!address || typeof address === "string") throw new Error("server"); baseUrl = `http://127.0.0.1:${address.port}`;
   });
@@ -52,5 +55,15 @@ describe("curation sources integration with real PostgreSQL", { concurrency: fal
     await assert.rejects(pool.query(sql, [runId, marketplaceId, "not-a-url", 0, null, null]), (error: any) => error.code === "23514");
     await assert.rejects(pool.query(sql, [runId, marketplaceId, "https://example.test", -1, null, null]), (error: any) => error.code === "23514");
     await assert.rejects(pool.query(sql, [runId, marketplaceId, "https://example.test", 0, "2026-08-15", "2026-08-14"]), (error: any) => error.code === "23514");
+  });
+
+  it("executes a persisted source, stores history and rejects inactive/missing sources", async () => {
+    const created = await (await request("", { method: "POST", body: JSON.stringify(valid({ name: `${runId}-execute` })) })).json() as any; sourceIds.push(created.id);
+    let response = await request(`/${created.id}/collect`, { method: "POST" }); assert.equal(response.status, 200); assert.equal((await response.json() as any).itemsFound, 7);
+    const history = await pool.query("SELECT status,items_found,items_created,items_ignored FROM curation_source_runs WHERE source_id=$1", [created.id]);
+    assert.deepEqual(history.rows[0], { status: "completed", items_found: 7, items_created: 2, items_ignored: 5 });
+    await request(`/${created.id}`, { method: "PATCH", body: JSON.stringify({ status: "inactive" }) });
+    response = await request(`/${created.id}/collect`, { method: "POST" }); assert.equal(response.status, 422);
+    response = await request(`/${crypto.randomUUID()}/collect`, { method: "POST" }); assert.equal(response.status, 404);
   });
 });

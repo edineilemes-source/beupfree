@@ -26,7 +26,7 @@ test.afterAll(async () => {
 
 test("protege o cadastro, edição, desativação e filtro de listas de curadoria", async ({ page }) => {
   await page.goto("/admin/curadoria/listas");
-  await expect(page.getByTestId("text-page-title")).toHaveText("Listas de Curadoria");
+  await expect(page.getByTestId("text-page-title")).toHaveText("Fontes de Curadoria");
 
   await page.getByTestId("button-new-source").click();
   await page.getByLabel("Nome").fill(sourceName);

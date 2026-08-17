@@ -29,6 +29,10 @@ import { createFavoritesRouter } from "./favorites/routes";
 import { favoritesRepository } from "./favorites/repository";
 import { createCurationSourcesRouter } from "./curationSources/routes";
 import { curationSourcesRepository } from "./curationSources/repository";
+import { registerCollector } from "./curationSources/collectorResolver";
+import { mercadoLivreCollector } from "./curationSources/mercadoLivreCollector";
+
+registerCollector(["mercadolivre", "mercado-livre"], mercadoLivreCollector);
 
 const ML_CLIENT_ID = process.env.ML_CLIENT_ID;
 const ML_CLIENT_SECRET = process.env.ML_CLIENT_SECRET;

@@ -70,6 +70,9 @@ export const curationSourceStatusEnum = pgEnum('curation_source_status', [
   'ended'
 ]);
 
+export const curationSourceRunStatusEnum = pgEnum('curation_source_run_status', ['running', 'completed', 'failed']);
+export const curationSourceTriggerEnum = pgEnum('curation_source_trigger', ['manual', 'scheduled']);
+
 // ============================================
 // MARCAS
 // ============================================
@@ -298,7 +301,7 @@ export const collectionSources = pgTable("collection_sources", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Fontes cadastradas manualmente pela curadoria. Não implica coleta automática.
+// Configuração persistida das fontes operacionais. Agendamento configurável virá em CURA003.
 export const curationSources = pgTable("curation_sources", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name", { length: 200 }).notNull(),
@@ -328,6 +331,23 @@ export const curationSourcesRelations = relations(curationSources, ({ one }) => 
     references: [marketplaces.id],
   }),
 }));
+
+export const curationSourceRuns = pgTable("curation_source_runs", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  sourceId: varchar("source_id", { length: 36 }).notNull().references(() => curationSources.id, { onDelete: 'cascade' }),
+  triggerType: curationSourceTriggerEnum("trigger_type").notNull().default('manual'),
+  status: curationSourceRunStatusEnum("status").notNull().default('running'),
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  finishedAt: timestamp("finished_at"),
+  itemsFound: integer("items_found"),
+  itemsCreated: integer("items_created"),
+  itemsUpdated: integer("items_updated"),
+  itemsIgnored: integer("items_ignored"),
+  errorMessage: text("error_message"),
+}, (table) => [
+  index("idx_curation_source_runs_source_started").on(table.sourceId, table.startedAt),
+  index("idx_curation_source_runs_status").on(table.status),
+]);
 
 // ============================================
 // MEMBERSHIPS DE COLEÇÃO (rastreia itens por fonte)
@@ -645,6 +665,7 @@ export const updateCurationSourceSchema = curationSourceFieldsSchema.partial().r
 export type InsertCurationSource = z.infer<typeof insertCurationSourceSchema>;
 export type UpdateCurationSource = z.infer<typeof updateCurationSourceSchema>;
 export type CurationSource = typeof curationSources.$inferSelect;
+export type CurationSourceRun = typeof curationSourceRuns.$inferSelect;
 
 export const insertCollectionMembershipSchema = createInsertSchema(collectionMemberships).omit({ id: true, firstSeenAt: true, lastSeenAt: true });
 export type InsertCollectionMembership = z.infer<typeof insertCollectionMembershipSchema>;

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, ExternalLink, ListPlus, Loader2, Pencil, Power, SquareCheckBig } from "lucide-react";
+import { ArrowLeft, ExternalLink, ListPlus, Loader2, Pencil, Play, Power, SquareCheckBig } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -20,9 +20,10 @@ type Marketplace = { id: string; name: string; isActive: boolean | null };
 type Source = {
   id: string; name: string; marketplaceId: string; marketplaceName: string; url: string;
   sourceType: SourceType; status: Status; priority: number; startsAt: string | null;
-  endsAt: string | null; notes: string | null;
+  endsAt: string | null; notes: string | null; collectorSupported: boolean;
+  lastRun: null | { status: "running" | "completed" | "failed"; startedAt: string; itemsFound: number | null; itemsCreated: number | null; itemsIgnored: number | null; errorMessage: string | null };
 };
-type FormState = Omit<Source, "id" | "marketplaceName" | "startsAt" | "endsAt"> & { startsAt: string; endsAt: string };
+type FormState = Omit<Source, "id" | "marketplaceName" | "startsAt" | "endsAt" | "collectorSupported" | "lastRun"> & { startsAt: string; endsAt: string };
 
 const TYPES: Array<{ value: SourceType; label: string }> = [
   { value: "promotion", label: "Promoção" }, { value: "brand", label: "Marca" },
@@ -74,10 +75,22 @@ export default function CurationSources() {
     onSuccess: () => { invalidate(); toast({ title: "Status atualizado" }); },
     onError: (error: Error) => toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" }),
   });
+  const collectMutation = useMutation({
+    mutationFn: async (source: Source) => {
+      const response = await apiRequest("POST", `/api/admin/curation-sources/${source.id}/collect`);
+      return { source, result: await response.json() as { itemsFound: number; itemsCreated: number; itemsIgnored: number } };
+    },
+    onSuccess: ({ result }) => {
+      invalidate();
+      toast({ title: "Coleta concluída", description: `Encontrados: ${result.itemsFound} · Criados: ${result.itemsCreated} · Ignorados: ${result.itemsIgnored}` });
+    },
+    onError: (error: Error) => toast({ title: "Falha na coleta", description: error.message.replace(/^\d+:\s*/, ""), variant: "destructive" }),
+  });
 
   const startNew = () => { setEditing(null); setForm(emptyForm(marketplaceData?.marketplaces[0]?.id)); setFormError(""); setOpen(true); };
   const startEdit = (item: Source) => {
-    setEditing(item); setForm({ ...item, startsAt: dateInput(item.startsAt), endsAt: dateInput(item.endsAt), notes: item.notes ?? "" });
+    const { collectorSupported: _collectorSupported, lastRun: _lastRun, marketplaceName: _marketplaceName, id: _id, ...editable } = item;
+    setEditing(item); setForm({ ...editable, startsAt: dateInput(item.startsAt), endsAt: dateInput(item.endsAt), notes: item.notes ?? "" });
     setFormError(""); setOpen(true);
   };
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((current) => ({ ...current, [key]: value }));
@@ -87,7 +100,7 @@ export default function CurationSources() {
       <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <Link href="/admin/triagem"><Button variant="ghost" size="icon" aria-label="Voltar à triagem"><ArrowLeft /></Button></Link>
-          <div><h1 className="text-xl font-bold" data-testid="text-page-title">Listas de Curadoria</h1><p className="text-sm text-muted-foreground">Fontes manuais multi-marketplace</p></div>
+          <div><h1 className="text-xl font-bold" data-testid="text-page-title">Fontes de Curadoria</h1><p className="text-sm text-muted-foreground">Fontes configuradas para alimentar o UpPulse</p></div>
         </div>
         <Button onClick={startNew} data-testid="button-new-source"><ListPlus className="w-4 h-4 mr-2" />Nova lista</Button>
       </div>
@@ -101,19 +114,19 @@ export default function CurationSources() {
       </div>
       <Card className="overflow-x-auto">
         {isLoading ? <div className="p-12 flex justify-center"><Loader2 className="animate-spin" /></div> : <Table>
-          <TableHeader><TableRow><TableHead>Status</TableHead><TableHead>Nome</TableHead><TableHead>Marketplace</TableHead><TableHead>Tipo</TableHead><TableHead>Início</TableHead><TableHead>Fim</TableHead><TableHead>Prioridade</TableHead><TableHead>URL</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
-          <TableBody>{sources.length === 0 ? <TableRow><TableCell colSpan={9} className="text-center py-10 text-muted-foreground">Nenhuma lista encontrada.</TableCell></TableRow> : sources.map((item) => {
+          <TableHeader><TableRow><TableHead>Status</TableHead><TableHead>Nome</TableHead><TableHead>Provider</TableHead><TableHead>Tipo</TableHead><TableHead>Última coleta</TableHead><TableHead>Prioridade</TableHead><TableHead>URL</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
+          <TableBody>{sources.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">Nenhuma fonte encontrada.</TableCell></TableRow> : sources.map((item) => {
             const expired = item.endsAt && new Date(item.endsAt) < new Date();
             return <TableRow key={item.id} className={item.status === "active" ? "bg-green-500/5" : ""} data-testid={`source-row-${item.id}`}>
               <TableCell><Badge variant={item.status === "active" ? "default" : "secondary"}>{STATUS_LABEL[item.status]}</Badge>{expired && item.status !== "ended" && <div className="text-xs text-amber-700 mt-1">Prazo vencido</div>}</TableCell>
-              <TableCell className="font-medium">{item.name}</TableCell><TableCell>{item.marketplaceName}</TableCell><TableCell>{TYPES.find((type) => type.value === item.sourceType)?.label}</TableCell><TableCell>{displayDate(item.startsAt)}</TableCell><TableCell>{displayDate(item.endsAt)}</TableCell><TableCell>{item.priority}</TableCell>
+              <TableCell className="font-medium">{item.name}</TableCell><TableCell>{item.marketplaceName}</TableCell><TableCell>{TYPES.find((type) => type.value === item.sourceType)?.label}</TableCell>
+              <TableCell>{item.lastRun ? <div className="text-xs"><div>{item.lastRun.status === "completed" ? "Concluída" : item.lastRun.status === "failed" ? "Falhou" : "Em andamento"}</div><div className="text-muted-foreground">{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.lastRun.startedAt))}{item.lastRun.itemsFound != null ? ` · ${item.lastRun.itemsFound} encontrados` : ""}</div>{item.lastRun.errorMessage && <div className="text-destructive">{item.lastRun.errorMessage}</div>}</div> : "Nunca"}</TableCell><TableCell>{item.priority}</TableCell>
               <TableCell><a href={item.url} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1">Abrir <ExternalLink className="w-3 h-3" /></a></TableCell>
-              <TableCell><div className="flex gap-1"><Button size="icon" variant="ghost" aria-label={`Editar ${item.name}`} onClick={() => startEdit(item)}><Pencil className="w-4 h-4" /></Button>{item.status === "active" ? <Button size="icon" variant="ghost" aria-label={`Desativar ${item.name}`} onClick={() => statusMutation.mutate({ id: item.id, next: "inactive" })}><Power className="w-4 h-4" /></Button> : <Button size="icon" variant="ghost" aria-label={`Ativar ${item.name}`} onClick={() => statusMutation.mutate({ id: item.id, next: "active" })}><Power className="w-4 h-4 text-green-600" /></Button>}<Button size="icon" variant="ghost" aria-label={`Encerrar ${item.name}`} onClick={() => statusMutation.mutate({ id: item.id, next: "ended" })}><SquareCheckBig className="w-4 h-4" /></Button></div></TableCell>
+              <TableCell><div className="flex gap-1"><Button size="sm" variant="outline" aria-label={`Coletar agora ${item.name}`} title={item.status !== "active" ? `Fonte ${STATUS_LABEL[item.status].toLowerCase()}` : !item.collectorSupported ? "Coleta ainda não disponível para este provedor" : "Coletar agora"} disabled={item.status !== "active" || !item.collectorSupported || collectMutation.isPending} onClick={() => collectMutation.mutate(item)}>{collectMutation.isPending && collectMutation.variables?.id === item.id ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Play className="w-4 h-4 mr-1" />}{collectMutation.isPending && collectMutation.variables?.id === item.id ? "Coletando..." : "Coletar agora"}</Button><Button size="icon" variant="ghost" aria-label={`Editar ${item.name}`} onClick={() => startEdit(item)}><Pencil className="w-4 h-4" /></Button>{item.status === "active" ? <Button size="icon" variant="ghost" aria-label={`Desativar ${item.name}`} onClick={() => statusMutation.mutate({ id: item.id, next: "inactive" })}><Power className="w-4 h-4" /></Button> : <Button size="icon" variant="ghost" aria-label={`Ativar ${item.name}`} onClick={() => statusMutation.mutate({ id: item.id, next: "active" })}><Power className="w-4 h-4 text-green-600" /></Button>}<Button size="icon" variant="ghost" aria-label={`Encerrar ${item.name}`} onClick={() => statusMutation.mutate({ id: item.id, next: "ended" })}><SquareCheckBig className="w-4 h-4" /></Button></div></TableCell>
             </TableRow>;
           })}</TableBody>
         </Table>}
       </Card>
-      <p className="text-xs text-muted-foreground">A ação “Coletar agora” será disponibilizada em CURA002.</p>
     </main>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>{editing ? "Editar lista" : "Nova lista"}</DialogTitle></DialogHeader>
       <form className="grid sm:grid-cols-2 gap-4" onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }}>
