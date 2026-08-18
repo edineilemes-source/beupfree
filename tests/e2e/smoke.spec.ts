@@ -5,7 +5,7 @@ test("carrega a página inicial e navega para o catálogo", async ({ page }) => 
 
   expect(response?.ok()).toBeTruthy();
   await expect(
-    page.getByRole("img", { name: "UpPulse - Tênis esportivos em promoção" }),
+    page.getByRole("img", { name: "UpPulse" }),
   ).toBeVisible();
 
   await page.goto("/catalogo");

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, pool } from "../db";
 import { collectionBatches, collectionSources } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
+import { isPublicDemoMode } from "../publicDemo";
 
 const router = Router();
 
@@ -150,13 +151,13 @@ async function getItemsByPromotionType(
     id: row.membership_id,
     title: row.normalized_title || row.raw_title || "Produto",
     imageUrl: row.image_url ?? null,
-    itemUrl: row.affiliate_url || row.source_url || row.raw_url || "",
+    itemUrl: isPublicDemoMode() ? "" : row.affiliate_url || row.source_url || row.raw_url || "",
     currentPrice: parseFloat(row.price || "0"),
     oldPrice: row.original_price ? parseFloat(row.original_price) : null,
     discountPercent: row.discount_percent ?? null,
     soldOut: !row.is_active,
     freeShipping: row.free_shipping ?? false,
-    lastSeenAt: row.last_seen_at?.toISOString() ?? new Date().toISOString(),
+    lastSeenAt: isPublicDemoMode() ? "" : row.last_seen_at?.toISOString() ?? new Date().toISOString(),
   })).filter((i) => i.currentPrice > 0);
 
   return { items, total };
@@ -173,7 +174,7 @@ async function getSection(
       getItemsByPromotionType(promotionType, limit, offset),
     ]);
 
-    return { lastUpdatedAt, items, total };
+    return { lastUpdatedAt: isPublicDemoMode() ? null : lastUpdatedAt, items, total };
   } catch (err: any) {
     console.error(`[DealSections] Error for ${promotionType}:`, err.message);
     return { lastUpdatedAt: null, items: [], total: 0 };

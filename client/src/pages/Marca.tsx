@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
+import { DEMO_PRICE_NOTICE, PUBLIC_DEMO_MODE } from "@/lib/publicDemo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
@@ -104,15 +105,17 @@ export default function Marca() {
               </Link>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold" data-testid="text-brand-title">
-                  Ofertas {brandName}
+                  {PUBLIC_DEMO_MODE ? `Produtos demonstrativos ${brandName}` : `Ofertas ${brandName}`}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Os melhores descontos da marca, atualizados em tempo real
+                  {PUBLIC_DEMO_MODE
+                    ? DEMO_PRICE_NOTICE
+                    : "Os melhores descontos da marca, atualizados em tempo real"}
                 </p>
               </div>
             </div>
             <span className="text-sm text-muted-foreground" data-testid="text-brand-count">
-              {accumulated.length} de {total} ofertas
+              {accumulated.length} de {total} {PUBLIC_DEMO_MODE ? "produtos" : "ofertas"}
             </span>
           </div>
         </div>
@@ -170,7 +173,7 @@ export default function Marca() {
                         Carregando...
                       </>
                     ) : (
-                      <>Carregar mais {PAGE_SIZE} ofertas</>
+                      <>Carregar mais {PAGE_SIZE} {PUBLIC_DEMO_MODE ? "produtos" : "ofertas"}</>
                     )}
                   </Button>
                 </div>

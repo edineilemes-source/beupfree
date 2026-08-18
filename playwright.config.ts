@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testIgnore: "regression/**",
+  testIgnore: ["regression/**", "public-demo/**"],
   timeout: 60_000,
   expect: {
     timeout: 10_000,

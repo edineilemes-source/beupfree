@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, pool } from "../db";
 import { collectionBatches } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
+import { isPublicDemoMode } from "../publicDemo";
 
 const router = Router();
 
@@ -139,17 +140,19 @@ router.get("/api/sections/marca/:slug", async (req, res) => {
         id: row.membership_id,
         title: row.normalized_title || row.raw_title || "Produto",
         imageUrl: row.image_url ?? null,
-        itemUrl: row.affiliate_url || row.source_url || row.raw_url || "",
+        itemUrl: isPublicDemoMode() ? "" : row.affiliate_url || row.source_url || row.raw_url || "",
         currentPrice: parseFloat(row.price || "0"),
         oldPrice: row.original_price ? parseFloat(row.original_price) : null,
         discountPercent: row.discount_percent ?? null,
         soldOut: !row.is_active,
         freeShipping: row.free_shipping ?? false,
-        lastSeenAt: row.last_seen_at?.toISOString() ?? new Date().toISOString(),
+        lastSeenAt: isPublicDemoMode() ? "" : row.last_seen_at?.toISOString() ?? new Date().toISOString(),
+        storeLabel: isPublicDemoMode() ? "Loja demonstrativa" : null,
+        demonstrative: isPublicDemoMode(),
       }))
       .filter((i) => i.currentPrice > 0);
 
-    const lastUpdatedAt = await getLastUpdatedAt();
+    const lastUpdatedAt = isPublicDemoMode() ? null : await getLastUpdatedAt();
     res.json({ brand: SUPPORTED_BRANDS[slug], slug, items, total, page, pageSize, lastUpdatedAt });
   } catch (err: any) {
     console.error("[BrandSections] /marca/:slug error:", err.message);

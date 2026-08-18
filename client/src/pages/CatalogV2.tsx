@@ -29,6 +29,14 @@ import type { FavoriteProduct } from "@/types/favorites";
 import { toFavoriteProduct } from "@/lib/favoriteProductAdapter";
 import ProductBadges from "@/components/ProductBadges";
 import { getProductBadges } from "@/lib/productBadges";
+import { Badge } from "@/components/ui/badge";
+import { requestDemoProductNotice } from "@/components/DemoProductDialog";
+import {
+  DEMO_PRICE_NOTICE,
+  DEMO_PRODUCT_LABEL,
+  PUBLIC_DEMO_MODE,
+  publicOfferSource,
+} from "@/lib/publicDemo";
 
 interface ProductsResponse {
   total: number;
@@ -178,9 +186,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
   const discount = discountOf(product);
   const favoriteProduct = toFavoriteProduct(product);
   const badges = getProductBadges(favoriteProduct);
-  const offerSource = [product.bestOffer?.marketplaceName?.trim(), product.bestOffer?.sellerName?.trim()]
-    .filter(Boolean)
-    .join(" · ");
+  const offerSource = publicOfferSource(product.bestOffer?.marketplaceName, product.bestOffer?.sellerName);
   const ratingText = product.averageRating != null && product.averageRating > 0
     ? `⭐ ${product.averageRating.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}${product.totalReviews ? ` (${product.totalReviews.toLocaleString("pt-BR")})` : ""}`
     : "";
@@ -196,12 +202,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
         </span>
       )}
       <FavoriteButton product={favoriteProduct} className="absolute right-3 top-3 z-20" />
-      <a
-        href={product.bestOffer?.affiliateUrl || "#"}
-        target="_blank"
-        rel="noreferrer"
-        className="flex min-h-[336px] flex-col p-5"
-      >
+      <div className="flex min-h-[336px] flex-col p-5">
       <div className="flex h-44 items-center justify-center bg-white pr-8">
         {product.mainImageUrl && (
           <img
@@ -213,6 +214,13 @@ function PromoTile({ product }: { product: CatalogProduct }) {
       </div>
 
       <div className="mt-4 flex flex-1 flex-col">
+        {PUBLIC_DEMO_MODE && (
+          <div className="mb-2">
+            <Badge className="bg-slate-900 text-[10px] text-white">
+              {DEMO_PRODUCT_LABEL}
+            </Badge>
+          </div>
+        )}
         <ProductBadges badges={badges} productId={product.id} className="mb-2" />
         <p className="text-sm font-extrabold uppercase text-foreground">
           {brandNameOf(product)}
@@ -241,8 +249,19 @@ function PromoTile({ product }: { product: CatalogProduct }) {
         {ratingText && (
           <p className="mt-1 text-xs font-medium">{ratingText}</p>
         )}
+        <Button
+          type="button"
+          size="sm"
+          className="mt-3 w-full"
+          onClick={() => {
+            if (PUBLIC_DEMO_MODE) requestDemoProductNotice(product.bestOffer?.referenceUrl ?? undefined);
+            else if (product.bestOffer?.affiliateUrl) window.open(product.bestOffer.affiliateUrl, "_blank", "noopener,noreferrer");
+          }}
+        >
+          {PUBLIC_DEMO_MODE ? "Ver referência" : "Ver oferta"}
+        </Button>
       </div>
-      </a>
+    </div>
     </div>
   );
 }
@@ -274,11 +293,11 @@ function Hero({ products }: { products: CatalogProduct[] }) {
             className="relative text-[40px] font-extrabold italic leading-[0.95] tracking-normal text-white"
             data-testid="text-hero-title"
           >
-            TÊNIS
+            {PUBLIC_DEMO_MODE ? "PRODUTOS" : "TÊNIS"}
             <br />
-            <span style={{ color: NEON }}>ESPORTIVOS</span>
+            <span style={{ color: NEON }}>{PUBLIC_DEMO_MODE ? "PARA" : "ESPORTIVOS"}</span>
             <br />
-            EM PROMOÇÃO
+            {PUBLIC_DEMO_MODE ? "EXPLORAR" : "EM PROMOÇÃO"}
           </h1>
         </div>
 
@@ -450,6 +469,11 @@ export default function CatalogV2() {
       <Hero products={products} />
 
       <main className="flex-1">
+        {PUBLIC_DEMO_MODE && (
+          <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-950" role="note" data-testid="demo-price-notice">
+            <strong>Catálogo demonstrativo.</strong> {DEMO_PRICE_NOTICE}
+          </div>
+        )}
         <div className="w-full px-4 pt-5">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
             <div className="flex flex-wrap items-center gap-3">
@@ -457,7 +481,7 @@ export default function CatalogV2() {
                 <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
                   <Tag className="h-3.5 w-3.5" />
                 </span>
-                {query ? `Resultados para "${query}"` : "Produtos com desconto"}
+                {query ? `Resultados para "${query}"` : PUBLIC_DEMO_MODE ? "Produtos demonstrativos" : "Produtos com desconto"}
               </h2>
               {query && (
                 <button
@@ -475,7 +499,7 @@ export default function CatalogV2() {
 
             <div className="flex flex-wrap items-center gap-4">
               <p className="text-xs text-muted-foreground" data-testid="text-catalog-count">
-                Mais de {filtered.length} ofertas
+                {filtered.length} {filtered.length === 1 ? "produto" : "produtos"}
               </p>
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 Ordenar por:
@@ -488,7 +512,7 @@ export default function CatalogV2() {
                   <option value="maior-desconto">Maior desconto</option>
                   <option value="relevantes">Mais relevantes</option>
                   <option value="menor-preco">Menor preço</option>
-                  <option value="recentes">Mais recentes</option>
+                  {!PUBLIC_DEMO_MODE && <option value="recentes">Mais recentes</option>}
                 </select>
               </label>
             </div>
@@ -518,14 +542,16 @@ export default function CatalogV2() {
                   Nenhum produto disponível ainda
                 </h2>
                 <p className="text-muted-foreground">
-                  Nosso catálogo está sendo atualizado. Volte em breve para conferir as melhores ofertas!
+                  {PUBLIC_DEMO_MODE
+                    ? "O snapshot demonstrativo ainda não possui produtos publicados."
+                    : "Nosso catálogo está sendo atualizado. Volte em breve para conferir as melhores ofertas!"}
                 </p>
               </Card>
             ) : filtered.length === 0 ? (
               <Card className="p-8 text-center">
                 <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
                 <h2 className="mb-2 text-lg font-medium" data-testid="text-no-results">
-                  Nenhuma oferta para os filtros selecionados
+                  Nenhum produto para os filtros selecionados
                 </h2>
                 <p className="text-muted-foreground">
                   Tente remover alguns filtros para ver mais resultados.
@@ -553,6 +579,7 @@ export default function CatalogV2() {
                       image={product.mainImageUrl || ""}
                       category={categoryNameOf(product)}
                       affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
+                      referenceUrl={product.bestOffer?.referenceUrl ?? undefined}
                       marketplaceName={product.bestOffer?.marketplaceName ?? undefined}
                       sellerName={product.bestOffer?.sellerName ?? undefined}
                       freeShipping={product.bestOffer?.freeShipping || false}

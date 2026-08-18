@@ -6,6 +6,7 @@ export interface CatalogBestOffer {
   originalPrice: string | null;
   discountPercent: number | null;
   affiliateUrl: string;
+  referenceUrl?: string | null;
   marketplaceName?: string | null;
   sellerName?: string | null;
   freeShipping: boolean;

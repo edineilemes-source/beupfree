@@ -17,6 +17,7 @@ export interface FavoriteProductCardSource {
   image: string;
   category: string;
   affiliateUrl: string;
+  referenceUrl?: string;
   marketplaceName?: string;
   sellerName?: string;
   freeShipping?: boolean;
@@ -46,6 +47,7 @@ export function toFavoriteProduct(source: FavoriteProductSource): FavoriteProduc
       image: source.mainImageUrl || "",
       category: categoryNameOf(source),
       affiliateUrl: source.bestOffer?.affiliateUrl || "#",
+      referenceUrl: source.bestOffer?.referenceUrl ?? undefined,
       marketplaceName: source.bestOffer?.marketplaceName ?? undefined,
       sellerName: source.bestOffer?.sellerName ?? undefined,
       freeShipping: source.bestOffer?.freeShipping ?? false,
@@ -74,6 +76,7 @@ export function toFavoriteProduct(source: FavoriteProductSource): FavoriteProduc
     image: source.image,
     category: source.category,
     affiliateUrl: source.affiliateUrl,
+    referenceUrl: source.referenceUrl,
     marketplaceName: source.marketplaceName,
     sellerName: source.sellerName,
     freeShipping: source.freeShipping,

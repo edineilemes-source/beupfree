@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /triagem
+Disallow: /api/
+
+Sitemap: https://uppulse.beupfree.com.br/sitemap.xml

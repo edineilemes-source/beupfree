@@ -31,6 +31,12 @@ import { createCurationSourcesRouter } from "./curationSources/routes";
 import { curationSourcesRepository } from "./curationSources/repository";
 import { registerCollector } from "./curationSources/collectorResolver";
 import { mercadoLivreCollector } from "./curationSources/mercadoLivreCollector";
+import {
+  createPublicDemoGuard,
+  isPublicDemoMode,
+  sanitizeDemoOffer,
+  shouldStartExternalScheduler,
+} from "./publicDemo";
 
 registerCollector(["mercadolivre", "mercado-livre"], mercadoLivreCollector);
 
@@ -41,6 +47,7 @@ const REPLIT_DEV_DOMAIN = process.env.REPLIT_DEV_DOMAIN;
 export async function registerRoutes(app: Express): Promise<Server> {
   app.set("trust proxy", 1);
   app.use(authSession());
+  app.use(createPublicDemoGuard());
   app.use("/api/auth", createAuthRouter(userRepository));
   app.use("/api/favorites", createFavoritesRouter(favoritesRepository));
   // Segue o padrão administrativo atual, que ainda não possui autorização própria.
@@ -444,7 +451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           averageRating: row.average_rating != null ? parseFloat(row.average_rating) : null,
           totalReviews: parseInt(String(row.total_reviews ?? 0)),
           offersCount: parseInt(String(row.offers_count ?? 0)),
-          bestOffer: hasOffer ? {
+          bestOffer: hasOffer ? (isPublicDemoMode() ? sanitizeDemoOffer({
             id: row.offer_id,
             currentPrice: row.current_price,
             originalPrice: row.original_price,
@@ -456,7 +463,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lastSeenAt: row.last_seen_at,
             formattedPrice: `R$ ${currentPrice.toFixed(2).replace(".", ",")}`,
             formattedOriginalPrice: originalPrice ? `R$ ${originalPrice.toFixed(2).replace(".", ",")}` : null,
-          } : null,
+          }) : {
+            id: row.offer_id,
+            currentPrice: row.current_price,
+            originalPrice: row.original_price,
+            discountPercent: row.discount_percent != null ? parseInt(String(row.discount_percent)) : null,
+            affiliateUrl: row.affiliate_url,
+            marketplaceName: row.marketplace_name,
+            sellerName: row.seller_name,
+            freeShipping: row.free_shipping ?? false,
+            lastSeenAt: row.last_seen_at,
+            formattedPrice: `R$ ${currentPrice.toFixed(2).replace(".", ",")}`,
+            formattedOriginalPrice: originalPrice ? `R$ ${originalPrice.toFixed(2).replace(".", ",")}` : null,
+          }) : null,
         };
       });
       res.json({ total: totalCount, products: result });
@@ -481,7 +500,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         images,
         brand: brandData,
         category: categoryData,
-        offers: productOffers.map(o => ({
+        offers: productOffers.map(o => (isPublicDemoMode() ? sanitizeDemoOffer({
+          ...o,
+          formattedPrice: `R$ ${parseFloat(o.currentPrice).toFixed(2).replace(".", ",")}`,
+          formattedOriginalPrice: o.originalPrice ? `R$ ${parseFloat(o.originalPrice).toFixed(2).replace(".", ",")}` : null,
+        }) : {
           ...o,
           formattedPrice: `R$ ${parseFloat(o.currentPrice).toFixed(2).replace(".", ",")}`,
           formattedOriginalPrice: o.originalPrice ? `R$ ${parseFloat(o.originalPrice).toFixed(2).replace(".", ",")}` : null,
@@ -664,13 +687,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
-  setTimeout(async () => {
-    try {
-      await startScheduler();
-    } catch (err: any) {
-      console.error("[Scheduler] Erro ao iniciar:", err.message);
-    }
-  }, 5000);
+  if (!shouldStartExternalScheduler()) {
+    console.log("[PublicDemo] Scheduler e coletas automáticas externas desativados.");
+  } else {
+    setTimeout(async () => {
+      try {
+        await startScheduler();
+      } catch (err: any) {
+        console.error("[Scheduler] Erro ao iniciar:", err.message);
+      }
+    }, 5000);
+  }
 
   return httpServer;
 }

@@ -3,9 +3,33 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
+function partnerVerificationMeta() {
+  return {
+    name: "partner-verification-meta",
+    transformIndexHtml() {
+      const token = process.env.AWIN_VERIFICATION_TOKEN?.trim();
+      if (!token) return [];
+      return [{
+        tag: "meta",
+        attrs: { name: "awin-verification", content: token },
+        injectTo: "head" as const,
+      }];
+    },
+  };
+}
+
 export default defineConfig({
+  define: {
+    "import.meta.env.PUBLIC_DEMO_MODE": JSON.stringify(
+      process.env.PUBLIC_DEMO_MODE === "true" ? "true" : "false",
+    ),
+    "import.meta.env.PUBLIC_CONTACT_EMAIL": JSON.stringify(
+      process.env.PUBLIC_CONTACT_EMAIL ?? "",
+    ),
+  },
   plugins: [
     react(),
+    partnerVerificationMeta(),
     runtimeErrorOverlay(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined

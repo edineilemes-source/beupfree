@@ -13,6 +13,7 @@ export interface FavoriteProduct {
   image: string;
   category: string;
   affiliateUrl: string;
+  referenceUrl?: string;
   marketplaceName?: string;
   sellerName?: string;
   freeShipping?: boolean;

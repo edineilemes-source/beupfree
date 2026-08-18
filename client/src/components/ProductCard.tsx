@@ -6,6 +6,12 @@ import FavoriteButton from "@/components/FavoriteButton";
 import ProductBadges from "@/components/ProductBadges";
 import { getProductBadges } from "@/lib/productBadges";
 import { toFavoriteProduct } from "@/lib/favoriteProductAdapter";
+import { requestDemoProductNotice } from "@/components/DemoProductDialog";
+import {
+  DEMO_PRODUCT_LABEL,
+  PUBLIC_DEMO_MODE,
+  publicOfferSource,
+} from "@/lib/publicDemo";
 
 interface ProductCardProps {
   id: string;
@@ -17,6 +23,7 @@ interface ProductCardProps {
   image: string;
   category: string;
   affiliateUrl: string;
+  referenceUrl?: string;
   marketplaceName?: string;
   sellerName?: string;
   freeShipping?: boolean;
@@ -37,6 +44,7 @@ export default function ProductCard({
   image,
   category,
   affiliateUrl,
+  referenceUrl,
   marketplaceName,
   sellerName,
   freeShipping,
@@ -56,6 +64,7 @@ export default function ProductCard({
     image,
     category,
     affiliateUrl,
+    referenceUrl,
     marketplaceName,
     sellerName,
     freeShipping,
@@ -88,7 +97,7 @@ export default function ProductCard({
   };
 
   const timeAgo = getTimeAgoText(lastSeenAt);
-  const offerSource = [marketplaceName?.trim(), sellerName?.trim()].filter(Boolean).join(" · ");
+  const offerSource = publicOfferSource(marketplaceName, sellerName);
   const ratingText = averageRating != null && averageRating > 0
     ? `⭐ ${averageRating.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}${totalReviews ? ` (${totalReviews.toLocaleString("pt-BR")})` : ""}`
     : "";
@@ -137,6 +146,13 @@ export default function ProductCard({
 
       {/* Body */}
       <div className="flex flex-1 flex-col px-5 pb-5 pt-1">
+        {PUBLIC_DEMO_MODE && (
+          <div className="mb-2" data-testid={`demo-label-area-${id}`}>
+            <Badge className="bg-slate-900 text-[10px] text-white" data-testid={`badge-demo-${id}`}>
+              {DEMO_PRODUCT_LABEL}
+            </Badge>
+          </div>
+        )}
         <span
           className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
           data-testid={`text-brand-${id}`}
@@ -185,7 +201,10 @@ export default function ProductCard({
           className="mt-3 w-full gap-2"
           variant={soldOut ? "outline" : "default"}
           disabled={soldOut}
-          onClick={soldOut ? undefined : () => window.open(affiliateUrl, "_blank")}
+          onClick={soldOut ? undefined : () => {
+            if (PUBLIC_DEMO_MODE) requestDemoProductNotice(referenceUrl);
+            else window.open(affiliateUrl, "_blank", "noopener,noreferrer");
+          }}
           data-testid={`button-buy-${id}`}
         >
           {soldOut ? (
@@ -196,13 +215,13 @@ export default function ProductCard({
           ) : (
             <>
               <ExternalLink className="h-4 w-4" />
-              Ver oferta
+              {PUBLIC_DEMO_MODE ? "Ver referência" : "Ver oferta"}
             </>
           )}
         </Button>
 
         <p className="mt-2 text-center text-[10px] text-muted-foreground" data-testid={`text-updated-${id}`}>
-          {timeAgo ? `Atualizado ${timeAgo}` : ""}
+          {!PUBLIC_DEMO_MODE && timeAgo ? `Atualizado ${timeAgo}` : ""}
         </p>
       </div>
     </Card>

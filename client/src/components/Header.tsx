@@ -8,6 +8,7 @@ import FavoritesDrawer from "@/components/FavoritesDrawer";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useAuth } from "@/context/AuthContext";
 import AuthDialog from "@/components/AuthDialog";
+import { PUBLIC_DEMO_MODE } from "@/lib/publicDemo";
 
 const SEARCH_BORDER = "hsl(160 55% 38%)";
 
@@ -80,7 +81,7 @@ export default function Header() {
             >
               <img
                 src={logoUrl}
-                alt="UpPulse - Tênis esportivos em promoção"
+                alt="UpPulse"
                 className="h-24 w-auto sm:h-32 md:h-40"
                 data-testid="img-logo"
               />
@@ -94,8 +95,8 @@ export default function Header() {
           >
             <Input
               type="search"
-              aria-label="Buscar tênis"
-              placeholder="Buscar tênis..."
+              aria-label="Buscar produtos"
+              placeholder="Buscar produtos..."
               className="h-11 w-full rounded-full border bg-white/5 pl-5 pr-12 text-white placeholder:text-white/50"
               style={{ borderColor: SEARCH_BORDER }}
               value={searchQuery}
@@ -121,21 +122,24 @@ export default function Header() {
                 <span aria-hidden="true" className="h-3 w-10 animate-pulse rounded bg-white/20" />
               </div>
             ) : isAuthenticated ? (
-              <div className="flex items-center gap-1">
-                <div className="flex max-w-28 flex-col items-center gap-1 px-1 py-1" data-testid="item-usuario">
-                  <User className="h-6 w-6" />
-                  <span className="max-w-full truncate text-[11px] font-medium" title={user?.name}>
+              <div
+                className="flex max-w-40 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 sm:max-w-52 sm:px-3"
+                data-testid="item-usuario"
+              >
+                <User className="h-6 w-6 flex-none" aria-hidden="true" />
+                <div className="min-w-0 text-left">
+                  <span className="block truncate text-[11px] font-medium" title={user?.name}>
                     Olá, {user?.name}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => void logout()}
+                    className="mt-0.5 block rounded text-[11px] font-semibold text-white/75 underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    data-testid="button-sair"
+                  >
+                    Sair
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void logout()}
-                  className="rounded-md px-2 py-1 text-xs font-medium hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                  data-testid="button-sair"
-                >
-                  Sair
-                </button>
               </div>
             ) : (
               <button
@@ -167,7 +171,7 @@ export default function Header() {
               </span>
               <span className="text-[11px] font-medium">Favoritos</span>
             </button>
-            <div
+            {!PUBLIC_DEMO_MODE && <div
               className="flex flex-col items-center gap-1 px-2 py-1"
               data-testid="item-carrinho"
             >
@@ -182,8 +186,8 @@ export default function Header() {
                 </span>
               </span>
               <span className="text-[11px] font-medium">Carrinho</span>
-            </div>
-            <Link href="/admin/triagem">
+            </div>}
+            {!PUBLIC_DEMO_MODE && <Link href="/admin/triagem">
               <div
                 className="flex cursor-pointer flex-col items-center gap-1 rounded-md px-2 py-1 hover-elevate active-elevate-2"
                 data-testid="link-curadoria"
@@ -191,7 +195,7 @@ export default function Header() {
                 <Settings className="h-6 w-6" />
                 <span className="text-[11px] font-medium">Curadoria</span>
               </div>
-            </Link>
+            </Link>}
           </div>
         </div>
       </div>
