@@ -11,11 +11,15 @@
 
 ## Ambiente e build
 
+Arquitetura prevista: `GitHub main → Hostinger Node.js → DATABASE_URL →
+Supabase PostgreSQL`. O deploy continua sendo uma etapa futura.
+
 - [ ] Configurar `NODE_ENV=production`.
 - [ ] Configurar `PUBLIC_DEMO_MODE=true` no build e no processo servidor.
 - [ ] Configurar `DATABASE_URL` sem registrar seu valor em logs ou repositório.
 - [ ] Configurar `SESSION_SECRET` forte, exclusivo e persistente.
 - [ ] Configurar `PUBLIC_CONTACT_EMAIL` institucional.
+- [ ] Usar o Session Pooler do PostgreSQL gerenciado e validar conectividade sem expor a URL.
 - [ ] Inserir `AWIN_VERIFICATION_TOKEN` somente se a Awin fornecer e confirmar o mecanismo.
 - [ ] Executar migrations aprovadas; WEB-PUBLIC001 não criou migration.
 - [ ] Executar `npm run build` no mesmo ambiente que servirá os artefatos.

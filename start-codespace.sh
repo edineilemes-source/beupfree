@@ -5,6 +5,7 @@ readonly EXPECTED_BRANCH="codespace-working"
 readonly PORT="5000"
 readonly LISTEN_TIMEOUT_SECONDS="30"
 readonly HTTP_TIMEOUT_SECONDS="15"
+readonly DATABASE_TIMEOUT_MILLISECONDS="10000"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 cd "$SCRIPT_DIR"
@@ -26,7 +27,14 @@ set +e
 node --env-file=.env -e '
   const value = process.env.DATABASE_URL;
   if (!value) process.exit(2);
-  if (!/^(postgresql|postgres):\/\//.test(value)) process.exit(3);
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
+      process.exit(3);
+    }
+  } catch {
+    process.exit(3);
+  }
 ' >/dev/null 2>&1
 database_url_status=$?
 set -e
@@ -47,27 +55,38 @@ case "$database_url_status" in
     ;;
 esac
 
-echo "🚀 Iniciando PostgreSQL..."
-if pg_isready >/dev/null 2>&1; then
-  echo "ℹ️ PostgreSQL já está ativo."
-else
-  if ! sudo service postgresql start; then
-    echo "❌ Não foi possível iniciar o PostgreSQL." >&2
-    exit 1
-  fi
-fi
-
-echo "🔎 Verificando PostgreSQL..."
-if ! pg_isready; then
-  echo "❌ PostgreSQL indisponível." >&2
+echo "🔎 Verificando conectividade com o PostgreSQL remoto..."
+if ! DATABASE_CONNECTION_TIMEOUT_MS="$DATABASE_TIMEOUT_MILLISECONDS" \
+  node --env-file=.env --input-type=module -e '
+    import pg from "pg";
+    const pool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      connectionTimeoutMillis: Number(process.env.DATABASE_CONNECTION_TIMEOUT_MS),
+      max: 1,
+    });
+    try {
+      await pool.query("SELECT 1");
+    } finally {
+      await pool.end();
+    }
+  ' >/dev/null 2>&1; then
+  echo "❌ PostgreSQL remoto inacessível. Verifique DATABASE_URL, rede e disponibilidade do provedor." >&2
   exit 1
 fi
 
 port_listener() {
+  ss -ltnp 2>/dev/null | grep -E "(^|[[:space:]])(0\.0\.0\.0|\*):${PORT}([[:space:]]|$)" || true
+}
+
+any_port_listener() {
   ss -ltnp 2>/dev/null | grep -E "[.:]${PORT}([[:space:]]|$)" || true
 }
 
 port_is_listening() {
+  [[ -n "$(any_port_listener)" ]]
+}
+
+public_port_is_listening() {
   [[ -n "$(port_listener)" ]]
 }
 
@@ -80,8 +99,8 @@ print_ready() {
   echo
   echo "✅ UpPulse pronto para uso"
   echo
-  echo "📦 PostgreSQL: OK"
-  echo "🌐 Porta ${PORT}: LISTEN"
+  echo "📦 PostgreSQL remoto: OK"
+  echo "🌐 Porta 0.0.0.0:${PORT}: LISTEN"
   echo "❤️ HTTP: 200 OK"
   echo
   echo "Preview:"
@@ -90,8 +109,8 @@ print_ready() {
 
 if port_is_listening; then
   echo "ℹ️ Processo encontrado na porta ${PORT}:"
-  port_listener
-  if [[ "$(http_status)" == "200" ]]; then
+  any_port_listener
+  if public_port_is_listening && [[ "$(http_status)" == "200" ]]; then
     echo "ℹ️ UpPulse já está rodando na porta ${PORT}."
     print_ready
     exit 0
@@ -131,6 +150,11 @@ while ! port_is_listening; do
   fi
   sleep 1
 done
+
+if ! public_port_is_listening; then
+  echo "❌ UpPulse abriu a porta ${PORT}, mas não está ouvindo em 0.0.0.0:${PORT}." >&2
+  exit 1
+fi
 
 http_deadline=$((SECONDS + HTTP_TIMEOUT_SECONDS))
 while [[ "$(http_status)" != "200" ]]; do

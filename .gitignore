@@ -7,6 +7,11 @@ dist/
 # Variáveis de ambiente
 .env
 .env.*
+!.env.example
+
+# Dumps de banco nunca devem ser versionados
+*.dump
+*.backup
 
 # Arquivos temporários
 .agents/

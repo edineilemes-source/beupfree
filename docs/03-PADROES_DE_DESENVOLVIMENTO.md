@@ -37,6 +37,9 @@ Cada passagem para commit ou push depende da validação prevista para a tarefa 
 
 ## Ritual do Codespaces
 
+O banco oficial é um PostgreSQL externo configurado por `DATABASE_URL`;
+nenhum serviço PostgreSQL local precisa ser iniciado.
+
 1. Confirmar que a branch ativa é `codespace-working`.
 2. Acessar o projeto:
 
@@ -50,6 +53,9 @@ Cada passagem para commit ou push depende da validação prevista para a tarefa 
    ./start-codespace.sh
    ```
 
+   O script valida branch, `.env`, URL e conectividade remota, recusa conflito
+   na porta 5000, confirma `0.0.0.0:5000` com `ss` e exige HTTP 200.
+
 4. Manter o terminal do processo aberto.
 5. Verificar a resposta local:
 
@@ -58,4 +64,3 @@ Cada passagem para commit ou push depende da validação prevista para a tarefa 
    ```
 
 6. Na área **PORTS** do Codespaces, abrir a porta `5000` e realizar o teste visual no navegador.
-
