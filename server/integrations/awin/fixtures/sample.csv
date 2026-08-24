@@ -1,0 +1,4 @@
+aw_deep_link,product_name,aw_product_id,merchant_product_id,merchant_image_url,description,search_price,merchant_name,merchant_id,currency,brand_name,colour,size_stock_amount,ean,in_stock,is_for_sale,parent_product_id,merchant_deep_link,data_feed_id
+https://affiliate.example/click?id=1,Tênis Modelo,AW-1,SKU-40,https://img.example/1.jpg,"Descrição, com vírgula
+e segunda linha",199.90,Loja Exemplo,42,BRL,Marca Exemplo,Azul,40,7894900011517,true,1,PARENT-1,https://merchant.example/produto,feed-7
+https://affiliate.example/click?id=2,Tênis Modelo,AW-2,SKU-41,,,199.90,Loja Exemplo,42,BRL,Marca Exemplo,Azul,41,4006381333931,yes,true,PARENT-1,https://merchant.example/produto,feed-7

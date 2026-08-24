@@ -15,6 +15,7 @@ dist/
 
 # Arquivos temporários
 .agents/
+tmp/
 attached_assets/
 exports/
 test-results/
@@ -23,6 +24,7 @@ playwright-report/
 
 # Arquivos compactados
 *.zip
+*.csv.gz
 
 # Logs
 *.log

@@ -73,6 +73,9 @@ export const curationSourceStatusEnum = pgEnum('curation_source_status', [
 export const curationSourceRunStatusEnum = pgEnum('curation_source_run_status', ['running', 'completed', 'failed']);
 export const curationSourceTriggerEnum = pgEnum('curation_source_trigger', ['manual', 'scheduled']);
 
+export const commercePublicationStateEnum = pgEnum('commerce_publication_state', ['staging', 'approved', 'rejected']);
+export const provenanceMethodEnum = pgEnum('provenance_method', ['merchant_provided', 'normalized', 'ai_extracted', 'externally_enriched']);
+
 // ============================================
 // MARCAS
 // ============================================
@@ -178,6 +181,53 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   offers: many(offers)
 }));
 
+// External commerce identities remain isolated from public catalog publication.
+export const commerceProviders = pgTable("commerce_providers", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 60 }).notNull(), name: varchar("name", { length: 160 }).notNull(),
+  providerType: varchar("provider_type", { length: 60 }).notNull(), active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(), updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [uniqueIndex("uq_commerce_providers_code").on(table.code)]);
+
+export const commerceMerchants = pgTable("commerce_merchants", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  providerId: varchar("provider_id", { length: 36 }).notNull().references(() => commerceProviders.id),
+  externalMerchantId: text("external_merchant_id").notNull(), name: varchar("name", { length: 200 }).notNull(),
+  active: boolean("active").notNull().default(true), metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp("created_at").notNull().defaultNow(), updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [uniqueIndex("uq_commerce_merchants_provider_external").on(table.providerId, table.externalMerchantId), index("idx_commerce_merchants_provider").on(table.providerId)]);
+
+export const commerceFeeds = pgTable("commerce_feeds", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  providerId: varchar("provider_id", { length: 36 }).notNull().references(() => commerceProviders.id),
+  merchantId: varchar("merchant_id", { length: 36 }).references(() => commerceMerchants.id), externalFeedId: text("external_feed_id").notNull(),
+  name: varchar("name", { length: 200 }), locale: varchar("locale", { length: 20 }), language: varchar("language", { length: 20 }),
+  active: boolean("active").notNull().default(true), lastSeenAt: timestamp("last_seen_at"), lastImportStartedAt: timestamp("last_import_started_at"), lastImportCompletedAt: timestamp("last_import_completed_at"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}), createdAt: timestamp("created_at").notNull().defaultNow(), updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [uniqueIndex("uq_commerce_feeds_provider_external").on(table.providerId, table.externalFeedId), index("idx_commerce_feeds_merchant").on(table.merchantId)]);
+
+export const externalProductIdentities = pgTable("external_product_identities", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`), productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id),
+  providerId: varchar("provider_id", { length: 36 }).notNull().references(() => commerceProviders.id), merchantId: varchar("merchant_id", { length: 36 }).notNull().references(() => commerceMerchants.id), feedId: varchar("feed_id", { length: 36 }).references(() => commerceFeeds.id),
+  externalProductKey: varchar("external_product_key", { length: 64 }).notNull(), parentProductId: text("parent_product_id"), merchantProductPageUrl: text("merchant_product_page_url"), identityMethod: varchar("identity_method", { length: 40 }).notNull(),
+  publicationState: commercePublicationStateEnum("publication_state").notNull().default('staging'), provenanceMethod: provenanceMethodEnum("provenance_method").notNull().default('normalized'), active: boolean("active").notNull().default(false),
+  lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(), createdAt: timestamp("created_at").notNull().defaultNow(), updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [uniqueIndex("uq_external_products_provider_merchant_key").on(table.providerId, table.merchantId, table.externalProductKey), index("idx_external_products_product").on(table.productId), index("idx_external_products_feed_seen").on(table.feedId, table.lastSeenAt), index("idx_external_products_publication").on(table.publicationState, table.active)]);
+
+export const productVariants = pgTable("product_variants", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`), productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id),
+  providerId: varchar("provider_id", { length: 36 }).notNull().references(() => commerceProviders.id), merchantId: varchar("merchant_id", { length: 36 }).notNull().references(() => commerceMerchants.id), externalVariantKey: varchar("external_variant_key", { length: 64 }).notNull(),
+  merchantProductId: text("merchant_product_id"), awProductId: text("aw_product_id"), ean: varchar("ean", { length: 32 }), gtin: varchar("gtin", { length: 32 }), upc: varchar("upc", { length: 32 }), mpn: text("mpn"), size: text("size"), colour: text("colour"),
+  attributes: jsonb("attributes").$type<Record<string, unknown>>().notNull().default({}), provenanceMethod: provenanceMethodEnum("provenance_method").notNull().default('merchant_provided'), active: boolean("active").notNull().default(false),
+  lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(), createdAt: timestamp("created_at").notNull().defaultNow(), updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [uniqueIndex("uq_product_variants_provider_merchant_key").on(table.providerId, table.merchantId, table.externalVariantKey), index("idx_product_variants_product").on(table.productId), index("idx_product_variants_seen").on(table.lastSeenAt)]);
+
+export const commerceRawFeedItems = pgTable("commerce_raw_feed_items", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`), providerId: varchar("provider_id", { length: 36 }).notNull().references(() => commerceProviders.id), merchantId: varchar("merchant_id", { length: 36 }).notNull().references(() => commerceMerchants.id), feedId: varchar("feed_id", { length: 36 }).notNull().references(() => commerceFeeds.id),
+  externalProductId: text("external_product_id"), merchantProductId: text("merchant_product_id"), identityHash: varchar("identity_hash", { length: 64 }).notNull(), contentHash: varchar("content_hash", { length: 64 }).notNull(), rawPayload: jsonb("raw_payload").$type<Record<string, unknown>>().notNull(),
+  firstSeenAt: timestamp("first_seen_at").notNull().defaultNow(), lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(), createdAt: timestamp("created_at").notNull().defaultNow(), updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [uniqueIndex("uq_commerce_raw_feed_identity").on(table.providerId, table.merchantId, table.feedId, table.identityHash), index("idx_commerce_raw_feed_content").on(table.contentHash), index("idx_commerce_raw_feed_seen").on(table.feedId, table.lastSeenAt)]);
+
 // ============================================
 // IMAGENS DE PRODUTO
 // ============================================
@@ -189,9 +239,15 @@ export const productImages = pgTable("product_images", {
   alt: text("alt"),
   sortOrder: integer("sort_order").default(0),
   isPrimary: boolean("is_primary").default(false),
+  providerId: varchar("provider_id", { length: 36 }).references(() => commerceProviders.id),
+  variantId: varchar("variant_id", { length: 36 }).references(() => productVariants.id),
+  externalIdentity: text("external_identity"),
+  imageType: varchar("image_type", { length: 40 }),
+  provenanceMethod: provenanceMethodEnum("provenance_method").default('merchant_provided'),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
-  index("idx_product_images_product").on(table.productId)
+  index("idx_product_images_product").on(table.productId),
+  uniqueIndex("uq_product_images_product_url").on(table.productId, table.url).where(sql`${table.providerId} IS NOT NULL`)
 ]);
 
 export const productImagesRelations = relations(productImages, ({ one }) => ({
@@ -250,8 +306,15 @@ export const offers = pgTable("offers", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
   productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id),
   marketplaceId: varchar("marketplace_id", { length: 36 }).references(() => marketplaces.id),
+  variantId: varchar("variant_id", { length: 36 }).references(() => productVariants.id),
+  providerId: varchar("provider_id", { length: 36 }).references(() => commerceProviders.id),
+  merchantId: varchar("merchant_id", { length: 36 }).references(() => commerceMerchants.id),
+  externalOfferKey: varchar("external_offer_key", { length: 64 }),
   currentPrice: decimal("current_price", { precision: 10, scale: 2 }).notNull(),
   originalPrice: decimal("original_price", { precision: 10, scale: 2 }),
+  rrpPrice: decimal("rrp_price", { precision: 10, scale: 2 }),
+  saving: decimal("saving", { precision: 10, scale: 2 }),
+  savingsPercent: decimal("savings_percent", { precision: 7, scale: 3 }),
   discountPercent: integer("discount_percent"),
   currency: varchar("currency", { length: 10 }).default('BRL'),
   originalUrl: text("original_url"),
@@ -261,6 +324,13 @@ export const offers = pgTable("offers", {
   freeShipping: boolean("free_shipping").default(false),
   installments: varchar("installments", { length: 100 }),
   externalId: varchar("external_id", { length: 100 }),
+  inStock: boolean("in_stock"),
+  isForSale: boolean("is_for_sale"),
+  stockStatus: text("stock_status"),
+  validFrom: timestamp("valid_from"),
+  validTo: timestamp("valid_to"),
+  active: boolean("active").notNull().default(true),
+  provenanceMethod: provenanceMethodEnum("provenance_method").default('merchant_provided'),
   status: offerStatusEnum("status").default('active'),
   lastSeenAt: timestamp("last_seen_at").defaultNow(),
   capturedAt: timestamp("captured_at").defaultNow(),
@@ -270,7 +340,8 @@ export const offers = pgTable("offers", {
   index("idx_offers_product").on(table.productId),
   index("idx_offers_marketplace").on(table.marketplaceId),
   index("idx_offers_status").on(table.status),
-  index("idx_offers_external").on(table.externalId)
+  index("idx_offers_external").on(table.externalId),
+  uniqueIndex("uq_offers_provider_merchant_external_key").on(table.providerId, table.merchantId, table.externalOfferKey)
 ]);
 
 export const offersRelations = relations(offers, ({ one }) => ({
@@ -283,6 +354,20 @@ export const offersRelations = relations(offers, ({ one }) => ({
     references: [marketplaces.id]
   })
 }));
+
+export const offerPromotionEvidence = pgTable("offer_promotion_evidence", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  offerId: varchar("offer_id", { length: 36 }).notNull().references(() => offers.id, { onDelete: "cascade" }),
+  feedId: varchar("feed_id", { length: 36 }).references(() => commerceFeeds.id),
+  promotionStatus: varchar("promotion_status", { length: 40 }).notNull(),
+  promotionEvidenceType: varchar("promotion_evidence_type", { length: 60 }).notNull(),
+  oldPrice: decimal("old_price", { precision: 10, scale: 2 }).notNull(),
+  currentPrice: decimal("current_price", { precision: 10, scale: 2 }).notNull(),
+  discountPercent: decimal("discount_percent", { precision: 7, scale: 3 }).notNull(),
+  evidenceSource: varchar("evidence_source", { length: 80 }).notNull(),
+  evidenceObservedAt: timestamp("evidence_observed_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(), updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [uniqueIndex("uq_offer_promotion_evidence_offer_source").on(table.offerId, table.evidenceSource), index("idx_offer_promotion_evidence_feed").on(table.feedId, table.evidenceObservedAt)]);
 
 // ============================================
 // ORIGENS DE COLETA

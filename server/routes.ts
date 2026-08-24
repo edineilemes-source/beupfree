@@ -488,7 +488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/products/:id", async (req, res) => {
     try {
       const product = await storage.getProduct(req.params.id);
-      if (!product) return res.status(404).json({ error: "Produto não encontrado" });
+      if (!product || product.catalogStatus !== 'published') return res.status(404).json({ error: "Produto não encontrado" });
 
       const productOffers = await storage.getOffers({ productId: product.id, status: 'active' });
       const images = await storage.getProductImages(product.id);
@@ -521,7 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/click/:offerId", async (req, res) => {
     try {
       const offer = await storage.getOffer(req.params.offerId);
-      if (!offer || !offer.affiliateUrl) {
+      if (!offer || offer.status !== 'active' || offer.active === false || !offer.affiliateUrl) {
         return res.status(404).json({ error: "Oferta não encontrada" });
       }
 
