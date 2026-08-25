@@ -75,6 +75,7 @@ export const curationSourceTriggerEnum = pgEnum('curation_source_trigger', ['man
 
 export const commercePublicationStateEnum = pgEnum('commerce_publication_state', ['staging', 'approved', 'rejected']);
 export const provenanceMethodEnum = pgEnum('provenance_method', ['merchant_provided', 'normalized', 'ai_extracted', 'externally_enriched']);
+export const catalogOperationalStateEnum = pgEnum('catalog_operational_state', ['CATALOG_ELIGIBLE', 'QUARANTINED', 'OUT_OF_SCOPE', 'PUBLISHED', 'PAUSED']);
 
 // ============================================
 // MARCAS
@@ -368,6 +369,26 @@ export const offerPromotionEvidence = pgTable("offer_promotion_evidence", {
   evidenceObservedAt: timestamp("evidence_observed_at").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(), updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [uniqueIndex("uq_offer_promotion_evidence_offer_source").on(table.offerId, table.evidenceSource), index("idx_offer_promotion_evidence_feed").on(table.feedId, table.evidenceObservedAt)]);
+
+export const productCatalogClassifications = pgTable("product_catalog_classifications", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id", { length: 36 }).notNull().references(() => products.id, { onDelete: "cascade" }),
+  providerId: varchar("provider_id", { length: 36 }).references(() => commerceProviders.id),
+  merchantId: varchar("merchant_id", { length: 36 }).references(() => commerceMerchants.id),
+  universe: varchar("universe", { length: 40 }).notNull(), style: varchar("style", { length: 40 }).notNull(),
+  activities: text("activities").array().notNull().default(sql`ARRAY[]::text[]`), confidence: varchar("confidence", { length: 20 }).notNull(),
+  reasonCodes: text("reason_codes").array().notNull().default(sql`ARRAY[]::text[]`), operationalState: catalogOperationalStateEnum("operational_state").notNull(),
+  classifierVersion: varchar("classifier_version", { length: 80 }).notNull(), classifiedAt: timestamp("classified_at").notNull(),
+  sourceEvidence: jsonb("source_evidence").$type<Record<string, unknown>>().notNull().default({}), createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [uniqueIndex("uq_product_catalog_classifications_version").on(table.productId, table.classifierVersion), index("idx_product_catalog_classifications_product_latest").on(table.productId, table.classifiedAt), index("idx_product_catalog_classifications_state").on(table.operationalState, table.classifierVersion), index("idx_product_catalog_classifications_merchant").on(table.merchantId, table.classifiedAt)]);
+
+export const productVariantNormalizations = pgTable("product_variant_normalizations", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`), variantId: varchar("variant_id", { length: 36 }).notNull().references(() => productVariants.id, { onDelete: "cascade" }),
+  sizeRaw: text("size_raw"), sizeNormalized: decimal("size_normalized", { precision: 6, scale: 2 }), sizeStatus: varchar("size_status", { length: 30 }).notNull(),
+  colourRaw: text("colour_raw"), colourNormalized: text("colour_normalized").array(), colourStatus: varchar("colour_status", { length: 30 }).notNull(),
+  normalizerVersion: varchar("normalizer_version", { length: 80 }).notNull(), normalizedAt: timestamp("normalized_at").notNull(),
+  reasonCodes: text("reason_codes").array().notNull().default(sql`ARRAY[]::text[]`), createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [uniqueIndex("uq_product_variant_normalizations_version").on(table.variantId, table.normalizerVersion), index("idx_variant_normalizations_variant_latest").on(table.variantId, table.normalizedAt)]);
 
 // ============================================
 // ORIGENS DE COLETA
