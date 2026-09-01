@@ -61,7 +61,7 @@ export async function scrapeBrandShopUrl(
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
       },
-      timeout: 20000,
+      signal: AbortSignal.timeout(20000),
     });
 
     if (!response.ok) {

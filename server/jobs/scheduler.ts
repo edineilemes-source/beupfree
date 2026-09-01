@@ -56,9 +56,9 @@ export async function startScheduler(): Promise<void> {
 }
 
 export function stopScheduler(): void {
-  for (const [, scheduled] of activeTimers) {
+  activeTimers.forEach((scheduled) => {
     clearInterval(scheduled.timer);
-  }
+  });
   activeTimers.clear();
 }
 

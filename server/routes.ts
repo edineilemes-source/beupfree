@@ -37,6 +37,7 @@ import {
   sanitizeDemoOffer,
   shouldStartExternalScheduler,
 } from "./publicDemo";
+import { createCatalogPreviewRouter } from "./catalogPreview/routes";
 
 registerCollector(["mercadolivre", "mercado-livre"], mercadoLivreCollector);
 
@@ -50,6 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(createPublicDemoGuard());
   app.use("/api/auth", createAuthRouter(userRepository));
   app.use("/api/favorites", createFavoritesRouter(favoritesRepository));
+  app.use("/api/catalog-preview", createCatalogPreviewRouter());
   // Segue o padrão administrativo atual, que ainda não possui autorização própria.
   app.use("/api/admin/curation-sources", createCurationSourcesRouter(curationSourcesRepository));
 

@@ -26,6 +26,9 @@ export default defineConfig({
     "import.meta.env.PUBLIC_CONTACT_EMAIL": JSON.stringify(
       process.env.PUBLIC_CONTACT_EMAIL ?? "",
     ),
+    "import.meta.env.UPPULSE_CATALOG_PREVIEW_ENABLED": JSON.stringify(
+      process.env.UPPULSE_CATALOG_PREVIEW_ENABLED === "true" ? "true" : "false",
+    ),
   },
   plugins: [
     react(),

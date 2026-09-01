@@ -20,6 +20,9 @@ import TermsOfUse from "@/pages/TermsOfUse";
 import Contact from "@/pages/Contact";
 import { PUBLIC_DEMO_MODE } from "@/lib/publicDemo";
 import ScrollToTop from "@/components/ScrollToTop";
+import CatalogPreview from "@/pages/CatalogPreview";
+
+const CATALOG_PREVIEW_ENABLED = import.meta.env.UPPULSE_CATALOG_PREVIEW_ENABLED === "true";
 
 function Router() {
   return (
@@ -37,6 +40,7 @@ function Router() {
       {!PUBLIC_DEMO_MODE && <Route path="/admin/curadoria/listas" component={CurationSources} />}
       {!PUBLIC_DEMO_MODE && <Route path="/triagem" component={AdminTriagem} />}
       <Route path="/catalogo-v2" component={CatalogV2} />
+      {CATALOG_PREVIEW_ENABLED && <Route path="/dev/catalogo-dafiti" component={CatalogPreview} />}
       <Route component={NotFound} />
     </Switch>
   );

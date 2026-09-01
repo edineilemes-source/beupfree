@@ -9,7 +9,7 @@
     "build": "vite build && esbuild server/index-prod.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/index.js",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
-    "test:unit": "node --import tsx --test client/src/decision-engine/core/DecisionEngine.test.ts client/src/features/comparison-intelligence/comparisonIntelligence.test.ts client/src/lib/favoritesImport.test.ts client/src/lib/favoritesStorage.test.ts client/src/lib/publicDemo.test.ts server/publicDemo.test.ts server/auth/routes.test.ts server/favorites/routes.test.ts server/curationSources/routes.test.ts server/curationSources/executeSource.test.ts server/services/mlCollectionsCollector.test.ts server/integrations/awin/awin.test.ts server/integrations/awin/curation.test.ts server/integrations/awin/outletAudit.test.ts server/integrations/awin/dafitiCuration.test.ts server/integrations/awin/productTaxonomy.test.ts server/integrations/awin/operationalCatalog.test.ts",
+    "test:unit": "node --import tsx --test client/src/components/CatalogPreviewCard.test.ts server/catalogPreview/routes.test.ts server/catalogSearchProjection/builder.test.ts server/catalogSearchProjection/repository.test.ts client/src/decision-engine/core/DecisionEngine.test.ts client/src/features/comparison-intelligence/comparisonIntelligence.test.ts client/src/lib/favoritesImport.test.ts client/src/lib/favoritesStorage.test.ts client/src/lib/publicDemo.test.ts server/publicDemo.test.ts server/auth/routes.test.ts server/favorites/routes.test.ts server/curationSources/routes.test.ts server/curationSources/executeSource.test.ts server/services/mlCollectionsCollector.test.ts server/integrations/awin/awin.test.ts server/integrations/awin/curation.test.ts server/integrations/awin/outletAudit.test.ts server/integrations/awin/dafitiCuration.test.ts server/integrations/awin/productTaxonomy.test.ts server/integrations/awin/operationalCatalog.test.ts",
     "test:cura002": "node --import tsx --test server/curationSources/executeSource.test.ts server/curationSources/routes.test.ts server/services/mlCollectionsCollector.test.ts",
     "test:auth-integration": "NODE_ENV=test SESSION_SECRET=auth-integration-test-secret node --env-file=.env --import tsx --test server/auth/routes.integration.test.ts",
     "test:favorites-integration": "NODE_ENV=test SESSION_SECRET=favorites-integration-test-secret node --env-file=.env --import tsx --test server/favorites/routes.integration.test.ts",
@@ -39,7 +39,8 @@
     "awin:dafiti-curation": "node --import tsx scripts/awin-dafiti-curation.ts",
     "awin:dafiti-taxonomy-audit": "node --import tsx scripts/awin-dafiti-taxonomy-audit.ts",
     "awin:dafiti-catalog-dry-run": "node --import tsx scripts/awin-dafiti-catalog-dry-run.ts",
-    "awin:dafiti-catalog-persist": "node --import tsx scripts/awin-dafiti-catalog-persist.ts"
+    "awin:dafiti-catalog-persist": "node --import tsx scripts/awin-dafiti-catalog-persist.ts",
+    "catalog:search-projection:persist": "node --import tsx scripts/catalog-search-projection-persist.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
