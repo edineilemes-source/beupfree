@@ -113,3 +113,19 @@ Registro append-only de decisões técnicas e operacionais que precisam sobreviv
 - Contexto: retries após falha de rede poderiam repetir missão ou relatório, e transporte remoto não pode ampliar a autorização operacional.
 - Decisão: recusar `mission_id` terminal já processado e consultar todos os comentários pelo marcador de relatório antes de publicar; a bridge não executa polling, Git mutável, merge, deploy ou publicação real.
 - Consequências: repetir `publish` para a mesma missão não cria novo comentário; falha ao verificar idempotência impede publicação, enquanto o resultado local permanece disponível para revisão.
+
+## UPCAT002-D001 — Fonte pública reversível e opt-in
+
+- Data: 2026-09-02.
+- Status: aceita.
+- Contexto: a projeção operacional multi-marketplace precisa poder substituir o catálogo demo sem transformar elegibilidade em publicação automática.
+- Decisão: manter `demo` como fonte padrão e exigir simultaneamente fonte `operational`, aprovação explícita e conexão configurada para selecionar o adaptador operacional.
+- Consequências: configuração ausente ou parcial preserva o demo; ativação real e rollback permanecem decisões humanas de produção, e os demos não são removidos.
+
+## UPCAT002-D002 — Ranking recomendado multi-sinal
+
+- Data: 2026-09-02.
+- Status: aceita.
+- Contexto: maior desconto isolado favorece percentuais promocionais sem assegurar relevância ou qualidade.
+- Decisão: usar disponibilidade, completude, atividades, força de oferta com desconto limitado e recência, com Product e merchant como desempates determinísticos; manter ordenações explícitas separadas.
+- Consequências: desconto continua filtrável e ordenável sob escolha explícita, mas não domina o ranking público padrão.

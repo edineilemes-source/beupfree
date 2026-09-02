@@ -28,7 +28,9 @@ Estado técnico consolidado e relativamente estável do BeUpFree/UpPulse. Regist
 - A ponte operacional usa uma GitHub Issue dedicada como mailbox separada dos commits: `sync` aceita missão estruturada de colaborador, `publish` devolve resultado sanitizado e idempotente e `cycle` encadeia o ciclo completo.
 - A bridge depende de `gh` instalado e autenticado; falha de autenticação, rede ou consistência interrompe com segurança sem apagar o resultado local. Na inspeção de 2026-09-02, o CLI estava instalado, mas a autenticação disponível era inválida.
 - Logs operacionais locais: `.ai/logs/`; locks transitórios por `mission_id`: `.ai/locks/`.
-- Última atualização estrutural: 2026-09-02, durante DEVAI001.6.
+- A seleção do catálogo público possui gate reversível `demo`/`operational`; o default permanece demo e a fonte operacional requer duas flags explícitas e conexão própria.
+- O ranking recomendado da projeção pública é determinístico e multi-sinal; disponibilidade, completude, atividades e recência participam, e o peso do desconto é limitado.
+- Última atualização estrutural: 2026-09-02, durante UPCAT002.
 
 ## Responsabilidades documentais
 

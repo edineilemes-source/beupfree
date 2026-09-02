@@ -38,6 +38,7 @@ import {
   shouldStartExternalScheduler,
 } from "./publicDemo";
 import { createCatalogPreviewRouter } from "./catalogPreview/routes";
+import { operationalPublicCatalogHandler } from "./publicCatalog/operational";
 
 registerCollector(["mercadolivre", "mercado-livre"], mercadoLivreCollector);
 
@@ -377,6 +378,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ PUBLIC: CATALOG (products + offers) ============
+
+  app.get("/api/products", operationalPublicCatalogHandler);
 
   app.get("/api/products", async (req, res) => {
     try {

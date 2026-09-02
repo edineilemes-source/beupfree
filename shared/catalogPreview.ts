@@ -1,4 +1,4 @@
-export const catalogPreviewSorts = ["discount-desc", "discount-asc", "price-asc", "price-desc", "name-asc", "brand-asc"] as const;
+export const catalogPreviewSorts = ["recommended", "discount-desc", "discount-asc", "price-asc", "price-desc", "name-asc", "brand-asc"] as const;
 export type CatalogPreviewSort = typeof catalogPreviewSorts[number];
 export interface CatalogPreviewVariant { id:string; sizeRaw:string|null; sizeNormalized:number|null; colorRaw:string|null; colorNormalized:string[]|null; available:boolean }
 export interface CatalogPreviewProduct {
