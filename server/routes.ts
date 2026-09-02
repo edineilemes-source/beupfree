@@ -38,7 +38,7 @@ import {
   shouldStartExternalScheduler,
 } from "./publicDemo";
 import { createCatalogPreviewRouter } from "./catalogPreview/routes";
-import { operationalPublicCatalogHandler } from "./publicCatalog/operational";
+import { operationalPublicAffiliateClickHandler, operationalPublicCatalogHandler, operationalPublicProductDetailHandler } from "./publicCatalog/operational";
 
 registerCollector(["mercadolivre", "mercado-livre"], mercadoLivreCollector);
 
@@ -490,6 +490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/products/:id", operationalPublicProductDetailHandler);
   app.get("/api/products/:id", async (req, res) => {
     try {
       const product = await storage.getProduct(req.params.id);
@@ -523,6 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ PUBLIC: AFFILIATE CLICK TRACKING ============
 
+  app.get("/api/click/:offerId", operationalPublicAffiliateClickHandler);
   app.get("/api/click/:offerId", async (req, res) => {
     try {
       const offer = await storage.getOffer(req.params.offerId);

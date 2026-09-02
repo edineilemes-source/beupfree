@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "test": "npm run test:unit && npm run test:public-catalog",
-    "test:public-catalog": "node --import tsx --test server/publicCatalog/policy.test.ts",
+    "test:public-catalog": "node --import tsx --test server/publicCatalog/policy.test.ts server/publicCatalog/operational.test.ts",
     "dev": "NODE_ENV=development tsx server/index-dev.ts",
     "dev:e2e": "NODE_ENV=development node --env-file=.env ./node_modules/.bin/tsx server/index-dev.ts",
     "build": "vite build && esbuild server/index-prod.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/index.js",
