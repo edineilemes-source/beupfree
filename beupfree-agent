@@ -1,0 +1,236 @@
+#!/usr/bin/env bash
+set -u
+
+PROGRAM=${0##*/}
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd -P) || exit 1
+ROOT=$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null) || {
+  printf 'ERROR: %s must be located inside a Git repository.\n' "$PROGRAM" >&2
+  exit 2
+}
+
+AI_DIR="$ROOT/.ai"
+MISSION_FILE="$AI_DIR/CURRENT_MISSION.md"
+REQUIRED_FILES="PROJECT_STATE.md CURRENT_MISSION.md DECISIONS.md CODEX_REPORT.md NEXT_ACTION.md"
+VALID_STATUSES="PENDING IN_PROGRESS BLOCKED COMPLETED FAILED"
+
+yaml_value() {
+  key=$1
+  file=$2
+  awk -v key="$key" '
+    /^```yaml[[:space:]]*$/ { yaml=1; next }
+    yaml && /^```[[:space:]]*$/ { exit }
+    yaml && $0 ~ "^[[:space:]]*" key ":[[:space:]]*" {
+      sub("^[[:space:]]*" key ":[[:space:]]*", "")
+      gsub(/^"|"$/, "")
+      print
+      exit
+    }
+  ' "$file" 2>/dev/null
+}
+
+redact() {
+  sed -E \
+    -e '/^[[:space:]-]*[A-Za-z0-9_.-]*(DATABASE_URL|TOKEN|PASSWORD|PASSWD|SECRET|API_KEY|PRIVATE_KEY)[A-Za-z0-9_.-]*[[:space:]]*[:=]/I{s/.*/[REDACTED: sensitive line]/;}' \
+    -e '/affiliate[^[:space:]]*:[[:space:]]*https?:\/\//I{s#https?://[^[:space:]]+#\[REDACTED_URL\]#g;}'
+}
+
+git_branch() {
+  git -C "$ROOT" branch --show-current 2>/dev/null
+}
+
+git_state() {
+  state=$(git -C "$ROOT" status --short 2>/dev/null)
+  if [ -z "$state" ]; then
+    printf 'clean\n'
+  else
+    count=$(printf '%s\n' "$state" | wc -l | tr -d ' ')
+    printf 'changes (%s entries)\n' "$count"
+  fi
+}
+
+log_action() {
+  mission=$1 action=$2 result=$3
+  mkdir -p "$AI_DIR/logs" 2>/dev/null || return 0
+  printf '%s\tmission_id=%s\taction=%s\texit_status=%s\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$mission" "$action" "$result" \
+    >> "$AI_DIR/logs/operations.log" 2>/dev/null || true
+}
+
+do_status() {
+  mission=$(yaml_value mission_id "$MISSION_FILE")
+  title=$(yaml_value title "$MISSION_FILE")
+  status=$(yaml_value status "$MISSION_FILE")
+  recommendation=$(yaml_value recommended_next_mission "$AI_DIR/NEXT_ACTION.md")
+  printf 'repository: %s\n' "$ROOT"
+  printf 'branch: %s\n' "$(git_branch)"
+  printf 'git: %s\n' "$(git_state)"
+  printf 'mission_id: %s\n' "${mission:-MISSING}"
+  printf 'title: %s\n' "${title:-MISSING}"
+  printf 'mission status: %s\n' "${status:-MISSING}"
+  printf 'last recommendation: %s\n' "${recommendation:-MISSING}"
+  printf 'protocol files:\n'
+  for file in $REQUIRED_FILES; do
+    if [ -f "$AI_DIR/$file" ]; then result=present; else result=MISSING; fi
+    printf '  - .ai/%s: %s\n' "$file" "$result"
+  done
+}
+
+do_check() {
+  errors=0
+  check_error() { printf 'ERROR: %s\n' "$1" >&2; errors=$((errors + 1)); }
+
+  git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1 || check_error 'invalid Git root'
+  [ -f "$ROOT/AGENTS.md" ] || check_error 'AGENTS.md is missing'
+  [ -d "$AI_DIR" ] || check_error '.ai directory is missing'
+  for file in $REQUIRED_FILES; do
+    [ -f "$AI_DIR/$file" ] || check_error ".ai/$file is missing"
+  done
+
+  if [ -f "$MISSION_FILE" ]; then
+    mission=$(yaml_value mission_id "$MISSION_FILE")
+    status=$(yaml_value status "$MISSION_FILE")
+    title=$(yaml_value title "$MISSION_FILE")
+    objective=$(yaml_value objective "$MISSION_FILE")
+    expected_branch=$(yaml_value expected_branch "$MISSION_FILE")
+    [ -n "$mission" ] || check_error 'CURRENT_MISSION mission_id is missing'
+    [ -n "$title" ] || check_error 'CURRENT_MISSION title is missing'
+    [ -n "$objective" ] || check_error 'CURRENT_MISSION objective is missing'
+    [ -n "$expected_branch" ] || check_error 'CURRENT_MISSION expected_branch is missing'
+    case " $VALID_STATUSES " in *" $status "*) ;; *) check_error "CURRENT_MISSION status is invalid: ${status:-MISSING}" ;; esac
+    if [ -n "$expected_branch" ] && [ "$(git_branch)" != "$expected_branch" ]; then
+      check_error "current branch $(git_branch) does not match expected branch $expected_branch"
+    fi
+    report_mission=$(yaml_value mission_id "$AI_DIR/CODEX_REPORT.md")
+    report_status=$(yaml_value final_status "$AI_DIR/CODEX_REPORT.md")
+    if [ "$status" = PENDING ] && [ "$mission" = "$report_mission" ] && [ "$report_status" = COMPLETED ]; then
+      check_error "mission $mission is already recorded as COMPLETED"
+    fi
+  fi
+
+  [ -z "$(git -C "$ROOT" ls-files -u 2>/dev/null)" ] || check_error 'Git has unresolved conflicts'
+  if [ "$errors" -ne 0 ]; then
+    printf 'CHECK FAILED: %s blocking error(s).\n' "$errors" >&2
+    return 1
+  fi
+  printf 'CHECK OK: protocol is structurally valid.\n'
+}
+
+section() {
+  local section_title=$1 section_file=$2
+  printf '\n## %s\n\n' "$section_title"
+  redact < "$section_file"
+}
+
+do_context() {
+  do_check >/dev/null || return 1
+  printf '# BeUpFree-Agent context\n\n'
+  printf 'Repository: %s\nBranch: %s\nGit: %s\n' "$ROOT" "$(git_branch)" "$(git_state)"
+  printf '\n## Essential operational rules\n\n'
+  printf '%s\n' \
+    '- Follow AGENTS.md; it has precedence over the .ai protocol.' \
+    '- Preserve multi-marketplace architecture and the Product/Offer distinction.' \
+    '- Preserve existing work and execute only the current mission allowed actions.' \
+    '- Do not commit, push, merge, deploy, publish, expose secrets, or perform destructive actions.' \
+    '- Record the result in CODEX_REPORT.md and NEXT_ACTION.md without falsely marking completion.'
+  section PROJECT_STATE "$AI_DIR/PROJECT_STATE.md"
+  section CURRENT_MISSION "$MISSION_FILE"
+  section DECISIONS "$AI_DIR/DECISIONS.md"
+  section CODEX_REPORT "$AI_DIR/CODEX_REPORT.md"
+  section NEXT_ACTION "$AI_DIR/NEXT_ACTION.md"
+}
+
+release_lock() {
+  [ -n "${LOCK_DIR:-}" ] || return 0
+  if [ -d "$LOCK_DIR" ]; then
+    rm -f "$LOCK_DIR/pid" 2>/dev/null || true
+    rmdir "$LOCK_DIR" 2>/dev/null || true
+  fi
+}
+
+acquire_lock() {
+  safe_mission=$(printf '%s' "$1" | tr -c 'A-Za-z0-9._-' '_')
+  LOCK_DIR="$AI_DIR/locks/$safe_mission.lock"
+  mkdir -p "$AI_DIR/locks" || return 1
+  if mkdir "$LOCK_DIR" 2>/dev/null; then
+    printf '%s\n' "$$" > "$LOCK_DIR/pid"
+    return 0
+  fi
+  old_pid=$(sed -n '1p' "$LOCK_DIR/pid" 2>/dev/null || true)
+  if [ -n "$old_pid" ] && ! kill -0 "$old_pid" 2>/dev/null; then
+    rm -f "$LOCK_DIR/pid" 2>/dev/null || true
+    rmdir "$LOCK_DIR" 2>/dev/null || true
+    mkdir "$LOCK_DIR" 2>/dev/null || return 1
+    printf '%s\n' "$$" > "$LOCK_DIR/pid"
+    return 0
+  fi
+  return 1
+}
+
+do_run() {
+  dry_run=false
+  if [ "${1:-}" = --dry-run ]; then dry_run=true; shift; fi
+  [ "$#" -eq 0 ] || { printf 'ERROR: unknown run option: %s\n' "$1" >&2; return 2; }
+  do_check || return 1
+  mission=$(yaml_value mission_id "$MISSION_FILE")
+  status=$(yaml_value status "$MISSION_FILE")
+  title=$(yaml_value title "$MISSION_FILE")
+  case "$status" in
+    COMPLETED|BLOCKED|FAILED) printf 'ERROR: mission %s has terminal status %s; execution refused.\n' "$mission" "$status" >&2; log_action "$mission" run-refused 1; return 1 ;;
+    PENDING) ;;
+    IN_PROGRESS) if [ "$dry_run" != true ]; then printf 'ERROR: mission %s is already IN_PROGRESS; execution refused.\n' "$mission" >&2; log_action "$mission" run-refused 1; return 1; fi ;;
+    *) printf 'ERROR: mission status must be PENDING.\n' >&2; return 1 ;;
+  esac
+
+  context_file=$(mktemp "${TMPDIR:-/tmp}/beupfree-agent-context.XXXXXX") || return 1
+  do_context > "$context_file" || { rm -f "$context_file"; return 1; }
+  codex_path=$(command -v codex 2>/dev/null || true)
+  printf 'mission_id: %s\nstatus: %s\ntitle: %s\nbranch: %s\n' "$mission" "$status" "$title" "$(git_branch)"
+  printf 'context prepared: yes (%s bytes, temporary file)\n' "$(wc -c < "$context_file" | tr -d ' ')"
+  printf 'mechanism: codex exec --sandbox workspace-write --ask-for-approval on-request -C %s -\n' "$ROOT"
+  printf 'safety gates: AGENTS.md; no automatic commit, push, merge, deploy, publication, or destructive operation\n'
+  if [ "$dry_run" = true ]; then
+    printf 'dry-run: Codex was not started.\n'
+    log_action "$mission" run-dry-run 0
+    rm -f "$context_file"
+    return 0
+  fi
+  if [ -z "$codex_path" ]; then
+    printf 'ERROR: Codex CLI is not installed or is not available in PATH. Context preparation succeeded.\n' >&2
+    log_action "$mission" run-no-codex 127
+    rm -f "$context_file"
+    return 127
+  fi
+  if ! acquire_lock "$mission"; then
+    printf 'ERROR: mission %s is already running (lock: %s).\n' "$mission" "$LOCK_DIR" >&2
+    log_action "$mission" run-locked 1
+    rm -f "$context_file"
+    return 1
+  fi
+  interrupted=false
+  trap 'interrupted=true; release_lock; log_action "$mission" interrupted 130; rm -f "$context_file"; exit 130' INT TERM HUP
+  {
+    printf '\nExecute the mission below. Follow AGENTS.md and CURRENT_MISSION.md exactly. The wrapper grants no authority beyond those files. Preserve all safety gates.\n\n'
+    cat "$context_file"
+  } | "$codex_path" exec --sandbox workspace-write --ask-for-approval on-request -C "$ROOT" -
+  result=$?
+  release_lock
+  trap - INT TERM HUP
+  log_action "$mission" run "$result"
+  rm -f "$context_file"
+  return "$result"
+}
+
+usage() {
+  printf 'Usage: %s {status|check|context|run [--dry-run]}\n' "$PROGRAM"
+}
+
+command=${1:-}
+if [ "$#" -gt 0 ]; then shift; fi
+case "$command" in
+  status) [ "$#" -eq 0 ] || { usage >&2; exit 2; }; do_status ;;
+  check) [ "$#" -eq 0 ] || { usage >&2; exit 2; }; do_check ;;
+  context) [ "$#" -eq 0 ] || { usage >&2; exit 2; }; do_context ;;
+  run) do_run "$@" ;;
+  -h|--help|help) usage ;;
+  *) usage >&2; exit 2 ;;
+esac
