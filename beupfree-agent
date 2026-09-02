@@ -12,6 +12,7 @@ AI_DIR="$ROOT/.ai"
 MISSION_FILE="$AI_DIR/CURRENT_MISSION.md"
 REQUIRED_FILES="PROJECT_STATE.md CURRENT_MISSION.md DECISIONS.md CODEX_REPORT.md NEXT_ACTION.md"
 VALID_STATUSES="PENDING IN_PROGRESS BLOCKED COMPLETED FAILED"
+TERMINAL_STATUSES="BLOCKED COMPLETED FAILED"
 
 yaml_value() {
   key=$1
@@ -166,6 +167,41 @@ acquire_lock() {
   return 1
 }
 
+validate_output_contract() {
+  executed_mission=$1
+  errors=0
+  contract_error() { printf 'ERROR: output contract: %s\n' "$1" >&2; errors=$((errors + 1)); }
+
+  current_mission=$(yaml_value mission_id "$MISSION_FILE")
+  current_status=$(yaml_value status "$MISSION_FILE")
+  report_mission=$(yaml_value mission_id "$AI_DIR/CODEX_REPORT.md")
+  report_status=$(yaml_value final_status "$AI_DIR/CODEX_REPORT.md")
+  next_mission=$(yaml_value originating_mission "$AI_DIR/NEXT_ACTION.md")
+  next_recommendation=$(yaml_value recommended_next_mission "$AI_DIR/NEXT_ACTION.md")
+
+  [ "$current_mission" = "$executed_mission" ] || contract_error "CURRENT_MISSION mission_id is ${current_mission:-MISSING}; expected $executed_mission"
+  case " $TERMINAL_STATUSES " in
+    *" $current_status "*) ;;
+    *) contract_error "CURRENT_MISSION status is not terminal: ${current_status:-MISSING}" ;;
+  esac
+  [ "$report_mission" = "$executed_mission" ] || contract_error "CODEX_REPORT mission_id is ${report_mission:-MISSING}; expected $executed_mission"
+  case " $TERMINAL_STATUSES " in
+    *" $report_status "*) ;;
+    *) contract_error "CODEX_REPORT final_status is not terminal: ${report_status:-MISSING}" ;;
+  esac
+  if [ -n "$current_status" ] && [ -n "$report_status" ] && [ "$report_status" != "$current_status" ]; then
+    contract_error "CODEX_REPORT final_status $report_status differs from CURRENT_MISSION status $current_status"
+  fi
+  [ "$next_mission" = "$executed_mission" ] || contract_error "NEXT_ACTION originating_mission is ${next_mission:-MISSING}; expected $executed_mission"
+  [ -n "$next_recommendation" ] || contract_error 'NEXT_ACTION recommended_next_mission is missing or empty; use a readable recommendation or an explicit absence such as NONE'
+
+  if [ "$errors" -ne 0 ]; then
+    printf 'OUTPUT CONTRACT FAILED: %s inconsistency(s); protocol files were not modified by the wrapper.\n' "$errors" >&2
+    return 1
+  fi
+  printf 'OUTPUT CONTRACT OK: mission, report, and next action are terminally consistent.\n'
+}
+
 do_run() {
   dry_run=false
   if [ "${1:-}" = --dry-run ]; then dry_run=true; shift; fi
@@ -213,6 +249,10 @@ do_run() {
     cat "$context_file"
   } | "$codex_path" exec --sandbox workspace-write -C "$ROOT" -
   result=$?
+  if [ "$result" -eq 0 ]; then
+    validate_output_contract "$mission"
+    result=$?
+  fi
   release_lock
   trap - INT TERM HUP
   log_action "$mission" run "$result"

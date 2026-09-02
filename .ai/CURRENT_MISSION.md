@@ -5,7 +5,7 @@ Este arquivo contém uma única missão. Os campos abaixo são YAML simples para
 ```yaml
 mission_id: DEVAI001.5
 title: "Validação pós-execução do contrato de saída"
-status: PENDING
+status: COMPLETED
 expected_branch: devai001-agent-workflow
 objective: "Adicionar ao BeUpFree-Agent uma verificação automática, após codex exec, que confirme que CURRENT_MISSION, CODEX_REPORT e NEXT_ACTION ficaram terminalmente consistentes antes de considerar a execução concluída."
 context:

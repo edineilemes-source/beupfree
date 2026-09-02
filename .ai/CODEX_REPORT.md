@@ -3,11 +3,11 @@
 Resultado estruturado da última execução. O bloco YAML deve ser substituído ao encerrar cada missão; registre somente comandos e testes realmente executados.
 
 ```yaml
-mission_id: DEVAI001.4
-started_at: "2026-09-02T01:18:48Z"
-finished_at: "2026-09-02T01:20:02Z"
+mission_id: DEVAI001.5
+started_at: "2026-09-02T01:24:00Z"
+finished_at: "2026-09-02T01:30:49Z"
 final_status: COMPLETED
-summary: "Ponte ChatGPT → GitHub → sincronização local → BeUpFree-Agent → Codex comprovada por dogfood, compatibilizada com a interface atual do Codex CLI e documentada sem prometer integração inexistente."
+summary: "O BeUpFree-Agent agora valida automaticamente o contrato terminal entre CURRENT_MISSION, CODEX_REPORT e NEXT_ACTION após codex exec retornar zero, falhando com diagnóstico sem alterar os arquivos quando há inconsistência."
 files_changed:
   - "beupfree-agent"
   - "tests/beupfree-agent.test.sh"
@@ -17,31 +17,27 @@ files_changed:
   - ".ai/DECISIONS.md"
   - ".ai/CODEX_REPORT.md"
   - ".ai/NEXT_ACTION.md"
-dogfood_result: "A missão DEVAI001.4 recebida via GitHub foi reconhecida localmente como PENDING; a execução atual foi iniciada por ./beupfree-agent run, criou o lock da missão e entregou o contexto ao Codex por stdin sem copiar a missão para um chat interativo."
-gap_found: "A versão instalada do codex exec não oferece --ask-for-approval; a alteração preexistente no wrapper removia a opção incompatível, mas testes e documentação ainda não comprovavam a nova interface."
-gap_fixed: "A invocação codex exec --sandbox workspace-write -C <repo> - foi documentada e ganhou teste específico de argumentos e conteúdo enviado por stdin."
-human_intervention:
-  - "Sincronizar a branch no Codespace com git pull e resolver eventuais conflitos antes da execução."
-  - "Revisar o diff, criar commit/push/PR quando autorizado e levar CODEX_REPORT/NEXT_ACTION de volta ao fluxo do ChatGPT."
-  - "A memória privada da conversa do ChatGPT não é acessível automaticamente ao executor."
+implementation:
+  - "Validação pós-execução restrita a retornos zero do Codex, preservando o status original em erros."
+  - "Identidade, terminalidade e coerência de status são verificadas na missão e no relatório; origem e recomendação explícita são verificadas na próxima ação."
+  - "Locks continuam liberados após sucesso, inconsistência e retorno não zero; o arquivo temporário mantém a limpeza existente."
 commands_executed:
   - "Leitura integral de AGENTS.md, PROJECT_STATE.md, DECISIONS.md e CURRENT_MISSION.md"
   - "git branch --show-current"
   - "git status --short"
-  - "codex exec --help"
-  - "./beupfree-agent status"
+  - "bash -n beupfree-agent tests/beupfree-agent.test.sh"
   - "./beupfree-agent check"
   - "bash tests/beupfree-agent.test.sh"
   - "git diff --check"
   - "git status --short"
 tests:
-  executor_tests: "PASS (11/11)"
+  executor_tests: "PASS (20/20)"
   application_tests: NOT_RUN
-  reason: "A missão proíbe alterações no produto e nenhum código da aplicação foi alterado."
-git_status: "Alterações locais sem commit nos arquivos DEVAI001; o lock transitório DEVAI001.4 pertence à execução externa atual e deve ser liberado pelo wrapper ao encerrá-la."
+  reason: "A missão proíbe alterações no produto e modificou somente o executor, seus testes, documentação e protocolo .ai."
+git_status: "Alterações locais sem commit nos oito arquivos permitidos; lock transitório DEVAI001.5 preservado por pertencer à execução externa atual."
 blockers: []
 risks:
-  - "O parser intencionalmente lê somente o primeiro bloco YAML simples e chaves escalares; não é um parser YAML geral."
-  - "O wrapper ainda não valida, após o retorno do Codex, se CURRENT_MISSION, CODEX_REPORT e NEXT_ACTION ficaram terminalmente consistentes."
-recommendation: "DEVAI001.5 deve adicionar uma verificação pós-execução do contrato de saída, sem automatizar commit, push, pull ou acesso ao ChatGPT."
+  - "O parser permanece deliberadamente limitado ao primeiro bloco YAML simples e a chaves escalares."
+  - "A validação confirma coerência estrutural, não a veracidade semântica do relatório nem a qualidade do diff."
+recommendation: "Revisar humanamente o diff e o relatório; uma missão futura pode testar interrupção por sinal de forma dedicada, sem automatizar operações Git."
 ```

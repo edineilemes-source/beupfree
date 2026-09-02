@@ -24,9 +24,10 @@ Estado técnico consolidado e relativamente estável do BeUpFree/UpPulse. Regist
 - Protocolo operacional: DEVAI001.2.
 - Executor local do protocolo: `./beupfree-agent`, criado pela DEVAI001.3.
 - O executor valida e resume o protocolo, consolida contexto, oferece dry-run e usa `codex exec --sandbox workspace-write -C <repo> -` quando uma missão `PENDING` pode ser executada.
+- Após retorno zero do Codex, o executor exige consistência terminal entre `CURRENT_MISSION.md`, `CODEX_REPORT.md` e `NEXT_ACTION.md`; inconsistências produzem falha sem correção automática.
 - A ponte operacional comprovada usa GitHub como persistência e exige sincronização e revisão Git humanas antes e depois da execução local.
 - Logs operacionais locais: `.ai/logs/`; locks transitórios por `mission_id`: `.ai/locks/`.
-- Última atualização estrutural: 2026-09-02, durante DEVAI001.4.
+- Última atualização estrutural: 2026-09-02, durante DEVAI001.5.
 
 ## Responsabilidades documentais
 

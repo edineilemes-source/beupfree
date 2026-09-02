@@ -26,6 +26,30 @@ make_fixture() {
   FIXTURE=$fixture
 }
 
+install_contract_mock() {
+  mode=$1
+  mock_bin="$FIXTURE/mock-bin"
+  mkdir "$mock_bin"
+  printf '%s\n' \
+    '#!/usr/bin/env bash' \
+    'cat >/dev/null' \
+    '[ "$MOCK_MODE" = codex-error ] && exit 23' \
+    'mission_status=COMPLETED' \
+    'report_mission=TEST001' \
+    'report_status=COMPLETED' \
+    'next_mission=TEST001' \
+    '[ "$MOCK_MODE" = non-terminal ] && mission_status=IN_PROGRESS' \
+    '[ "$MOCK_MODE" = report-mission-mismatch ] && report_mission=OTHER' \
+    '[ "$MOCK_MODE" = status-mismatch ] && report_status=FAILED' \
+    '[ "$MOCK_MODE" = next-mismatch ] && next_mission=OTHER' \
+    'sed -i "s/status: PENDING/status: $mission_status/" "$MOCK_FIXTURE/.ai/CURRENT_MISSION.md"' \
+    "printf '%s\\n' '# Report' '\`\`\`yaml' \"mission_id: \$report_mission\" \"final_status: \$report_status\" '\`\`\`' > \"\$MOCK_FIXTURE/.ai/CODEX_REPORT.md\"" \
+    "printf '%s\\n' '# Next' '\`\`\`yaml' \"originating_mission: \$next_mission\" 'recommended_next_mission: \"NONE — no next mission\"' '\`\`\`' > \"\$MOCK_FIXTURE/.ai/NEXT_ACTION.md\"" \
+    > "$mock_bin/codex"
+  chmod +x "$mock_bin/codex"
+  MOCK_MODE=$mode
+}
+
 make_fixture
 assert_success 'status' "$FIXTURE/beupfree-agent" status
 grep -q 'mission_id: TEST001' "$TEMP_ROOT/out" && pass 'status shows mission' || fail 'status shows mission'
@@ -53,7 +77,7 @@ if PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" run --dry-run >"$TEM
 make_fixture
 mock_bin="$FIXTURE/mock-bin"
 mkdir "$mock_bin"
-printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$@" > "%s/codex-args"\ncat > "%s/codex-stdin"\n' "$FIXTURE" "$FIXTURE" > "$mock_bin/codex"
+printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$@" > "%s/codex-args"\ncat > "%s/codex-stdin"\nsed -i "s/status: PENDING/status: COMPLETED/" "%s/.ai/CURRENT_MISSION.md"\nprintf "# Report\\n\\`\\`\\`yaml\\nmission_id: TEST001\\nfinal_status: COMPLETED\\n\\`\\`\\`\\n" > "%s/.ai/CODEX_REPORT.md"\nprintf "# Next\\n\\`\\`\\`yaml\\noriginating_mission: TEST001\\nrecommended_next_mission: NONE\\n\\`\\`\\`\\n" > "%s/.ai/NEXT_ACTION.md"\n' "$FIXTURE" "$FIXTURE" "$FIXTURE" "$FIXTURE" "$FIXTURE" > "$mock_bin/codex"
 chmod +x "$mock_bin/codex"
 if PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" run >"$TEMP_ROOT/out" 2>"$TEMP_ROOT/err" && \
    grep -qxF 'exec' "$FIXTURE/codex-args" && \
@@ -69,6 +93,35 @@ if PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" run >"$TEMP_ROOT/out
 else
   fail 'run invokes current Codex CLI interface with context on stdin'
 fi
+
+make_fixture
+install_contract_mock valid
+assert_success 'valid output contract' env MOCK_MODE="$MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" run
+[ ! -d "$FIXTURE/.ai/locks/TEST001.lock" ] && pass 'lock released after valid output' || fail 'lock released after valid output'
+
+make_fixture
+install_contract_mock non-terminal
+assert_failure 'non-terminal mission rejected after Codex success' env MOCK_MODE="$MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" run
+grep -q 'CURRENT_MISSION status is not terminal' "$TEMP_ROOT/err" && pass 'non-terminal error is clear' || fail 'non-terminal error is clear'
+
+make_fixture
+install_contract_mock report-mission-mismatch
+assert_failure 'report mission_id mismatch rejected' env MOCK_MODE="$MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" run
+
+make_fixture
+install_contract_mock status-mismatch
+assert_failure 'report status mismatch rejected' env MOCK_MODE="$MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" run
+
+make_fixture
+install_contract_mock next-mismatch
+assert_failure 'next action mission mismatch rejected' env MOCK_MODE="$MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" run
+
+make_fixture
+install_contract_mock codex-error
+env MOCK_MODE="$MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" run >"$TEMP_ROOT/out" 2>"$TEMP_ROOT/err"
+result=$?
+if [ "$result" -eq 23 ] && ! grep -q 'output contract' "$TEMP_ROOT/err"; then pass 'Codex nonzero status propagated'; else fail 'Codex nonzero status propagated'; fi
+[ ! -d "$FIXTURE/.ai/locks/TEST001.lock" ] && pass 'lock released after Codex error' || fail 'lock released after Codex error'
 
 make_fixture
 mock_bin="$FIXTURE/mock-bin"

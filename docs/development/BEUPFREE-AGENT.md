@@ -40,6 +40,14 @@ Executa as validações e prepara o contexto, mas não inicia o Codex. Mostra mi
 
 Aceita somente missão `PENDING`, obtém um lock por `mission_id` e usa a interface instalada `codex exec`, com contexto via stdin, diretório do repositório e sandbox `workspace-write`. A interface atual não expõe `--ask-for-approval`; o sandbox e as regras de `AGENTS.md` continuam sendo os gates efetivos. O executor não concede autorização para commit, push, merge, deploy, publicação ou operação destrutiva. Ausência do CLI é informada sem perder o contexto persistente.
 
+Quando `codex exec` retorna zero, o executor só considera a execução bem-sucedida após validar o contrato de saída:
+
+- `CURRENT_MISSION` mantém o `mission_id` executado e termina como `COMPLETED`, `BLOCKED` ou `FAILED`;
+- `CODEX_REPORT` usa o mesmo `mission_id` e seu `final_status` terminal coincide com o status da missão;
+- `NEXT_ACTION` usa o mesmo `originating_mission` e contém `recommended_next_mission` legível, inclusive uma indicação explícita como `NONE` quando não houver próxima missão.
+
+Uma inconsistência retorna código não zero, descreve os campos inválidos e não tenta corrigir os arquivos. Se `codex exec` retorna erro, seu código é propagado sem executar a validação pós-execução, preservando a causa original.
+
 Logs operacionais mínimos ficam em `.ai/logs/operations.log`, contendo timestamp, missão, ação e exit status. Locks transitórios ficam em `.ai/locks/`. Interrupções liberam o lock quando possível, são registradas e nunca alteram a missão para `COMPLETED`.
 
 ## Fluxo real via GitHub
@@ -58,3 +66,5 @@ ChatGPT
 Depois da sincronização, `./beupfree-agent status` deve mostrar a missão recebida e `./beupfree-agent check` deve confirmar protocolo e branch. `./beupfree-agent run` entrega o contexto persistente ao Codex por stdin; não é necessário copiar a missão para um chat interativo do Codex.
 
 O executor não executa `git pull`, commit ou push, não abre pull request e não devolve o relatório ao ChatGPT. Essas etapas continuam humanas. Ele também não possui acesso automático à memória privada de uma conversa específica do ChatGPT: somente o conteúdo persistido e sincronizado no repositório entra no contexto.
+
+A validação automática confirma somente a coerência estrutural do encerramento. A revisão humana ainda deve avaliar o diff, a veracidade do relatório, a adequação dos testes e qualquer decisão de commit, push ou pull request.

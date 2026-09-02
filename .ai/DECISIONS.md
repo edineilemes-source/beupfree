@@ -89,3 +89,11 @@ Registro append-only de decisões técnicas e operacionais que precisam sobreviv
 - Contexto: a versão instalada de `codex exec` aceita `--sandbox workspace-write`, `-C <repo>` e prompt por stdin, mas não oferece mais `--ask-for-approval`.
 - Decisão: invocar `codex exec --sandbox workspace-write -C <repo> -` e cobrir argumentos e stdin com teste específico.
 - Consequências: o wrapper permanece compatível com a interface comprovada localmente; o sandbox, `AGENTS.md` e a missão continuam limitando a execução.
+
+## DEVAI001.5-D001 — Contrato de saída validado após sucesso do Codex
+
+- Data: 2026-09-02.
+- Status: aceita.
+- Contexto: `codex exec` podia retornar zero sem encerrar coerentemente os três arquivos operacionais, fazendo o wrapper sinalizar sucesso para uma execução incompleta.
+- Decisão: após retorno zero, validar identidade e status terminal coerente em `CURRENT_MISSION.md` e `CODEX_REPORT.md`, além da origem e recomendação explícita em `NEXT_ACTION.md`; não validar nem mascarar retornos não zero do Codex.
+- Consequências: inconsistências estruturais agora fazem `run` retornar não zero com diagnóstico, sem o wrapper inventar correções; conteúdo, diff e ações Git continuam dependendo de revisão humana.
