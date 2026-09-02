@@ -53,6 +53,26 @@ if PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" run --dry-run >"$TEM
 make_fixture
 mock_bin="$FIXTURE/mock-bin"
 mkdir "$mock_bin"
+printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$@" > "%s/codex-args"\ncat > "%s/codex-stdin"\n' "$FIXTURE" "$FIXTURE" > "$mock_bin/codex"
+chmod +x "$mock_bin/codex"
+if PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" run >"$TEMP_ROOT/out" 2>"$TEMP_ROOT/err" && \
+   grep -qxF 'exec' "$FIXTURE/codex-args" && \
+   grep -qxF -- '--sandbox' "$FIXTURE/codex-args" && \
+   grep -qxF 'workspace-write' "$FIXTURE/codex-args" && \
+   grep -qxF -- '-C' "$FIXTURE/codex-args" && \
+   grep -qxF "$FIXTURE" "$FIXTURE/codex-args" && \
+   grep -qxF -- '-' "$FIXTURE/codex-args" && \
+   ! grep -q -- '--ask-for-approval' "$FIXTURE/codex-args" && \
+   grep -q 'Follow AGENTS.md and CURRENT_MISSION.md exactly' "$FIXTURE/codex-stdin" && \
+   grep -q 'mission_id: TEST001' "$FIXTURE/codex-stdin"; then
+  pass 'run invokes current Codex CLI interface with context on stdin'
+else
+  fail 'run invokes current Codex CLI interface with context on stdin'
+fi
+
+make_fixture
+mock_bin="$FIXTURE/mock-bin"
+mkdir "$mock_bin"
 printf '#!/usr/bin/env bash\ncat >/dev/null\nsleep 3\n' > "$mock_bin/codex"
 chmod +x "$mock_bin/codex"
 PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" run >"$TEMP_ROOT/first.out" 2>"$TEMP_ROOT/first.err" &

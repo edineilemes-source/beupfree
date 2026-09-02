@@ -73,3 +73,19 @@ Registro append-only de decisões técnicas e operacionais que precisam sobreviv
 - Contexto: duas execuções simultâneas do mesmo `mission_id` podem duplicar trabalho, enquanto logs detalhados podem vazar dados.
 - Decisão: usar diretório de lock local por `mission_id` e registrar somente timestamp, missão, ação e exit status em `.ai/logs/operations.log`.
 - Consequências: concorrência duplicada é recusada, locks obsoletos com PID inexistente são recuperados e interrupções tentam liberar o lock sem alterar falsamente o status da missão.
+
+## DEVAI001.4-D001 — GitHub como ponte persistente, com sincronização e revisão humanas
+
+- Data: 2026-09-02.
+- Status: aceita.
+- Contexto: o dogfood confirmou que uma missão escrita no GitHub chega ao executor após sincronização local, mas o executor não acessa a memória privada do ChatGPT nem administra o ciclo Git.
+- Decisão: documentar a ponte como ChatGPT → GitHub → `git pull` humano → `beupfree-agent` → Codex → relatório local → revisão e envio humanos.
+- Consequências: missão e resultados são auditáveis por diff; sincronização, resolução de conflitos, commit, push e retorno ao ChatGPT permanecem fora da autonomia do executor.
+
+## DEVAI001.4-D002 — Interface Codex CLI detectada no dogfood
+
+- Data: 2026-09-02.
+- Status: aceita; substitui a menção a `--ask-for-approval on-request` em DEVAI001.3-D002.
+- Contexto: a versão instalada de `codex exec` aceita `--sandbox workspace-write`, `-C <repo>` e prompt por stdin, mas não oferece mais `--ask-for-approval`.
+- Decisão: invocar `codex exec --sandbox workspace-write -C <repo> -` e cobrir argumentos e stdin com teste específico.
+- Consequências: o wrapper permanece compatível com a interface comprovada localmente; o sandbox, `AGENTS.md` e a missão continuam limitando a execução.

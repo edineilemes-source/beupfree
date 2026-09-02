@@ -5,7 +5,7 @@ Este arquivo contém uma única missão. Os campos abaixo são YAML simples para
 ```yaml
 mission_id: DEVAI001.4
 title: "Ponte segura ChatGPT → GitHub → BeUpFree-Agent → Codex"
-status: PENDING
+status: COMPLETED
 expected_branch: devai001-agent-workflow
 objective: "Validar e fortalecer a ponte operacional em que o ChatGPT grava uma missão no GitHub, o Codespace a recebe e o beupfree-agent executa o Codex CLI, persistindo relatório e próxima ação para revisão posterior."
 context:

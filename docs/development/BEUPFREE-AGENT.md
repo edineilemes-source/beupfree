@@ -38,20 +38,23 @@ Executa as validações e prepara o contexto, mas não inicia o Codex. Mostra mi
 ./beupfree-agent run
 ```
 
-Aceita somente missão `PENDING`, obtém um lock por `mission_id` e usa a interface instalada `codex exec`, com contexto via stdin, diretório do repositório, sandbox `workspace-write` e aprovações `on-request`. O executor não concede autorização para commit, push, merge, deploy, publicação ou operação destrutiva. Ausência do CLI é informada sem perder o contexto persistente.
+Aceita somente missão `PENDING`, obtém um lock por `mission_id` e usa a interface instalada `codex exec`, com contexto via stdin, diretório do repositório e sandbox `workspace-write`. A interface atual não expõe `--ask-for-approval`; o sandbox e as regras de `AGENTS.md` continuam sendo os gates efetivos. O executor não concede autorização para commit, push, merge, deploy, publicação ou operação destrutiva. Ausência do CLI é informada sem perder o contexto persistente.
 
 Logs operacionais mínimos ficam em `.ai/logs/operations.log`, contendo timestamp, missão, ação e exit status. Locks transitórios ficam em `.ai/locks/`. Interrupções liberam o lock quando possível, são registradas e nunca alteram a missão para `COMPLETED`.
 
-## Fluxo
+## Fluxo real via GitHub
 
 ```text
 ChatGPT
-  → CURRENT_MISSION
+  → grava CURRENT_MISSION no GitHub
+  → pessoa revisa/sincroniza a branch no Codespace (git pull)
   → beupfree-agent
   → Codex CLI
   → código/testes
   → CODEX_REPORT/NEXT_ACTION
-  → revisão
+  → pessoa revisa o diff e decide como enviar os resultados ao GitHub
 ```
 
-O executor local não possui acesso automático à memória de uma conversa específica do ChatGPT. Essa ponte será tratada em missão posterior.
+Depois da sincronização, `./beupfree-agent status` deve mostrar a missão recebida e `./beupfree-agent check` deve confirmar protocolo e branch. `./beupfree-agent run` entrega o contexto persistente ao Codex por stdin; não é necessário copiar a missão para um chat interativo do Codex.
+
+O executor não executa `git pull`, commit ou push, não abre pull request e não devolve o relatório ao ChatGPT. Essas etapas continuam humanas. Ele também não possui acesso automático à memória privada de uma conversa específica do ChatGPT: somente o conteúdo persistido e sincronizado no repositório entra no contexto.

@@ -186,7 +186,7 @@ do_run() {
   codex_path=$(command -v codex 2>/dev/null || true)
   printf 'mission_id: %s\nstatus: %s\ntitle: %s\nbranch: %s\n' "$mission" "$status" "$title" "$(git_branch)"
   printf 'context prepared: yes (%s bytes, temporary file)\n' "$(wc -c < "$context_file" | tr -d ' ')"
-  printf 'mechanism: codex exec --sandbox workspace-write --ask-for-approval on-request -C %s -\n' "$ROOT"
+  printf 'mechanism: codex exec --sandbox workspace-write -C %s -\n' "$ROOT"
   printf 'safety gates: AGENTS.md; no automatic commit, push, merge, deploy, publication, or destructive operation\n'
   if [ "$dry_run" = true ]; then
     printf 'dry-run: Codex was not started.\n'
@@ -211,7 +211,7 @@ do_run() {
   {
     printf '\nExecute the mission below. Follow AGENTS.md and CURRENT_MISSION.md exactly. The wrapper grants no authority beyond those files. Preserve all safety gates.\n\n'
     cat "$context_file"
-  } | "$codex_path" exec --sandbox workspace-write --ask-for-approval on-request -C "$ROOT" -
+  } | "$codex_path" exec --sandbox workspace-write -C "$ROOT" -
   result=$?
   release_lock
   trap - INT TERM HUP
