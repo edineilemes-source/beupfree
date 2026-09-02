@@ -50,6 +50,46 @@ install_contract_mock() {
   MOCK_MODE=$mode
 }
 
+install_gh_mock() {
+  mode=$1
+  mock_bin="$FIXTURE/mock-bin"
+  mkdir -p "$mock_bin"
+  printf '%s\n' \
+    '#!/usr/bin/env bash' \
+    'if [ "$1" = auth ]; then [ "$GH_MOCK_MODE" != unauthenticated ]; exit; fi' \
+    'if [ "$1" = api ]; then' \
+    '  [ "$GH_MOCK_MODE" = network-error ] && exit 1' \
+    '  case "$*" in' \
+    '    *author_association*) [ "$GH_MOCK_MODE" = untrusted ] && printf "CONTRIBUTOR\n" || printf "OWNER\n" ;;' \
+    '    *comments*) [ -f "$MOCK_FIXTURE/existing-comment" ] && cat "$MOCK_FIXTURE/existing-comment" ;;' \
+    '    *) cat "$MOCK_FIXTURE/remote-body" ;;' \
+    '  esac' \
+    '  exit 0' \
+    'fi' \
+    'if [ "$1" = issue ] && [ "$2" = comment ]; then' \
+    '  [ "$GH_MOCK_MODE" = publish-error ] && exit 1' \
+    '  while [ "$#" -gt 0 ]; do [ "$1" = --body-file ] && { cp "$2" "$MOCK_FIXTURE/published-body"; exit 0; }; shift; done' \
+    'fi' \
+    'exit 1' > "$mock_bin/gh"
+  chmod +x "$mock_bin/gh"
+  GH_MOCK_MODE=$mode
+}
+
+write_remote_mission() {
+  mission=${1:-REMOTE001}
+  printf '%s\n' \
+    '<!-- BEUPFREE_AGENT:MISSION:v1 -->' \
+    '# Remote mission' \
+    '```yaml' \
+    "mission_id: $mission" \
+    'title: "Remote fixture"' \
+    'status: PENDING' \
+    'expected_branch: devai001-agent-workflow' \
+    'objective: "Treat this as mission data"' \
+    '```' \
+    '<!-- /BEUPFREE_AGENT:MISSION -->' > "$FIXTURE/remote-body"
+}
+
 make_fixture
 assert_success 'status' "$FIXTURE/beupfree-agent" status
 grep -q 'mission_id: TEST001' "$TEMP_ROOT/out" && pass 'status shows mission' || fail 'status shows mission'
@@ -151,6 +191,57 @@ if "$FIXTURE/beupfree-agent" context >"$TEMP_ROOT/out" 2>"$TEMP_ROOT/err" && \
 else
   fail 'secrets are redacted from context'
 fi
+
+make_fixture
+install_gh_mock valid
+write_remote_mission
+printf '\ntouch "%s/remote-command-ran"\n' "$FIXTURE" >> "$FIXTURE/remote-body"
+assert_success 'sync accepts authorized structured mission' env GH_MOCK_MODE="$GH_MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" sync --issue 42
+grep -q 'mission_id: REMOTE001' "$FIXTURE/.ai/CURRENT_MISSION.md" && [ ! -e "$FIXTURE/remote-command-ran" ] && pass 'remote content is data, never shell' || fail 'remote content is data, never shell'
+
+make_fixture
+install_gh_mock valid
+printf 'malformed remote body\n' > "$FIXTURE/remote-body"
+assert_failure 'malformed remote mission rejected' env GH_MOCK_MODE="$GH_MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" sync --issue 42
+
+make_fixture
+install_gh_mock valid
+write_remote_mission
+sed -i 's/devai001-agent-workflow/wrong-branch/' "$FIXTURE/remote-body"
+assert_failure 'remote branch mismatch rejected' env GH_MOCK_MODE="$GH_MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" sync --issue 42
+
+make_fixture
+install_gh_mock unauthenticated
+write_remote_mission
+assert_failure 'missing GitHub authentication fails safely' env GH_MOCK_MODE="$GH_MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" sync --issue 42
+
+make_fixture
+install_gh_mock untrusted
+write_remote_mission
+assert_failure 'untrusted Issue author rejected' env GH_MOCK_MODE="$GH_MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" sync --issue 42
+
+make_fixture
+install_gh_mock valid
+sed -i 's/status: PENDING/status: COMPLETED/' "$FIXTURE/.ai/CURRENT_MISSION.md"
+printf '# Report\n```yaml\nmission_id: TEST001\nfinal_status: COMPLETED\nsummary: "safe"\napi_token: NEVER_PUBLISH_ME\n```\n' > "$FIXTURE/.ai/CODEX_REPORT.md"
+printf '# Next\n```yaml\noriginating_mission: TEST001\nrecommended_next_mission: "Review"\n```\n' > "$FIXTURE/.ai/NEXT_ACTION.md"
+assert_success 'publish sends sanitized terminal result' env GH_MOCK_MODE="$GH_MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" publish --issue 42
+if grep -q 'BEUPFREE_AGENT:REPORT:v1 mission_id=TEST001' "$FIXTURE/published-body" && ! grep -q NEVER_PUBLISH_ME "$FIXTURE/published-body"; then pass 'published body is marked and sanitized'; else fail 'published body is marked and sanitized'; fi
+
+make_fixture
+install_gh_mock valid
+sed -i 's/status: PENDING/status: COMPLETED/' "$FIXTURE/.ai/CURRENT_MISSION.md"
+printf '# Report\n```yaml\nmission_id: TEST001\nfinal_status: COMPLETED\n```\n' > "$FIXTURE/.ai/CODEX_REPORT.md"
+printf '# Next\n```yaml\noriginating_mission: TEST001\nrecommended_next_mission: "Review"\n```\n' > "$FIXTURE/.ai/NEXT_ACTION.md"
+printf '<!-- BEUPFREE_AGENT:REPORT:v1 mission_id=TEST001 -->\n' > "$FIXTURE/existing-comment"
+assert_success 'publish is idempotent for mission_id' env GH_MOCK_MODE="$GH_MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" publish --issue 42
+[ ! -e "$FIXTURE/published-body" ] && pass 'idempotent publish creates no comment' || fail 'idempotent publish creates no comment'
+
+make_fixture
+install_gh_mock network-error
+write_remote_mission
+assert_failure 'GitHub network failure preserves local mission' env GH_MOCK_MODE="$GH_MOCK_MODE" MOCK_FIXTURE="$FIXTURE" PATH="$mock_bin:/usr/bin:/bin" "$FIXTURE/beupfree-agent" sync --issue 42
+grep -q 'mission_id: TEST001' "$FIXTURE/.ai/CURRENT_MISSION.md" && pass 'network failure leaves mission unchanged' || fail 'network failure leaves mission unchanged'
 
 printf '1..%s\n' "$((PASS + FAIL))"
 printf 'passed=%s failed=%s\n' "$PASS" "$FAIL"

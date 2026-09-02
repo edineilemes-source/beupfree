@@ -13,6 +13,9 @@ MISSION_FILE="$AI_DIR/CURRENT_MISSION.md"
 REQUIRED_FILES="PROJECT_STATE.md CURRENT_MISSION.md DECISIONS.md CODEX_REPORT.md NEXT_ACTION.md"
 VALID_STATUSES="PENDING IN_PROGRESS BLOCKED COMPLETED FAILED"
 TERMINAL_STATUSES="BLOCKED COMPLETED FAILED"
+BRIDGE_MISSION_BEGIN='<!-- BEUPFREE_AGENT:MISSION:v1 -->'
+BRIDGE_MISSION_END='<!-- /BEUPFREE_AGENT:MISSION -->'
+BRIDGE_REPORT_PREFIX='<!-- BEUPFREE_AGENT:REPORT:v1 mission_id='
 
 yaml_value() {
   key=$1
@@ -33,6 +36,117 @@ redact() {
   sed -E \
     -e '/^[[:space:]-]*[A-Za-z0-9_.-]*(DATABASE_URL|TOKEN|PASSWORD|PASSWD|SECRET|API_KEY|PRIVATE_KEY)[A-Za-z0-9_.-]*[[:space:]]*[:=]/I{s/.*/[REDACTED: sensitive line]/;}' \
     -e '/affiliate[^[:space:]]*:[[:space:]]*https?:\/\//I{s#https?://[^[:space:]]+#\[REDACTED_URL\]#g;}'
+}
+
+require_gh() {
+  GH_PATH=$(command -v gh 2>/dev/null || true)
+  [ -n "$GH_PATH" ] || { printf 'ERROR: GitHub CLI is not installed or unavailable in PATH.\n' >&2; return 127; }
+  "$GH_PATH" auth status >/dev/null 2>&1 || { printf 'ERROR: GitHub CLI is not authenticated for the operational repository.\n' >&2; return 1; }
+}
+
+validate_issue_number() {
+  case "$1" in ''|*[!0-9]*) printf 'ERROR: --issue must be a positive numeric GitHub Issue number.\n' >&2; return 2 ;; esac
+  [ "$1" -gt 0 ] 2>/dev/null || { printf 'ERROR: --issue must be a positive numeric GitHub Issue number.\n' >&2; return 2; }
+}
+
+bridge_args() {
+  BRIDGE_ISSUE=
+  [ "${1:-}" = --issue ] || { printf 'ERROR: bridge command requires --issue NUMBER.\n' >&2; return 2; }
+  BRIDGE_ISSUE=${2:-}
+  [ "$#" -eq 2 ] || { printf 'ERROR: unexpected bridge arguments.\n' >&2; return 2; }
+  validate_issue_number "$BRIDGE_ISSUE"
+}
+
+extract_remote_mission() {
+  input=$1 output=$2
+  awk -v begin="$BRIDGE_MISSION_BEGIN" -v end="$BRIDGE_MISSION_END" '
+    $0 == begin { if (seen) exit 3; seen=1; inside=1; next }
+    $0 == end && inside { inside=0; closed=1; next }
+    inside { print }
+    END { if (!seen || !closed || inside) exit 2 }
+  ' "$input" > "$output"
+}
+
+validate_remote_mission() {
+  remote=$1
+  remote_mission=$(yaml_value mission_id "$remote")
+  remote_status=$(yaml_value status "$remote")
+  remote_branch=$(yaml_value expected_branch "$remote")
+  remote_title=$(yaml_value title "$remote")
+  remote_objective=$(yaml_value objective "$remote")
+  case "$remote_mission" in ''|*[!A-Za-z0-9._-]*) printf 'ERROR: remote mission_id is missing or invalid.\n' >&2; return 1 ;; esac
+  [ "$remote_status" = PENDING ] || { printf 'ERROR: remote mission status must be PENDING.\n' >&2; return 1; }
+  [ -n "$remote_title" ] && [ -n "$remote_objective" ] || { printf 'ERROR: remote mission title/objective is missing.\n' >&2; return 1; }
+  [ "$remote_branch" = "$(git_branch)" ] || { printf 'ERROR: remote expected_branch does not match the current branch.\n' >&2; return 1; }
+  local_mission=$(yaml_value mission_id "$MISSION_FILE")
+  local_status=$(yaml_value status "$MISSION_FILE")
+  report_mission=$(yaml_value mission_id "$AI_DIR/CODEX_REPORT.md")
+  report_status=$(yaml_value final_status "$AI_DIR/CODEX_REPORT.md")
+  if { [ "$remote_mission" = "$local_mission" ] && case " $TERMINAL_STATUSES " in *" $local_status "*) true;; *) false;; esac; } || \
+     { [ "$remote_mission" = "$report_mission" ] && [ "$report_status" = COMPLETED ]; }; then
+    printf 'ERROR: remote mission %s was already processed.\n' "$remote_mission" >&2
+    return 1
+  fi
+}
+
+do_sync() {
+  bridge_args "$@" || return $?
+  require_gh || return $?
+  remote_file=$(mktemp "${TMPDIR:-/tmp}/beupfree-agent-remote.XXXXXX") || return 1
+  mission_file=$(mktemp "${TMPDIR:-/tmp}/beupfree-agent-mission.XXXXXX") || { rm -f "$remote_file"; return 1; }
+  association=$($GH_PATH api "repos/{owner}/{repo}/issues/$BRIDGE_ISSUE" --jq .author_association 2>/dev/null) || {
+    printf 'ERROR: unable to read the operational GitHub Issue.\n' >&2; rm -f "$remote_file" "$mission_file"; return 1;
+  }
+  case "$association" in OWNER|MEMBER|COLLABORATOR) ;; *) printf 'ERROR: Issue author is not an authorized repository collaborator.\n' >&2; rm -f "$remote_file" "$mission_file"; return 1 ;; esac
+  $GH_PATH api "repos/{owner}/{repo}/issues/$BRIDGE_ISSUE" --jq .body > "$remote_file" 2>/dev/null || {
+    printf 'ERROR: unable to download the operational mission.\n' >&2; rm -f "$remote_file" "$mission_file"; return 1;
+  }
+  [ "$(wc -c < "$remote_file")" -le 131072 ] || { printf 'ERROR: remote mission exceeds 128 KiB.\n' >&2; rm -f "$remote_file" "$mission_file"; return 1; }
+  extract_remote_mission "$remote_file" "$mission_file" || { printf 'ERROR: remote mission markers are missing, malformed, or repeated.\n' >&2; rm -f "$remote_file" "$mission_file"; return 1; }
+  validate_remote_mission "$mission_file" || { rm -f "$remote_file" "$mission_file"; return 1; }
+  cp "$mission_file" "$MISSION_FILE" || { rm -f "$remote_file" "$mission_file"; return 1; }
+  rm -f "$remote_file" "$mission_file"
+  printf 'SYNC OK: accepted mission %s from Issue #%s.\n' "$remote_mission" "$BRIDGE_ISSUE"
+  log_action "$remote_mission" sync 0
+}
+
+do_publish() {
+  bridge_args "$@" || return $?
+  require_gh || return $?
+  mission=$(yaml_value mission_id "$AI_DIR/CODEX_REPORT.md")
+  validate_output_contract "$mission" >/dev/null || return 1
+  marker="$BRIDGE_REPORT_PREFIX$mission -->"
+  comments_file=$(mktemp "${TMPDIR:-/tmp}/beupfree-agent-comments.XXXXXX") || return 1
+  $GH_PATH api "repos/{owner}/{repo}/issues/$BRIDGE_ISSUE/comments" --paginate --jq '.[].body' > "$comments_file" 2>/dev/null || {
+    printf 'ERROR: unable to verify prior GitHub report publication.\n' >&2; rm -f "$comments_file"; return 1;
+  }
+  if grep -Fqx "$marker" "$comments_file"; then
+    rm -f "$comments_file"
+    printf 'PUBLISH OK: report for %s already exists; no duplicate comment created.\n' "$mission"
+    return 0
+  fi
+  rm -f "$comments_file"
+  body_file=$(mktemp "${TMPDIR:-/tmp}/beupfree-agent-report.XXXXXX") || return 1
+  {
+    printf '%s\n\n' "$marker"
+    printf 'Automated operational return (sanitized). Review remains required.\n'
+    section CURRENT_MISSION "$MISSION_FILE"
+    section CODEX_REPORT "$AI_DIR/CODEX_REPORT.md"
+    section NEXT_ACTION "$AI_DIR/NEXT_ACTION.md"
+  } > "$body_file"
+  $GH_PATH issue comment "$BRIDGE_ISSUE" --body-file "$body_file" >/dev/null 2>&1 || {
+    printf 'ERROR: local result is valid, but GitHub report publication failed.\n' >&2; rm -f "$body_file"; log_action "$mission" publish-failed 1; return 1;
+  }
+  rm -f "$body_file"
+  printf 'PUBLISH OK: sanitized report for %s sent to Issue #%s.\n' "$mission" "$BRIDGE_ISSUE"
+  log_action "$mission" publish 0
+}
+
+do_cycle() {
+  bridge_args "$@" || return $?
+  do_sync --issue "$BRIDGE_ISSUE" || return $?
+  do_run || return $?
+  do_publish --issue "$BRIDGE_ISSUE"
 }
 
 git_branch() {
@@ -261,7 +375,7 @@ do_run() {
 }
 
 usage() {
-  printf 'Usage: %s {status|check|context|run [--dry-run]}\n' "$PROGRAM"
+  printf 'Usage: %s {status|check|context|run [--dry-run]|sync --issue NUMBER|publish --issue NUMBER|cycle --issue NUMBER}\n' "$PROGRAM"
 }
 
 command=${1:-}
@@ -271,6 +385,9 @@ case "$command" in
   check) [ "$#" -eq 0 ] || { usage >&2; exit 2; }; do_check ;;
   context) [ "$#" -eq 0 ] || { usage >&2; exit 2; }; do_context ;;
   run) do_run "$@" ;;
+  sync) do_sync "$@" ;;
+  publish) do_publish "$@" ;;
+  cycle) do_cycle "$@" ;;
   -h|--help|help) usage ;;
   *) usage >&2; exit 2 ;;
 esac

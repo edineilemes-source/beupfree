@@ -1,6 +1,6 @@
 # BeUpFree-Agent
 
-`beupfree-agent` é o executor local do protocolo persistente em `.ai/`. Ele valida a missão, consolida contexto e, quando autorizado pelo estado da missão, inicia o Codex CLI de forma não interativa. Não usa APIs externas nem acessa conversas do ChatGPT.
+`beupfree-agent` é o executor local do protocolo persistente em `.ai/`. Ele valida a missão, consolida contexto e, quando autorizado pelo estado da missão, inicia o Codex CLI de forma não interativa. Opcionalmente usa uma GitHub Issue como mailbox operacional; nunca acessa conversas privadas do ChatGPT.
 
 Pode ser chamado da raiz ou de outro diretório pelo caminho do script. A raiz Git é resolvida a partir da localização do próprio executável.
 
@@ -50,21 +50,51 @@ Uma inconsistência retorna código não zero, descreve os campos inválidos e n
 
 Logs operacionais mínimos ficam em `.ai/logs/operations.log`, contendo timestamp, missão, ação e exit status. Locks transitórios ficam em `.ai/locks/`. Interrupções liberam o lock quando possível, são registradas e nunca alteram a missão para `COMPLETED`.
 
+## Bridge por GitHub Issue
+
+A bridge exige `gh` instalado e autenticado no repositório. A verificação suprime a saída de autenticação para não imprimir tokens. O número da Issue é sempre explícito e numérico:
+
+```bash
+./beupfree-agent sync --issue 123
+./beupfree-agent publish --issue 123
+./beupfree-agent cycle --issue 123
+```
+
+`sync` lê o corpo da Issue do repositório atual. A autoria precisa ter associação `OWNER`, `MEMBER` ou `COLLABORATOR`, e a missão deve estar entre marcadores exclusivos:
+
+~~~markdown
+<!-- BEUPFREE_AGENT:MISSION:v1 -->
+# Missão atual
+```yaml
+mission_id: EXAMPLE001
+title: "Exemplo"
+status: PENDING
+expected_branch: branch-de-trabalho
+objective: "Objetivo autorizado"
+```
+<!-- /BEUPFREE_AGENT:MISSION -->
+~~~
+
+O executor limita a entrada a 128 KiB e valida marcadores, campos obrigatórios, formato do `mission_id`, `PENDING`, branch e proteção contra missão já processada antes de substituir `CURRENT_MISSION.md`. O conteúdo nunca passa por `eval`, shell ou expansão de comandos: ele é persistido como dado e continua subordinado ao `AGENTS.md`.
+
+`publish` exige o contrato terminal local válido. Antes de comentar, procura o marcador `BEUPFREE_AGENT:REPORT:v1 mission_id=...` em todos os comentários; se já existir, termina sem duplicar. O comentário contém somente `CURRENT_MISSION`, `CODEX_REPORT` e `NEXT_ACTION` após a mesma sanitização usada no contexto, sem logs brutos ou `.env`. Falha ao consultar ou publicar no GitHub retorna erro e não altera o resultado local.
+
+`cycle` encadeia `sync` → `run` → validação terminal → `publish`. Cada etapa interrompe o ciclo em erro. O comando não faz polling, commit, push, merge, alteração da `main`, deploy, publicação de catálogo ou outra ação irreversível.
+
 ## Fluxo real via GitHub
 
 ```text
 ChatGPT
-  → grava CURRENT_MISSION no GitHub
-  → pessoa revisa/sincroniza a branch no Codespace (git pull)
-  → beupfree-agent
+  → grava missão estruturada na Issue operacional
+  → beupfree-agent cycle --issue NUMBER
   → Codex CLI
   → código/testes
-  → CODEX_REPORT/NEXT_ACTION
-  → pessoa revisa o diff e decide como enviar os resultados ao GitHub
+  → CODEX_REPORT/NEXT_ACTION sanitizados na Issue
+  → pessoa revisa o diff e mantém os gates Git/produção
 ```
 
-Depois da sincronização, `./beupfree-agent status` deve mostrar a missão recebida e `./beupfree-agent check` deve confirmar protocolo e branch. `./beupfree-agent run` entrega o contexto persistente ao Codex por stdin; não é necessário copiar a missão para um chat interativo do Codex.
+Depois de `sync`, `./beupfree-agent status` mostra a missão recebida e `./beupfree-agent check` confirma protocolo e branch. `run` entrega o contexto persistente ao Codex por stdin; não é necessário copiar a missão para um chat interativo do Codex.
 
-O executor não executa `git pull`, commit ou push, não abre pull request e não devolve o relatório ao ChatGPT. Essas etapas continuam humanas. Ele também não possui acesso automático à memória privada de uma conversa específica do ChatGPT: somente o conteúdo persistido e sincronizado no repositório entra no contexto.
+O executor não executa `git pull`, commit ou push e não abre pull request. Ele publica o retorno somente na Issue indicada; não injeta esse retorno em uma conversa do ChatGPT e não possui acesso automático à memória privada dela.
 
 A validação automática confirma somente a coerência estrutural do encerramento. A revisão humana ainda deve avaliar o diff, a veracidade do relatório, a adequação dos testes e qualquer decisão de commit, push ou pull request.

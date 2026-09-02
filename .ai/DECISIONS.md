@@ -97,3 +97,19 @@ Registro append-only de decisões técnicas e operacionais que precisam sobreviv
 - Contexto: `codex exec` podia retornar zero sem encerrar coerentemente os três arquivos operacionais, fazendo o wrapper sinalizar sucesso para uma execução incompleta.
 - Decisão: após retorno zero, validar identidade e status terminal coerente em `CURRENT_MISSION.md` e `CODEX_REPORT.md`, além da origem e recomendação explícita em `NEXT_ACTION.md`; não validar nem mascarar retornos não zero do Codex.
 - Consequências: inconsistências estruturais agora fazem `run` retornar não zero com diagnóstico, sem o wrapper inventar correções; conteúdo, diff e ações Git continuam dependendo de revisão humana.
+
+## DEVAI001.6-D001 — GitHub Issue como mailbox operacional explícita
+
+- Data: 2026-09-02.
+- Status: aceita; substitui a sincronização exclusivamente humana descrita em DEVAI001.4-D001 para o transporte da missão e do relatório.
+- Contexto: missão e retorno precisavam circular sem commits operacionais nem copiar/colar, preservando os gates humanos de código e produção.
+- Decisão: usar uma Issue numerada explicitamente; aceitar somente corpo com marcadores v1, missão `PENDING`, branch atual e autoria associada como owner/member/collaborator, e publicar comentário terminal sanitizado marcado por `mission_id`.
+- Consequências: `sync`, `publish` e `cycle` automatizam o transporte sem executar conteúdo remoto como shell; `gh` e autenticação são pré-requisitos, e qualquer falha de consulta/publicação termina de modo seguro.
+
+## DEVAI001.6-D002 — Idempotência remota e gates Git preservados
+
+- Data: 2026-09-02.
+- Status: aceita.
+- Contexto: retries após falha de rede poderiam repetir missão ou relatório, e transporte remoto não pode ampliar a autorização operacional.
+- Decisão: recusar `mission_id` terminal já processado e consultar todos os comentários pelo marcador de relatório antes de publicar; a bridge não executa polling, Git mutável, merge, deploy ou publicação real.
+- Consequências: repetir `publish` para a mesma missão não cria novo comentário; falha ao verificar idempotência impede publicação, enquanto o resultado local permanece disponível para revisão.
