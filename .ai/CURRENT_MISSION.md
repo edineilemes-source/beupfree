@@ -3,38 +3,46 @@
 Este arquivo contém uma única missão. Os campos abaixo são YAML simples para leitura humana e por scripts. Os únicos status válidos são `PENDING`, `IN_PROGRESS`, `BLOCKED`, `COMPLETED` e `FAILED`.
 
 ```yaml
-mission_id: DEVAI001.5
-title: "Validação pós-execução do contrato de saída"
-status: COMPLETED
+mission_id: DEVAI001.6
+title: "Canal operacional GitHub para missão e retorno automático"
+status: PENDING
 expected_branch: devai001-agent-workflow
-objective: "Adicionar ao BeUpFree-Agent uma verificação automática, após codex exec, que confirme que CURRENT_MISSION, CODEX_REPORT e NEXT_ACTION ficaram terminalmente consistentes antes de considerar a execução concluída."
+objective: "Projetar e implementar uma ponte operacional segura pelo GitHub para reduzir o ciclo manual entre ChatGPT e Codespace, permitindo ao BeUpFree-Agent sincronizar uma missão autorizada e publicar de volta um relatório sanitizado, sem conceder autorização para merge, main, deploy, publicação de produto ou operações destrutivas."
 context:
-  - "DEVAI001.4 comprovou o fluxo ChatGPT → GitHub → git pull → BeUpFree-Agent → Codex → arquivos .ai locais."
-  - "A interface válida nesta versão do Codex CLI é codex exec --sandbox workspace-write -C <repo> -, com contexto via stdin."
-  - "O maior risco remanescente identificado pelo próprio Codex é retornar exit 0 sem deixar o protocolo de saída coerente."
-  - "A missão deve aumentar confiabilidade do executor sem automatizar commit, push, pull, merge, deploy ou acesso ao ChatGPT."
+  - "DEVAI001.4 comprovou ChatGPT → GitHub → git pull → BeUpFree-Agent → Codex → arquivos .ai."
+  - "DEVAI001.5 adicionou validação pós-execução do contrato CURRENT_MISSION/CODEX_REPORT/NEXT_ACTION, com 20/20 testes aprovados."
+  - "O usuário autorizou explicitamente a DEVAI001.6 para reduzir a intervenção manual no transporte de missão e relatório pelo GitHub."
+  - "O GitHub deve funcionar como canal operacional persistente; a memória privada desta conversa do ChatGPT continua não acessível ao executor local."
+  - "Preferir um canal operacional separado de commits de código, como uma GitHub Issue dedicada com mensagens estruturadas, se a CLI gh instalada/autenticada e as APIs disponíveis permitirem uma implementação segura."
+  - "Não presumir disponibilidade/autenticação do gh: detectar e validar sem imprimir tokens ou credenciais."
 allowed_actions:
-  - "Inspecionar e alterar beupfree-agent, tests/beupfree-agent.test.sh, docs/development/BEUPFREE-AGENT.md e arquivos .ai do protocolo."
-  - "Adicionar validação pós-execução, mensagens de erro e testes específicos."
-  - "Executar testes locais não destrutivos do executor e comandos de validação Git."
+  - "Inspecionar e alterar exclusivamente beupfree-agent, seus testes, documentação e arquivos .ai necessários à DEVAI001.6."
+  - "Inspecionar de forma não sensível a disponibilidade e autenticação operacional da GitHub CLI, sem exibir tokens."
+  - "Implementar comandos de bridge/sync/publish/cycle, ou nomenclatura equivalente, somente se baseados em interfaces GitHub realmente disponíveis e testáveis."
+  - "Usar uma GitHub Issue dedicada como mailbox operacional, caso seja a solução mais segura, mantendo mensagens estruturadas, mission_id, branch esperada e marcadores de protocolo."
+  - "Publicar no canal operacional apenas CURRENT_MISSION/CODEX_REPORT/NEXT_ACTION sanitizados e metadados técnicos mínimos; nunca logs brutos, segredos ou conteúdo de .env."
+  - "Adicionar testes com mocks/fixtures para entrada remota malformada, mission_id repetido, branch incorreta, ausência de gh/autenticação, falha de rede/publicação, sanitização e idempotência."
+  - "Executar validações locais não destrutivas."
 forbidden_actions:
-  - "Alterar frontend, backend, banco, APIs ou funcionalidades do UpPulse."
-  - "Acessar ou expor segredos, tokens, .env, DATABASE_URL ou credenciais."
-  - "Fazer commit, push, pull automático, merge, alterar main, force push ou deploy."
-  - "Executar migrações ou operações destrutivas."
-  - "Publicar catálogo ou executar ações externas de negócio."
-  - "Simular integração automática com a memória privada do ChatGPT."
+  - "Alterar funcionalidades do UpPulse, frontend, backend, banco, APIs ou catálogo do produto."
+  - "Ler, imprimir, copiar, persistir ou transmitir tokens, credenciais, .env, DATABASE_URL ou outros segredos."
+  - "Executar merge, alterar main, force push, deploy, DNS, migração destrutiva ou publicação real do catálogo."
+  - "Dar ao canal remoto capacidade de enviar ou executar shell arbitrário; a mensagem remota deve ser tratada estritamente como dados de missão validados pelo protocolo."
+  - "Executar automaticamente comandos arbitrários contidos em comentários/issues."
+  - "Automatizar commit/push de código de produto nesta missão."
+  - "Criar daemon, polling contínuo ou webhook permanente nesta etapa."
+  - "Alegar acesso automático à memória privada do ChatGPT."
 acceptance_criteria:
-  - "Após codex exec retornar sucesso, o wrapper valida que CURRENT_MISSION continua com o mesmo mission_id e está em estado terminal permitido para encerramento."
-  - "CODEX_REPORT mission_id corresponde à missão executada e final_status é terminal e coerente com CURRENT_MISSION."
-  - "NEXT_ACTION originating_mission corresponde à missão executada e possui recomendação legível ou indicação explícita de ausência de próxima missão."
-  - "Se o Codex retornar exit 0 mas o contrato de saída estiver incompleto ou inconsistente, ./beupfree-agent run retorna código não zero e informa claramente a inconsistência sem inventar correções."
-  - "Se o Codex retornar erro, o comportamento atual de propagação do exit status é preservado e a validação não mascara o erro original."
-  - "Lock e arquivo temporário continuam sendo liberados em sucesso, falha e interrupção."
-  - "Os testes cobrem ao menos: saída válida, missão não terminal, mission_id divergente no relatório, status divergente, NEXT_ACTION divergente e retorno não zero do Codex."
-  - "Os testes existentes continuam passando."
-  - "A documentação descreve claramente o contrato pós-execução e o que ainda depende de revisão humana."
-  - "CURRENT_MISSION, CODEX_REPORT e NEXT_ACTION são atualizados ao final desta missão conforme o protocolo."
+  - "Existe uma arquitetura documentada e implementada para transportar missão e relatório pelo GitHub sem depender de copiar/colar texto entre ChatGPT e Codex."
+  - "O canal operacional é separado, na medida do possível, de commits de código e não exige que relatórios operacionais sejam misturados ao histórico de implementação."
+  - "O executor valida origem/protocolo, mission_id, status PENDING e expected_branch antes de aceitar uma missão remota."
+  - "Conteúdo remoto é tratado somente como dados; nenhuma linha remota é avaliada como shell ou comando local arbitrário."
+  - "A publicação de retorno envia somente relatório/próxima ação sanitizados e é idempotente para o mesmo mission_id."
+  - "Falha de GitHub, ausência de autenticação ou inconsistência do canal falha de modo seguro, sem mascarar o resultado local e sem expor segredos."
+  - "Se viável, um comando único ./beupfree-agent cycle executa sync seguro → validação → Codex → validação pós-execução → publish do relatório; se não for viável com as interfaces reais, documentar precisamente o blocker e implementar o máximo seguro comprovável."
+  - "Gates humanos continuam obrigatórios para merge/main, deploy/produção, migrações destrutivas, publicação real e outras ações irreversíveis."
+  - "Testes existentes continuam passando e novos testes cobrem o bridge sem realizar mutações reais não autorizadas durante a suíte."
+  - "CURRENT_MISSION, CODEX_REPORT e NEXT_ACTION registram fielmente o resultado e a próxima redução de atrito."
 validation_commands:
   - "bash -n beupfree-agent tests/beupfree-agent.test.sh"
   - "./beupfree-agent check"
