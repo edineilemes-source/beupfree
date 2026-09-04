@@ -263,131 +263,105 @@ release_lock() {
 }
 
 acquire_lock() {
-  safe_mission=$(printf '%s' "$1" | tr -c 'A-Za-z0-9._-' '_')
-  LOCK_DIR="$AI_DIR/locks/$safe_mission.lock"
-  mkdir -p "$AI_DIR/locks" || return 1
+  LOCK_DIR="$AI_DIR/.beupfree-agent.lock"
   if mkdir "$LOCK_DIR" 2>/dev/null; then
     printf '%s\n' "$$" > "$LOCK_DIR/pid"
+    trap release_lock EXIT HUP INT TERM
     return 0
   fi
-  old_pid=$(sed -n '1p' "$LOCK_DIR/pid" 2>/dev/null || true)
-  if [ -n "$old_pid" ] && ! kill -0 "$old_pid" 2>/dev/null; then
-    rm -f "$LOCK_DIR/pid" 2>/dev/null || true
-    rmdir "$LOCK_DIR" 2>/dev/null || true
-    mkdir "$LOCK_DIR" 2>/dev/null || return 1
-    printf '%s\n' "$$" > "$LOCK_DIR/pid"
-    return 0
-  fi
-  return 1
+  old_pid=$(cat "$LOCK_DIR/pid" 2>/dev/null || true)
+  case "$old_pid" in ''|*[!0-9]*) ;; *) if kill -0 "$old_pid" 2>/dev/null; then printf 'ERROR: another beupfree-agent run is active (pid %s).\n' "$old_pid" >&2; return 1; fi ;; esac
+  printf 'WARN: removing stale agent lock.\n' >&2
+  rm -f "$LOCK_DIR/pid" 2>/dev/null || return 1
+  rmdir "$LOCK_DIR" 2>/dev/null || return 1
+  mkdir "$LOCK_DIR" 2>/dev/null || return 1
+  printf '%s\n' "$$" > "$LOCK_DIR/pid"
+  trap release_lock EXIT HUP INT TERM
 }
 
 validate_output_contract() {
-  executed_mission=$1
-  errors=0
-  contract_error() { printf 'ERROR: output contract: %s\n' "$1" >&2; errors=$((errors + 1)); }
-
+  expected=$1
   current_mission=$(yaml_value mission_id "$MISSION_FILE")
   current_status=$(yaml_value status "$MISSION_FILE")
   report_mission=$(yaml_value mission_id "$AI_DIR/CODEX_REPORT.md")
   report_status=$(yaml_value final_status "$AI_DIR/CODEX_REPORT.md")
-  next_mission=$(yaml_value originating_mission "$AI_DIR/NEXT_ACTION.md")
-  next_recommendation=$(yaml_value recommended_next_mission "$AI_DIR/NEXT_ACTION.md")
-
-  [ "$current_mission" = "$executed_mission" ] || contract_error "CURRENT_MISSION mission_id is ${current_mission:-MISSING}; expected $executed_mission"
-  case " $TERMINAL_STATUSES " in
-    *" $current_status "*) ;;
-    *) contract_error "CURRENT_MISSION status is not terminal: ${current_status:-MISSING}" ;;
-  esac
-  [ "$report_mission" = "$executed_mission" ] || contract_error "CODEX_REPORT mission_id is ${report_mission:-MISSING}; expected $executed_mission"
-  case " $TERMINAL_STATUSES " in
-    *" $report_status "*) ;;
-    *) contract_error "CODEX_REPORT final_status is not terminal: ${report_status:-MISSING}" ;;
-  esac
-  if [ -n "$current_status" ] && [ -n "$report_status" ] && [ "$report_status" != "$current_status" ]; then
-    contract_error "CODEX_REPORT final_status $report_status differs from CURRENT_MISSION status $current_status"
-  fi
-  [ "$next_mission" = "$executed_mission" ] || contract_error "NEXT_ACTION originating_mission is ${next_mission:-MISSING}; expected $executed_mission"
-  [ -n "$next_recommendation" ] || contract_error 'NEXT_ACTION recommended_next_mission is missing or empty; use a readable recommendation or an explicit absence such as NONE'
-
-  if [ "$errors" -ne 0 ]; then
-    printf 'OUTPUT CONTRACT FAILED: %s inconsistency(s); protocol files were not modified by the wrapper.\n' "$errors" >&2
-    return 1
-  fi
-  printf 'OUTPUT CONTRACT OK: mission, report, and next action are terminally consistent.\n'
+  next_mission=$(yaml_value mission_id "$AI_DIR/NEXT_ACTION.md")
+  next_action=$(yaml_value recommended_next_mission "$AI_DIR/NEXT_ACTION.md")
+  errors=0
+  [ "$current_mission" = "$expected" ] || { printf 'ERROR: CURRENT_MISSION mission_id mismatch after Codex.\n' >&2; errors=$((errors+1)); }
+  case " $TERMINAL_STATUSES " in *" $current_status "*) ;; *) printf 'ERROR: CURRENT_MISSION must end BLOCKED, COMPLETED, or FAILED.\n' >&2; errors=$((errors+1)) ;; esac
+  [ "$report_mission" = "$expected" ] || { printf 'ERROR: CODEX_REPORT mission_id mismatch after Codex.\n' >&2; errors=$((errors+1)); }
+  case " $TERMINAL_STATUSES " in *" $report_status "*) ;; *) printf 'ERROR: CODEX_REPORT final_status must be terminal.\n' >&2; errors=$((errors+1)) ;; esac
+  [ "$report_status" = "$current_status" ] || { printf 'ERROR: CURRENT_MISSION and CODEX_REPORT terminal statuses differ.\n' >&2; errors=$((errors+1)); }
+  [ "$next_mission" = "$expected" ] || { printf 'ERROR: NEXT_ACTION mission_id mismatch after Codex.\n' >&2; errors=$((errors+1)); }
+  [ -n "$next_action" ] || { printf 'ERROR: NEXT_ACTION recommended_next_mission is missing.\n' >&2; errors=$((errors+1)); }
+  [ "$errors" -eq 0 ] || return 1
 }
 
 do_run() {
-  dry_run=false
-  if [ "${1:-}" = --dry-run ]; then dry_run=true; shift; fi
-  [ "$#" -eq 0 ] || { printf 'ERROR: unknown run option: %s\n' "$1" >&2; return 2; }
+  acquire_lock || return 1
   do_check || return 1
   mission=$(yaml_value mission_id "$MISSION_FILE")
   status=$(yaml_value status "$MISSION_FILE")
-  title=$(yaml_value title "$MISSION_FILE")
-  case "$status" in
-    COMPLETED|BLOCKED|FAILED) printf 'ERROR: mission %s has terminal status %s; execution refused.\n' "$mission" "$status" >&2; log_action "$mission" run-refused 1; return 1 ;;
-    PENDING) ;;
-    IN_PROGRESS) if [ "$dry_run" != true ]; then printf 'ERROR: mission %s is already IN_PROGRESS; execution refused.\n' "$mission" >&2; log_action "$mission" run-refused 1; return 1; fi ;;
-    *) printf 'ERROR: mission status must be PENDING.\n' >&2; return 1 ;;
-  esac
-
-  context_file=$(mktemp "${TMPDIR:-/tmp}/beupfree-agent-context.XXXXXX") || return 1
-  do_context > "$context_file" || { rm -f "$context_file"; return 1; }
-  codex_path=$(command -v codex 2>/dev/null || true)
-  printf 'mission_id: %s\nstatus: %s\ntitle: %s\nbranch: %s\n' "$mission" "$status" "$title" "$(git_branch)"
-  printf 'context prepared: yes (%s bytes, temporary file)\n' "$(wc -c < "$context_file" | tr -d ' ')"
-  printf 'mechanism: codex exec --sandbox workspace-write -C %s -\n' "$ROOT"
-  printf 'safety gates: AGENTS.md; no automatic commit, push, merge, deploy, publication, or destructive operation\n'
-  if [ "$dry_run" = true ]; then
-    printf 'dry-run: Codex was not started.\n'
-    log_action "$mission" run-dry-run 0
-    rm -f "$context_file"
-    return 0
+  case " $TERMINAL_STATUSES " in *" $status "*) printf 'ERROR: mission %s is terminal (%s); refusing to rerun.\n' "$mission" "$status" >&2; return 1 ;; esac
+  CODEX_PATH=$(command -v codex 2>/dev/null || true)
+  [ -n "$CODEX_PATH" ] || { printf 'ERROR: Codex CLI is not installed or unavailable in PATH.\n' >&2; return 127; }
+  prompt_file=$(mktemp "${TMPDIR:-/tmp}/beupfree-agent-prompt.XXXXXX") || return 1
+  do_context > "$prompt_file" || { rm -f "$prompt_file"; return 1; }
+  printf '\n## Execution instruction\n\nExecute the current mission autonomously. Inspect the repository before editing, preserve unrelated work, run the validations required by the mission, and finish by updating CURRENT_MISSION.md, CODEX_REPORT.md, and NEXT_ACTION.md to the truthful terminal result. Do not ask the operator for routine implementation choices; block only for the explicit gates in AGENTS.md or the mission.\n' >> "$prompt_file"
+  log_action "$mission" run-start 0
+  "$CODEX_PATH" exec --sandbox workspace-write -C "$ROOT" - < "$prompt_file"
+  codex_status=$?
+  rm -f "$prompt_file"
+  validate_output_contract "$mission"
+  contract_status=$?
+  if [ "$codex_status" -ne 0 ]; then
+    printf 'ERROR: Codex exited with status %s.\n' "$codex_status" >&2
+    log_action "$mission" run "$codex_status"
+    return "$codex_status"
   fi
-  if [ -z "$codex_path" ]; then
-    printf 'ERROR: Codex CLI is not installed or is not available in PATH. Context preparation succeeded.\n' >&2
-    log_action "$mission" run-no-codex 127
-    rm -f "$context_file"
-    return 127
-  fi
-  if ! acquire_lock "$mission"; then
-    printf 'ERROR: mission %s is already running (lock: %s).\n' "$mission" "$LOCK_DIR" >&2
-    log_action "$mission" run-locked 1
-    rm -f "$context_file"
+  if [ "$contract_status" -ne 0 ]; then
+    printf 'ERROR: Codex returned success but the output contract is invalid.\n' >&2
+    log_action "$mission" contract 1
     return 1
   fi
-  interrupted=false
-  trap 'interrupted=true; release_lock; log_action "$mission" interrupted 130; rm -f "$context_file"; exit 130' INT TERM HUP
-  {
-    printf '\nExecute the mission below. Follow AGENTS.md and CURRENT_MISSION.md exactly. The wrapper grants no authority beyond those files. Preserve all safety gates.\n\n'
-    cat "$context_file"
-  } | "$codex_path" exec --sandbox workspace-write -C "$ROOT" -
-  result=$?
-  if [ "$result" -eq 0 ]; then
-    validate_output_contract "$mission"
-    result=$?
-  fi
-  release_lock
-  trap - INT TERM HUP
-  log_action "$mission" run "$result"
-  rm -f "$context_file"
-  return "$result"
+  printf 'RUN OK: mission %s ended with status %s.\n' "$mission" "$(yaml_value status "$MISSION_FILE")"
+  log_action "$mission" run 0
+}
+
+do_dry_run() {
+  do_context || return $?
+  printf '\n[dry-run] Codex was not invoked and no files were changed.\n'
 }
 
 usage() {
-  printf 'Usage: %s {status|check|context|run [--dry-run]|sync --issue NUMBER|publish --issue NUMBER|cycle --issue NUMBER}\n' "$PROGRAM"
+  cat <<'EOF'
+Usage: ./beupfree-agent <command>
+
+Commands:
+  status                 Show mission, branch, Git state, and protocol files.
+  check                  Validate protocol structure and safety preconditions.
+  context                Print the exact context bundle that would be sent to Codex.
+  run                    Execute the current mission with Codex CLI.
+  dry-run                Validate and print context without invoking Codex.
+  sync --issue NUMBER    Accept one authorized PENDING mission from a GitHub Issue.
+  publish --issue NUMBER Publish the sanitized terminal report to the GitHub Issue.
+  cycle --issue NUMBER   sync -> run -> publish; stops immediately on any failure.
+  help                   Show this help.
+EOF
 }
 
-command=${1:-}
-if [ "$#" -gt 0 ]; then shift; fi
-case "$command" in
-  status) [ "$#" -eq 0 ] || { usage >&2; exit 2; }; do_status ;;
-  check) [ "$#" -eq 0 ] || { usage >&2; exit 2; }; do_check ;;
-  context) [ "$#" -eq 0 ] || { usage >&2; exit 2; }; do_context ;;
-  run) do_run "$@" ;;
+cmd=${1:-help}
+shift 2>/dev/null || true
+case "$cmd" in
+  status) [ "$#" -eq 0 ] || { printf 'ERROR: status takes no arguments.\n' >&2; exit 2; }; do_status ;;
+  check) [ "$#" -eq 0 ] || { printf 'ERROR: check takes no arguments.\n' >&2; exit 2; }; do_check ;;
+  context) [ "$#" -eq 0 ] || { printf 'ERROR: context takes no arguments.\n' >&2; exit 2; }; do_context ;;
+  run) [ "$#" -eq 0 ] || { printf 'ERROR: run takes no arguments.\n' >&2; exit 2; }; do_run ;;
+  dry-run) [ "$#" -eq 0 ] || { printf 'ERROR: dry-run takes no arguments.\n' >&2; exit 2; }; do_dry_run ;;
   sync) do_sync "$@" ;;
   publish) do_publish "$@" ;;
   cycle) do_cycle "$@" ;;
-  -h|--help|help) usage ;;
-  *) usage >&2; exit 2 ;;
+  help|-h|--help) usage ;;
+  *) printf 'ERROR: unknown command: %s\n' "$cmd" >&2; usage >&2; exit 2 ;;
 esac
