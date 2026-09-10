@@ -87,3 +87,36 @@ test("guard HTTP bloqueia admin na demo e preserva o comportamento normal", asyn
     normalServer.close();
   }
 });
+
+test("guard mantém superfícies protegidas mas libera somente clique do catálogo operacional homologado", async () => {
+  const env = {
+    PUBLIC_DEMO_MODE: "true",
+    UPPULSE_PUBLIC_CATALOG_SOURCE: "operational",
+    UPPULSE_PUBLIC_CATALOG_APPROVED: "true",
+    AWIN_CURATOR_DATABASE_URL: "configured",
+  };
+  const guard = createPublicDemoGuard(env);
+  let clickContinued = false;
+  guard(
+    { path: "/api/click/offer-1" } as any,
+    {} as any,
+    () => { clickContinued = true; },
+  );
+  assert.equal(clickContinued, true);
+
+  let statusCode: number | undefined;
+  let body: unknown;
+  let adminContinued = false;
+  const response = {
+    status(code: number) { statusCode = code; return this; },
+    json(value: unknown) { body = value; return this; },
+  } as any;
+  guard(
+    { path: "/api/admin/probe" } as any,
+    response,
+    () => { adminContinued = true; },
+  );
+  assert.equal(adminContinued, false);
+  assert.equal(statusCode, 404);
+  assert.deepEqual(body, { error: "Recurso não disponível" });
+});

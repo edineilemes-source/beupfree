@@ -13,6 +13,7 @@ import heroBgUrl from "@assets/fundo_rascunho_be_up_1783981500992.png";
 import {
   CatalogProduct,
   CatalogFilters,
+  CatalogFacets,
   MultiFilterKey,
   EMPTY_FILTERS,
   applyFilters,
@@ -40,6 +41,12 @@ import {
 
 interface ProductsResponse {
   total: number;
+  limit?: number;
+  offset?: number;
+  serverDriven?: boolean;
+  catalogSource?: "demo" | "operational";
+  demonstrative?: boolean;
+  facets?: CatalogFacets;
   products: CatalogProduct[];
 }
 
@@ -179,6 +186,7 @@ function selectHeroProducts(products: CatalogProduct[]): CatalogProduct[] {
 }
 
 function PromoTile({ product }: { product: CatalogProduct }) {
+  const demonstrative = product.demonstrative ?? product.bestOffer?.demonstrative ?? PUBLIC_DEMO_MODE;
   const price = priceOf(product);
   const oldPrice = product.bestOffer?.originalPrice
     ? parseFloat(product.bestOffer.originalPrice)
@@ -186,7 +194,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
   const discount = discountOf(product);
   const favoriteProduct = toFavoriteProduct(product);
   const badges = getProductBadges(favoriteProduct);
-  const offerSource = publicOfferSource(product.bestOffer?.marketplaceName, product.bestOffer?.sellerName);
+  const offerSource = publicOfferSource(product.bestOffer?.marketplaceName, product.bestOffer?.sellerName, demonstrative);
   const ratingText = product.averageRating != null && product.averageRating > 0
     ? `⭐ ${product.averageRating.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}${product.totalReviews ? ` (${product.totalReviews.toLocaleString("pt-BR")})` : ""}`
     : "";
@@ -214,7 +222,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
       </div>
 
       <div className="mt-4 flex flex-1 flex-col">
-        {PUBLIC_DEMO_MODE && (
+        {demonstrative && (
           <div className="mb-2">
             <Badge className="bg-slate-900 text-[10px] text-white">
               {DEMO_PRODUCT_LABEL}
@@ -254,11 +262,11 @@ function PromoTile({ product }: { product: CatalogProduct }) {
           size="sm"
           className="mt-3 w-full"
           onClick={() => {
-            if (PUBLIC_DEMO_MODE) requestDemoProductNotice(product.bestOffer?.referenceUrl ?? undefined);
+            if (demonstrative) requestDemoProductNotice(product.bestOffer?.referenceUrl ?? undefined);
             else if (product.bestOffer?.affiliateUrl) window.open(product.bestOffer.affiliateUrl, "_blank", "noopener,noreferrer");
           }}
         >
-          {PUBLIC_DEMO_MODE ? "Ver referência" : "Ver oferta"}
+          {demonstrative ? "Ver referência" : "Ver oferta"}
         </Button>
       </div>
     </div>
@@ -268,6 +276,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
 
 function Hero({ products }: { products: CatalogProduct[] }) {
   const featured = useMemo(() => selectHeroProducts(products), [products]);
+  const demonstrative = products[0]?.demonstrative ?? PUBLIC_DEMO_MODE;
 
   return (
     <section
@@ -293,11 +302,11 @@ function Hero({ products }: { products: CatalogProduct[] }) {
             className="relative text-[40px] font-extrabold italic leading-[0.95] tracking-normal text-white"
             data-testid="text-hero-title"
           >
-            {PUBLIC_DEMO_MODE ? "PRODUTOS" : "TÊNIS"}
+            {demonstrative ? "PRODUTOS" : "TÊNIS"}
             <br />
-            <span style={{ color: NEON }}>{PUBLIC_DEMO_MODE ? "PARA" : "ESPORTIVOS"}</span>
+            <span style={{ color: NEON }}>{demonstrative ? "PARA" : "ESPORTIVOS"}</span>
             <br />
-            {PUBLIC_DEMO_MODE ? "EXPLORAR" : "EM PROMOÇÃO"}
+            {demonstrative ? "EXPLORAR" : "EM PROMOÇÃO"}
           </h1>
         </div>
 
@@ -377,16 +386,25 @@ export default function CatalogV2() {
     setPage(boundedPage);
   };
 
-  const { data, isLoading } = useQuery<ProductsResponse>({
-    queryKey: ["/api/products", "catalog-v2"],
+  const { data, isLoading, isError } = useQuery<ProductsResponse>({
+    queryKey: ["/api/products", "catalog-v2", page, sortMode, query, filters],
     queryFn: async () => {
-      const res = await fetch("/api/products?limit=5000");
+      const params = new URLSearchParams({limit:String(PAGE_SIZE),offset:String((page-1)*PAGE_SIZE),sort:({"maior-desconto":"discount-desc","relevantes":"recommended","menor-preco":"price-asc","recentes":"recent-desc"} as const)[sortMode]});
+      if(query)params.set("q",query);
+      for(const [key,values] of Object.entries(filters))if(Array.isArray(values)&&values.length)params.set(key,values.join(","));
+      if(filters.price){params.set("priceMin",String(filters.price[0]));params.set("priceMax",String(filters.price[1]));}
+      const res = await fetch(`/api/products?${params}`);
       if (!res.ok) throw new Error("Falha ao carregar produtos");
-      return (await res.json()) as ProductsResponse;
+      const response=(await res.json()) as ProductsResponse;
+      if(response.serverDriven)return response;
+      const fallback=await fetch("/api/products?limit=5000");
+      if(!fallback.ok)throw new Error("Falha ao carregar catálogo demonstrativo");
+      return (await fallback.json()) as ProductsResponse;
     },
   });
 
   const products = useMemo(() => data?.products ?? [], [data]);
+  const catalogDemonstrative = data?.demonstrative ?? products[0]?.demonstrative ?? PUBLIC_DEMO_MODE;
   const favoriteProducts = useMemo<FavoriteProduct[]>(
     () => products.map(toFavoriteProduct),
     [products],
@@ -404,10 +422,12 @@ export default function CatalogV2() {
         : products.filter((product) => matchesQuery(product, queryTokens)),
     [products, queryTokens],
   );
-  const facets = useMemo(() => computeCrossFacets(searched, filters), [searched, filters]);
-  const filtered = useMemo(() => applyFilters(searched, filters), [searched, filters]);
+  const serverDriven=data?.serverDriven===true;
+  const facets = useMemo(() => serverDriven&&data?.facets?data.facets:computeCrossFacets(searched, filters), [serverDriven,data?.facets,searched, filters]);
+  const filtered = useMemo(() => serverDriven?products:applyFilters(searched, filters), [serverDriven,products,searched, filters]);
   const sorted = useMemo(() => {
     const next = [...filtered];
+    if(serverDriven)return next;
 
     if (sortMode === "maior-desconto") {
       return next.sort((a, b) => discountOf(b) - discountOf(a));
@@ -426,12 +446,13 @@ export default function CatalogV2() {
     }
 
     return next;
-  }, [filtered, sortMode]);
+  }, [filtered, sortMode,serverDriven]);
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const resultTotal=serverDriven?(data?.total??0):sorted.length;
+  const totalPages = Math.max(1, Math.ceil(resultTotal / PAGE_SIZE));
   const visible = useMemo(
-    () => sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [page, sorted],
+    () => serverDriven?sorted:sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [page, sorted,serverDriven],
   );
 
   const toggle = (key: MultiFilterKey, value: string) => {
@@ -469,7 +490,7 @@ export default function CatalogV2() {
       <Hero products={products} />
 
       <main className="flex-1">
-        {PUBLIC_DEMO_MODE && (
+        {catalogDemonstrative && (
           <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-950" role="note" data-testid="demo-price-notice">
             <strong>Catálogo demonstrativo.</strong> {DEMO_PRICE_NOTICE}
           </div>
@@ -481,7 +502,7 @@ export default function CatalogV2() {
                 <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
                   <Tag className="h-3.5 w-3.5" />
                 </span>
-                {query ? `Resultados para "${query}"` : PUBLIC_DEMO_MODE ? "Produtos demonstrativos" : "Produtos com desconto"}
+                {query ? `Resultados para "${query}"` : catalogDemonstrative ? "Produtos demonstrativos" : "Produtos com desconto"}
               </h2>
               {query && (
                 <button
@@ -499,7 +520,7 @@ export default function CatalogV2() {
 
             <div className="flex flex-wrap items-center gap-4">
               <p className="text-xs text-muted-foreground" data-testid="text-catalog-count">
-                {filtered.length} {filtered.length === 1 ? "produto" : "produtos"}
+                {resultTotal} {resultTotal === 1 ? "produto" : "produtos"}
               </p>
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 Ordenar por:
@@ -512,7 +533,7 @@ export default function CatalogV2() {
                   <option value="maior-desconto">Maior desconto</option>
                   <option value="relevantes">Mais relevantes</option>
                   <option value="menor-preco">Menor preço</option>
-                  {!PUBLIC_DEMO_MODE && <option value="recentes">Mais recentes</option>}
+                  {!catalogDemonstrative && <option value="recentes">Mais recentes</option>}
                 </select>
               </label>
             </div>
@@ -535,6 +556,8 @@ export default function CatalogV2() {
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
+            ) : isError ? (
+              <Card className="p-8 text-center"><Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground"/><h2 className="mb-2 text-lg font-medium">Não foi possível carregar o catálogo</h2><p className="text-muted-foreground">Tente novamente em instantes.</p></Card>
             ) : products.length === 0 ? (
               <Card className="p-8 text-center">
                 <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
@@ -542,7 +565,7 @@ export default function CatalogV2() {
                   Nenhum produto disponível ainda
                 </h2>
                 <p className="text-muted-foreground">
-                  {PUBLIC_DEMO_MODE
+                  {catalogDemonstrative
                     ? "O snapshot demonstrativo ainda não possui produtos publicados."
                     : "Nosso catálogo está sendo atualizado. Volte em breve para conferir as melhores ofertas!"}
                 </p>
@@ -586,6 +609,7 @@ export default function CatalogV2() {
                       averageRating={product.averageRating}
                       totalReviews={product.totalReviews}
                       lastSeenAt={product.bestOffer?.lastSeenAt}
+                      demonstrative={product.demonstrative ?? product.bestOffer?.demonstrative ?? catalogDemonstrative}
                     />
                   ))}
                 </div>

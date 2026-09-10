@@ -6,8 +6,9 @@ import { readFileSync } from "node:fs";
 import { parseAwinCsv } from "./csv";
 import { analyzeAwinFeed } from "./dryRun";
 import { openGzipFile, sanitizeFeedLocation } from "./input";
-import { isInvalidAwinItem, isValidAwinGtin, normalizeAwinItem, normalizeCurrency, parseAwinBoolean } from "./normalize";
+import { isInvalidAwinItem, isValidAwinGtin, normalizeAwinItem, normalizeCurrency, parseAwinBoolean, parseAwinNumber } from "./normalize";
 import { createAwinIdentitySnapshot, reconcileAwinItem } from "./reconcile";
+import { assertAwinSourceBatch } from "./sourceBatch";
 
 const csv = readFileSync(new URL("./fixtures/sample.csv", import.meta.url), "utf8");
 
@@ -65,6 +66,27 @@ test("preço e moeda inválidos tornam a linha inválida; booleanos são seguros
   assert.deepEqual(parseAwinBoolean("talvez"), null);
   assert.equal(normalizeCurrency("BRL"), "BRL");
   assert.equal(normalizeCurrency("REAL"), null);
+});
+
+test("parser monetário aceita formatos Awin localizados sem parsing permissivo", () => {
+  assert.equal(parseAwinNumber("R$ 1.234,56"), 1234.56);
+  assert.equal(parseAwinNumber("1234,56"), 1234.56);
+  assert.equal(parseAwinNumber("1234.56"), 1234.56);
+  assert.equal(parseAwinNumber("1.234,56 BRL"), 1234.56);
+  assert.equal(parseAwinNumber("1234.56 BRL"), 1234.56);
+  assert.equal(parseAwinNumber(""), null);
+  assert.equal(parseAwinNumber(null), null);
+  for (const invalid of ["R$ 12x", "1,234.56", "1.23.4,56", "R$ 1,00 BRL", "BRL 10", "10 reais", "--1"]) {
+    assert.equal(parseAwinNumber(invalid), null, invalid);
+  }
+});
+
+test("product_price_old localizado é preservado na Offer normalizada", async () => {
+  const [source] = await parsed();
+  source.raw.product_price_old = "R$ 1.234,56";
+  const item = normalizeAwinItem(source, { feedId: "fixture" });
+  assert.ok(!isInvalidAwinItem(item));
+  assert.equal(item.offer.prices.old, 1234.56);
 });
 
 test("produto agrupa tamanhos, variantes e ofertas permanecem distintas", async () => {
@@ -158,4 +180,14 @@ test("sanitização não vaza API key nem query da URL do feed", () => {
   const sanitized = sanitizeFeedLocation(`https://feeds.example/path/${secret}.csv.gz?apiKey=${secret}`);
   assert.doesNotMatch(sanitized, new RegExp(secret));
   assert.doesNotMatch(sanitized, /apiKey/);
+});
+
+test("gate reutilizável fecha lote por merchant, feed e contagem", async () => {
+  const [source] = await parsed();
+  source.raw.data_feed_id = "46605";
+  const item = normalizeAwinItem(source, { feedId: "46605" });
+  assert.ok(!isInvalidAwinItem(item));
+  assert.doesNotThrow(() => assertAwinSourceBatch([item], { merchantId: "42", feedId: "46605", expectedCount: 1 }));
+  assert.throws(() => assertAwinSourceBatch([item], { merchantId: "17893", feedId: "46605", expectedCount: 1 }), /MERCHANT_MISMATCH/);
+  assert.throws(() => assertAwinSourceBatch([item], { merchantId: "42", feedId: "46605", expectedCount: 2 }), /COUNT_MISMATCH/);
 });

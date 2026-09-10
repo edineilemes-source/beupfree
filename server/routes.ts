@@ -38,7 +38,7 @@ import {
   shouldStartExternalScheduler,
 } from "./publicDemo";
 import { createCatalogPreviewRouter } from "./catalogPreview/routes";
-import { operationalPublicCatalogHandler } from "./publicCatalog/operational";
+import { operationalPublicAffiliateClickHandler, operationalPublicCatalogHandler, operationalPublicProductDetailHandler } from "./publicCatalog/operational";
 
 registerCollector(["mercadolivre", "mercado-livre"], mercadoLivreCollector);
 
@@ -456,6 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           averageRating: row.average_rating != null ? parseFloat(row.average_rating) : null,
           totalReviews: parseInt(String(row.total_reviews ?? 0)),
           offersCount: parseInt(String(row.offers_count ?? 0)),
+          demonstrative: isPublicDemoMode(),
           bestOffer: hasOffer ? (isPublicDemoMode() ? sanitizeDemoOffer({
             id: row.offer_id,
             currentPrice: row.current_price,
@@ -483,13 +484,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }) : null,
         };
       });
-      res.json({ total: totalCount, products: result });
+      res.json({ total: totalCount, catalogSource: "demo", demonstrative: isPublicDemoMode(), products: result });
     } catch (error: any) {
       console.error("Erro ao listar produtos:", error);
       res.status(500).json({ error: error.message });
     }
   });
 
+  app.get("/api/products/:id", operationalPublicProductDetailHandler);
   app.get("/api/products/:id", async (req, res) => {
     try {
       const product = await storage.getProduct(req.params.id);
@@ -502,6 +504,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         ...product,
+        catalogSource: "demo",
+        demonstrative: isPublicDemoMode(),
         images,
         brand: brandData,
         category: categoryData,
@@ -523,6 +527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ============ PUBLIC: AFFILIATE CLICK TRACKING ============
 
+  app.get("/api/click/:offerId", operationalPublicAffiliateClickHandler);
   app.get("/api/click/:offerId", async (req, res) => {
     try {
       const offer = await storage.getOffer(req.params.offerId);

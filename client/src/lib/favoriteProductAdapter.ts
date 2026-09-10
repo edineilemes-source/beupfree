@@ -25,6 +25,7 @@ export interface FavoriteProductCardSource {
   totalReviews?: number;
   promotionType?: string;
   soldOut?: boolean;
+  demonstrative?: boolean;
 }
 
 export type FavoriteProductSource = CatalogProduct | FavoriteProductCardSource;
@@ -53,6 +54,7 @@ export function toFavoriteProduct(source: FavoriteProductSource): FavoriteProduc
       freeShipping: source.bestOffer?.freeShipping ?? false,
       averageRating: source.averageRating,
       totalReviews: source.totalReviews,
+      demonstrative: source.demonstrative ?? source.bestOffer?.demonstrative,
     };
   }
 
@@ -84,5 +86,6 @@ export function toFavoriteProduct(source: FavoriteProductSource): FavoriteProduc
     totalReviews: source.totalReviews,
     promotionType: source.promotionType,
     soldOut: source.soldOut,
+    demonstrative: source.demonstrative,
   };
 }
