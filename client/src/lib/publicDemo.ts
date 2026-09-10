@@ -12,5 +12,10 @@ export function publicOfferSource(
   demoMode = PUBLIC_DEMO_MODE,
 ): string {
   if (demoMode) return DEMO_STORE_LABEL;
-  return [marketplaceName?.trim(), sellerName?.trim()].filter(Boolean).join(" · ");
+  const names = Array.from(new Set(
+    [marketplaceName?.trim(), sellerName?.trim()].filter(
+      (value): value is string => Boolean(value),
+    ),
+  ));
+  return names.length ? `Loja: ${names.join(" · ")}` : "";
 }

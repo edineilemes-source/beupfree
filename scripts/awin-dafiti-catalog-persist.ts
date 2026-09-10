@@ -1,3 +1,4 @@
+import "dotenv/config";
 import pg from "pg";
 import { classifyAudience } from "../server/integrations/awin/dafitiCuration";
 import { CATALOG_CLASSIFIER_VERSION,CATALOG_NORMALIZER_VERSION,assertOperationalCatalogInvariants,auditAffiliateUrl,mapEligibilityToOperationalState,normalizeCatalogColour,normalizeCatalogSize,validatePromotion,type PreparedCatalogProduct } from "../server/integrations/awin/operationalCatalog";
