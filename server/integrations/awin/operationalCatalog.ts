@@ -1,7 +1,7 @@
 import type { Audience } from "./dafitiCuration";
 import type { CatalogEligibility, ProductActivity, ProductStyle, ProductUniverse, TaxonomyConfidence } from "./productTaxonomy";
 
-export const CATALOG_CLASSIFIER_VERSION = "uppulse-taxonomy-v1";
+export const CATALOG_CLASSIFIER_VERSION = "uppulse-taxonomy-v3";
 export const CATALOG_NORMALIZER_VERSION = "uppulse-normalizer-v1";
 export type CatalogOperationalState = "CATALOG_ELIGIBLE"|"QUARANTINED"|"OUT_OF_SCOPE"|"PUBLISHED"|"PAUSED";
 export type NormalizationStatus = "NORMALIZED_SAFE"|"RAW_ONLY"|"SUSPICIOUS";
