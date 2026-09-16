@@ -18,3 +18,24 @@ test("CLI exige conexão explícita, staging, confirmação, merchant e versões
 test("CLI rejeita host administrativo divergente e não usa DATABASE_URL implícita",()=>{const args=["--mode=staging","--confirm-staging","--merchant=17697","--classifier-version=v1","--normalizer-version=n1"];assert.throws(()=>validatePersistenceInvocation(args,{DATABASE_URL:"postgres://x@y/postgres",AWIN_CATALOG_EXPECTED_HOST:"y"}),/ADMIN_DATABASE_URL_REQUIRED/);assert.throws(()=>validatePersistenceInvocation(args,{AWIN_CATALOG_ADMIN_DATABASE_URL:"postgres://x@wrong/postgres",AWIN_CATALOG_EXPECTED_HOST:"right"}),/HOST_MISMATCH/);});
 test("CLI identifica URL administrativa malformada sem ecoar seu conteúdo",()=>{const args=["--mode=staging","--confirm-staging","--merchant=17893","--classifier-version=v1","--normalizer-version=n1"];assert.throws(()=>validatePersistenceInvocation(args,{AWIN_CATALOG_ADMIN_DATABASE_URL:"postgresql://user:secret-db.example.test:5432/postgres",AWIN_CATALOG_EXPECTED_HOST:"db.example.test"}),/^Error: ADMIN_DATABASE_URL_INVALID$/);});
 test("repository contabiliza primeira carga e reimport idêntico sem UPDATE",async()=>{let insertCalls=0;const client={query:async(sql:string)=>{if(sql.includes("SELECT count(*)"))return {rows:[{count:0}],rowCount:1};insertCalls++;return {rows:[],rowCount:insertCalls===1?1:0};}} as any;const classification={productId:"p",providerId:"cp",merchantId:"m",universe:"SNEAKER_CONFIRMED" as const,style:"LIFESTYLE" as const,activities:["GENERAL" as const],confidence:"HIGH" as const,reasonCodes:[],operationalState:"CATALOG_ELIGIBLE" as const,classifierVersion:"v1",classifiedAt:"2026-08-25T00:00:00Z",sourceEvidence:{}};assert.deepEqual(await persistClassifications(client,[classification]),{seen:1,created:1,unchanged:0,invalid:0});assert.deepEqual(await persistClassifications(client,[classification]),{seen:1,created:0,unchanged:1,invalid:0});const normalization={variantId:"v",sizeRaw:"40",sizeNormalized:40,sizeStatus:"NORMALIZED_SAFE" as const,colourRaw:"Preto",colourNormalized:["preto"],colourStatus:"NORMALIZED_SAFE" as const,normalizerVersion:"n1",normalizedAt:"2026-08-25T00:00:00Z",reasonCodes:[]};assert.deepEqual(await persistNormalizations(client,[normalization]),{seen:1,created:0,unchanged:1,invalid:0});});
+
+test("v3 mantém desconto obrigatório e consistente na elegibilidade",async()=>{
+ const {classifyProductTaxonomy,classifyCatalogEligibility}=await import("./productTaxonomy");
+ const taxonomy=classifyProductTaxonomy({name:"Tênis Adidas",merchantCategory:"Calçados"});
+ for(const [previousPrice,currentPrice,discountPercent,eligible] of [[399,299,25.063,true],[399,399,0,false],[399,499,0,false],[0,299,25,false],[399,299,50,false]] as const){
+  const promotion=validatePromotion({previousPrice,currentPrice,discountPercent,currency:"BRL"});
+  const result=classifyCatalogEligibility(taxonomy,{promotionConfirmed:promotion.valid,validCurrentPrice:currentPrice>0,validOldPrice:previousPrice>0,discountConsistent:promotion.valid,imageAvailable:true,brandAvailable:true,affiliateAvailable:true,inStock:true,identitySufficient:true});
+  assert.equal(taxonomy.universe,"SNEAKER_CONFIRMED");assert.equal(result.status==="IN_SCOPE_CONFIRMED",eligible);
+ }
+});
+test("classification-only grava apenas classificações; dry-run não grava nada",async()=>{
+ const {persistCatalogWrites}=await import("../../../scripts/awin-dafiti-catalog-persist");
+ const queries:string[]=[];
+ const client={query:async(sql:string)=>{queries.push(sql);return {rows:[{count:0}],rowCount:1};}} as any;
+ const classification={productId:"p",providerId:"cp",merchantId:"m",universe:"SNEAKER_CONFIRMED" as const,style:"LIFESTYLE" as const,activities:["GENERAL" as const],confidence:"HIGH" as const,reasonCodes:[],operationalState:"CATALOG_ELIGIBLE" as const,classifierVersion:"uppulse-taxonomy-v3",classifiedAt:"2026-09-14T00:00:00Z",sourceEvidence:{}};
+ const normalization={variantId:"v",sizeRaw:"40",sizeNormalized:40,sizeStatus:"NORMALIZED_SAFE" as const,colourRaw:"Preto",colourNormalized:["preto"],colourStatus:"NORMALIZED_SAFE" as const,normalizerVersion:"n1",normalizedAt:"2026-09-14T00:00:00Z",reasonCodes:[]};
+ const result=await persistCatalogWrites(client,[classification],[normalization],true,false);
+ assert.equal(result.classifications.created,1);assert.equal(result.normalizations,null);
+ assert.equal(queries.length,2);assert.ok(queries.every(sql=>sql.includes("product_catalog_classifications")));
+ queries.length=0;await persistCatalogWrites(client,[classification],[normalization],true,true);assert.deepEqual(queries,[]);
+});
