@@ -183,3 +183,62 @@ test("V1.1 multi-letter Roman generations keep order independence and conflicts"
   assert.equal(match(parse({name: "Umbro Techno II Campo"}), parse({name: "Umbro Techno III Campo"})).masterDecision, "NO_MATCH");
   assert.equal(parse({name: "Puma X Ray 2 Square BDP II Branco"}).version, "2");
 });
+
+const numericAmbiguityPairs: Array<[string, string, string]> = [
+  ["PID-0226", "Tênis Olympikus Venus 3 Feminino Laranja", "Tênis Olympikus Venus 3 Feminino Chumbo/Laranja 34"],
+  ["PID-0230", "Tênis Fila Ride 2 Feminino Bege", "Tênis Feminino Fila Ride 2 1285710"],
+  ["PID-0235", "Tênis Olympikus Jogging 101", "Tênis Olympikus Jogging 101 SE 36 Bege"],
+  ["PID-0208 HUMAN NO must not become automatic", "Chuteira Penalty Se7e Pro Molix Y-1 Society Vermelha e Preta", "Chuteira Penalty Society Brasil 70 Pro Y-1 Branca e Preta"],
+  ["additional number outside shoe sizes", "Fila Example 101", "Fila Example 101 999"],
+  ["additional repeated number", "Fila Example 101", "Fila Example 101 101"],
+  ["additional numbers on an unrelated model", "Fila Alpha 101", "Fila Beta 101 999"],
+];
+for (const [label, left, right] of numericAmbiguityPairs) test(`V1.2 numeric ambiguity: ${label}`, () => {
+  const a = parse({ name: left }), b = parse({ name: right });
+  const before = JSON.stringify([a, b]);
+  const result = match(a, b);
+  assert.equal(result.masterDecision, "REVIEW");
+  assert.notEqual(result.variantDecision, "AUTO_MATCH");
+  assert.ok(result.master.reasons.includes("AMBIGUOUS_ADDITIONAL_MODEL_NUMBER"));
+  assert.deepEqual(result.master.conflicts, []);
+  assert.deepEqual(match(b, a), result);
+  assert.equal(JSON.stringify([a, b]), before, "numeric evidence must not be removed or mutated");
+});
+
+const numericConflictPairs: Array<[string, string, string]> = [
+  ["explicit versions", "New Balance Evoz 1080 V3", "New Balance Evoz 1080 999 V4"],
+  ["V3 versus V4", "New Balance Evoz V3", "New Balance Evoz V4"],
+  ["27 versus 28", "Asics Gel Cumulus 27", "Asics Gel Cumulus 28"],
+  ["different numeric models", "New Balance 480", "New Balance 1080"],
+  ["shared number cannot mask replacement", "Fila Example 101 27", "Fila Example 101 28"],
+  ["multiplicity cannot mask replacement", "Fila Example 101 101", "Fila Example 101 999 999"],
+  ["brand conflict", "Fila Example 101", "Asics Example 101 999"],
+  ["type conflict", "Tênis Fila Example 101", "Chinelo Fila Example 101 999"],
+  ["qualifier conflict", "Nike Example 101 Low", "Nike Example 101 999 Mid"],
+];
+for (const [label, left, right] of numericConflictPairs) test(`V1.2 preserves conflict: ${label}`, () => {
+  const a = parse({ name: left }), b = parse({ name: right });
+  const result = match(a, b);
+  assert.equal(result.masterDecision, "NO_MATCH");
+  assert.equal(result.variantDecision, "NO_MATCH");
+  assert.ok(result.master.conflicts.length);
+  assert.deepEqual(match(b, a), result);
+});
+
+test("V1.2 preserves unclassified numbers and SE in the parse", () => {
+  assert.deepEqual(parse({ name: "Tênis Olympikus Venus 3 Feminino Chumbo/Laranja 34" }).modelTokens,
+    ["3", "34", "chumbo", "laranja", "venus"]);
+  assert.deepEqual(parse({ name: "Tênis Feminino Fila Ride 2 1285710" }).modelTokens,
+    ["1285710", "2", "ride"]);
+  const jogging = parse({ name: "Tênis Olympikus Jogging 101 SE 36 Bege" });
+  assert.deepEqual(jogging.modelTokens, ["101", "36", "jogging"]);
+  assert.deepEqual(jogging.technicalQualifiers, ["se"]);
+  assert.equal(jogging.variant.size, null);
+  assert.equal(jogging.variant.mpn, null);
+});
+
+test("V1.2 identical numeric evidence stays automatic; missing evidence stays review", () => {
+  const a = parse({ name: "Fila Example 101 999 Preto" });
+  assert.equal(match(a, parse({ name: "Fila Example 999 101 Branco" })).masterDecision, "AUTO_MATCH");
+  assert.equal(match(a, parse({ name: "Fila Example" })).masterDecision, "REVIEW");
+});

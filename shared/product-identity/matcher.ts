@@ -9,6 +9,8 @@ export interface DecisionEvidence {
   conflicts: string[];
 }
 const equal = (a: string[], b: string[]) => [...a].sort().join("|") === [...b].sort().join("|");
+const isStrictSubmultiset = (a: string[], b: string[]) => a.length < b.length &&
+  a.every(n => a.filter(value => value === n).length <= b.filter(value => value === n).length);
 const qualifierGroups = [ ["low", "mid", "high"], ["fg", "tf", "md"], ["academy", "club", "elite", "pro"], ["ps", "jr"] ];
 
 function matchMaster(a: ProductIdentity, b: ProductIdentity): DecisionEvidence {
@@ -24,7 +26,14 @@ function matchMaster(a: ProductIdentity, b: ProductIdentity): DecisionEvidence {
   })) conflicts.push("TECHNICAL_QUALIFIER_CONFLICT");
   // Numeric model identifiers remain structural evidence, not generation guesses.
   const numbers = (p: ProductIdentity) => p.modelTokens.filter(t => /^\d+$/.test(t));
-  if (numbers(a).length && numbers(b).length && !equal(numbers(a), numbers(b))) conflicts.push("MODEL_NUMBER_CONFLICT");
+  const leftNumbers = numbers(a), rightNumbers = numbers(b);
+  if (leftNumbers.length && rightNumbers.length && !equal(leftNumbers, rightNumbers)) {
+    // Additional numbers are unresolved evidence, never inferred sizes or SKUs.
+    // Preserve multiplicity and require REVIEW; replacements remain conflicts.
+    if (isStrictSubmultiset(leftNumbers, rightNumbers) || isStrictSubmultiset(rightNumbers, leftNumbers)) {
+      reasons.push("AMBIGUOUS_ADDITIONAL_MODEL_NUMBER");
+    } else conflicts.push("MODEL_NUMBER_CONFLICT");
+  }
   if (conflicts.length) return { decision: "NO_MATCH", confidence: 0, reasons: ["STRUCTURAL_CONFLICT"], conflicts };
 
   if (!a.brand || !b.brand) reasons.push("BRAND_EVIDENCE_MISSING");
