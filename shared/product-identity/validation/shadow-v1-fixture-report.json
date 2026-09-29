@@ -1,0 +1,1851 @@
+{
+  "logical": {
+    "candidates": [
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-a\\\"]\",\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-b\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-a\"]",
+        "right": "[\"provider-1\",\"merchant-b\",\"identity-b\"]",
+        "similarity": 1
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-evo-a\\\"]\",\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-evo-b\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-evo-a\"]",
+        "right": "[\"provider-1\",\"merchant-b\",\"identity-evo-b\"]",
+        "similarity": 1
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-a\\\"]\",\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-review\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-a\"]",
+        "right": "[\"provider-1\",\"merchant-b\",\"identity-review\"]",
+        "similarity": 0.9090909090909091
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-numeric-a\\\"]\",\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-numeric-b\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-numeric-a\"]",
+        "right": "[\"provider-1\",\"merchant-b\",\"identity-numeric-b\"]",
+        "similarity": 0.8333333333333334
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-a\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-c\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-a\"]",
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-c\"]",
+        "similarity": 0.8
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-a\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-conflict\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-a\"]",
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-conflict\"]",
+        "similarity": 0.8
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-b\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-c\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-b\",\"identity-b\"]",
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-c\"]",
+        "similarity": 0.8
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-b\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-conflict\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-b\",\"identity-b\"]",
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-conflict\"]",
+        "similarity": 0.8
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-review\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-c\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-b\",\"identity-review\"]",
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-c\"]",
+        "similarity": 0.7272727272727273
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-review\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-conflict\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-b\",\"identity-review\"]",
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-conflict\"]",
+        "similarity": 0.7272727272727273
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-evo-a\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-evo-edition\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-evo-a\"]",
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-evo-edition\"]",
+        "similarity": 0.6666666666666666
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-evo-b\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-evo-edition\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-b\",\"identity-evo-b\"]",
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-evo-edition\"]",
+        "similarity": 0.6666666666666666
+      }
+    ],
+    "config": {
+      "maxCandidatesPerProduct": 5,
+      "maxEvaluatedPairs": 20000,
+      "maxRetrievalComparisons": 100000,
+      "minSimilarity": 0.35
+    },
+    "coverageLimited": false,
+    "groupConflicts": [],
+    "groups": [
+      {
+        "id": "shadow-071060f784da9b8281247f2575b63c65ae87a54f0a50bc58058b05d720e37a16",
+        "members": [
+          "[\"provider-2\",\"merchant-c\",\"identity-conflict\"]"
+        ]
+      },
+      {
+        "id": "shadow-5215da845226dd2a387fb06b9b7cdc4c3408537f31ed06ed1142ed745905d2c9",
+        "members": [
+          "[\"provider-1\",\"merchant-b\",\"identity-review\"]"
+        ]
+      },
+      {
+        "id": "shadow-68b540f7b75c0e1c09d19277f74662c0bd286572e9d11367689afd42853117be",
+        "members": [
+          "[\"provider-1\",\"merchant-b\",\"identity-numeric-b\"]"
+        ]
+      },
+      {
+        "id": "shadow-71f44a1c1a2ff04a2b682a966a5577a38bee4f7664d80b4b3ad45cba1870851f",
+        "members": [
+          "[\"provider-2\",\"merchant-c\",\"identity-missing\"]"
+        ]
+      },
+      {
+        "id": "shadow-ab202f5b13946e84747dc2ef9e1df208c7119209dec2cef2004e5f55cde81231",
+        "members": [
+          "[\"provider-1\",\"merchant-a\",\"identity-a\"]",
+          "[\"provider-1\",\"merchant-b\",\"identity-b\"]",
+          "[\"provider-2\",\"merchant-c\",\"identity-c\"]"
+        ]
+      },
+      {
+        "id": "shadow-c42e9c5bd5a67f628885324e5ac31eea6e131ebfe106f495145997e094969254",
+        "members": [
+          "[\"provider-2\",\"merchant-c\",\"identity-solo\"]"
+        ]
+      },
+      {
+        "id": "shadow-cdb28bc2da6bfcb7efcb0c6db423e546e6817c3ae98c42f5e8979a5184841744",
+        "members": [
+          "[\"provider-2\",\"merchant-c\",\"identity-evo-edition\"]"
+        ]
+      },
+      {
+        "id": "shadow-db0a76d37ec3d7be769dcfcc1e2f7b184975f411db2aaf4a37fe14a9ee94f00e",
+        "members": [
+          "[\"provider-1\",\"merchant-a\",\"identity-numeric-a\"]"
+        ]
+      },
+      {
+        "id": "shadow-dc1309ad1e14ca5a1b24ecf18ccdfe211d1e907f4f367b18d44c4c94a74424e0",
+        "members": [
+          "[\"provider-1\",\"merchant-a\",\"identity-evo-a\"]",
+          "[\"provider-1\",\"merchant-b\",\"identity-evo-b\"]"
+        ]
+      }
+    ],
+    "identityCoverage": {
+      "candidatesGenerated": 12,
+      "candidatesTruncated": 0,
+      "evaluatedPairs": 12,
+      "groupConflicts": 0,
+      "master": {
+        "AUTO_MATCH": 4,
+        "NO_MATCH": 3,
+        "REVIEW": 5
+      },
+      "merchantProducts": 12,
+      "productsWithCandidate": 10,
+      "productsWithoutCandidate": 2,
+      "retrievalComparisons": 12,
+      "simulatedGroups": 2,
+      "singletons": 7,
+      "unevaluatedPairs": 0,
+      "unexaminedPairs": 0,
+      "variant": {
+        "AUTO_MATCH": 2,
+        "NO_MATCH": 6,
+        "REVIEW": 4
+      }
+    },
+    "inputManifestHash": "40ad3a8f6a34de2d7fdb8a5c528e14591fd8842c2c01ff013d93905f65414463",
+    "merchants": [
+      "[\"provider-1\",\"merchant-a\"]",
+      "[\"provider-1\",\"merchant-b\"]",
+      "[\"provider-2\",\"merchant-c\"]"
+    ],
+    "mode": "SHADOW",
+    "pairs": [
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-a\\\"]\",\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-b\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-a\"]",
+        "purpose": "CANDIDATE",
+        "result": {
+          "confidence": 0.95,
+          "conflicts": [],
+          "decision": "AUTO_MATCH",
+          "master": {
+            "confidence": 0.95,
+            "conflicts": [],
+            "decision": "AUTO_MATCH",
+            "reasons": [
+              "SAME_BRAND",
+              "SAME_MODEL_TOKEN_MULTISET",
+              "COMPATIBLE_VERSION_EVIDENCE",
+              "SAME_TECHNICAL_QUALIFIERS",
+              "COLOR_AUDIENCE_ORDER_IGNORED"
+            ]
+          },
+          "masterConfidence": 0.95,
+          "masterDecision": "AUTO_MATCH",
+          "reasons": [
+            "SAME_BRAND",
+            "SAME_MODEL_TOKEN_MULTISET",
+            "COMPATIBLE_VERSION_EVIDENCE",
+            "SAME_TECHNICAL_QUALIFIERS",
+            "COLOR_AUDIENCE_ORDER_IGNORED"
+          ],
+          "variant": {
+            "confidence": 0.85,
+            "conflicts": [],
+            "decision": "AUTO_MATCH",
+            "reasons": [
+              "MASTER_CONFIRMED",
+              "SAME_OBSERVED_VARIANT_ATTRIBUTES",
+              "UNOBSERVED_ATTRIBUTES_NOT_PROVEN"
+            ]
+          },
+          "variantConfidence": 0.85,
+          "variantDecision": "AUTO_MATCH"
+        },
+        "right": "[\"provider-1\",\"merchant-b\",\"identity-b\"]"
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-a\\\"]\",\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-review\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-a\"]",
+        "purpose": "CANDIDATE",
+        "result": {
+          "confidence": 0.5,
+          "conflicts": [],
+          "decision": "REVIEW",
+          "master": {
+            "confidence": 0.5,
+            "conflicts": [],
+            "decision": "REVIEW",
+            "reasons": [
+              "MODEL_EVIDENCE_DIFFERS"
+            ]
+          },
+          "masterConfidence": 0.5,
+          "masterDecision": "REVIEW",
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS"
+          ],
+          "variant": {
+            "confidence": 0.5,
+            "conflicts": [],
+            "decision": "REVIEW",
+            "reasons": [
+              "MASTER_NOT_CONFIRMED"
+            ]
+          },
+          "variantConfidence": 0.5,
+          "variantDecision": "REVIEW"
+        },
+        "right": "[\"provider-1\",\"merchant-b\",\"identity-review\"]"
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-a\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-c\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-a\"]",
+        "purpose": "CANDIDATE",
+        "result": {
+          "confidence": 0.95,
+          "conflicts": [],
+          "decision": "AUTO_MATCH",
+          "master": {
+            "confidence": 0.95,
+            "conflicts": [],
+            "decision": "AUTO_MATCH",
+            "reasons": [
+              "SAME_BRAND",
+              "SAME_MODEL_TOKEN_MULTISET",
+              "COMPATIBLE_VERSION_EVIDENCE",
+              "SAME_TECHNICAL_QUALIFIERS",
+              "COLOR_AUDIENCE_ORDER_IGNORED"
+            ]
+          },
+          "masterConfidence": 0.95,
+          "masterDecision": "AUTO_MATCH",
+          "reasons": [
+            "SAME_BRAND",
+            "SAME_MODEL_TOKEN_MULTISET",
+            "COMPATIBLE_VERSION_EVIDENCE",
+            "SAME_TECHNICAL_QUALIFIERS",
+            "COLOR_AUDIENCE_ORDER_IGNORED"
+          ],
+          "variant": {
+            "confidence": 0.99,
+            "conflicts": [
+              "COLOR_CONFLICT"
+            ],
+            "decision": "NO_MATCH",
+            "reasons": [
+              "EXPLICIT_VARIANT_CONFLICT"
+            ]
+          },
+          "variantConfidence": 0.99,
+          "variantDecision": "NO_MATCH"
+        },
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-c\"]"
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-a\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-conflict\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-a\"]",
+        "purpose": "CANDIDATE",
+        "result": {
+          "confidence": 0,
+          "conflicts": [
+            "VERSION_CONFLICT"
+          ],
+          "decision": "NO_MATCH",
+          "master": {
+            "confidence": 0.99,
+            "conflicts": [
+              "VERSION_CONFLICT"
+            ],
+            "decision": "NO_MATCH",
+            "reasons": [
+              "STRUCTURAL_CONFLICT"
+            ]
+          },
+          "masterConfidence": 0.99,
+          "masterDecision": "NO_MATCH",
+          "reasons": [
+            "STRUCTURAL_CONFLICT"
+          ],
+          "variant": {
+            "confidence": 0.99,
+            "conflicts": [
+              "VERSION_CONFLICT"
+            ],
+            "decision": "NO_MATCH",
+            "reasons": [
+              "MASTER_INCOMPATIBLE"
+            ]
+          },
+          "variantConfidence": 0.99,
+          "variantDecision": "NO_MATCH"
+        },
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-conflict\"]"
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-evo-a\\\"]\",\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-evo-b\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-evo-a\"]",
+        "purpose": "CANDIDATE",
+        "result": {
+          "confidence": 0.95,
+          "conflicts": [],
+          "decision": "AUTO_MATCH",
+          "master": {
+            "confidence": 0.95,
+            "conflicts": [],
+            "decision": "AUTO_MATCH",
+            "reasons": [
+              "SAME_BRAND",
+              "SAME_MODEL_TOKEN_MULTISET",
+              "COMPATIBLE_VERSION_EVIDENCE",
+              "SAME_TECHNICAL_QUALIFIERS",
+              "COLOR_AUDIENCE_ORDER_IGNORED"
+            ]
+          },
+          "masterConfidence": 0.95,
+          "masterDecision": "AUTO_MATCH",
+          "reasons": [
+            "SAME_BRAND",
+            "SAME_MODEL_TOKEN_MULTISET",
+            "COMPATIBLE_VERSION_EVIDENCE",
+            "SAME_TECHNICAL_QUALIFIERS",
+            "COLOR_AUDIENCE_ORDER_IGNORED"
+          ],
+          "variant": {
+            "confidence": 0.85,
+            "conflicts": [],
+            "decision": "AUTO_MATCH",
+            "reasons": [
+              "MASTER_CONFIRMED",
+              "SAME_OBSERVED_VARIANT_ATTRIBUTES",
+              "UNOBSERVED_ATTRIBUTES_NOT_PROVEN"
+            ]
+          },
+          "variantConfidence": 0.85,
+          "variantDecision": "AUTO_MATCH"
+        },
+        "right": "[\"provider-1\",\"merchant-b\",\"identity-evo-b\"]"
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-evo-a\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-evo-edition\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-evo-a\"]",
+        "purpose": "CANDIDATE",
+        "result": {
+          "confidence": 0.5,
+          "conflicts": [],
+          "decision": "REVIEW",
+          "master": {
+            "confidence": 0.5,
+            "conflicts": [],
+            "decision": "REVIEW",
+            "reasons": [
+              "MODEL_EVIDENCE_DIFFERS"
+            ]
+          },
+          "masterConfidence": 0.5,
+          "masterDecision": "REVIEW",
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS"
+          ],
+          "variant": {
+            "confidence": 0.5,
+            "conflicts": [],
+            "decision": "REVIEW",
+            "reasons": [
+              "MASTER_NOT_CONFIRMED",
+              "AUDIENCE_PRESENT_ON_ONE_SIDE"
+            ]
+          },
+          "variantConfidence": 0.5,
+          "variantDecision": "REVIEW"
+        },
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-evo-edition\"]"
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-a\\\",\\\"identity-numeric-a\\\"]\",\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-numeric-b\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-a\",\"identity-numeric-a\"]",
+        "purpose": "CANDIDATE",
+        "result": {
+          "confidence": 0.5,
+          "conflicts": [],
+          "decision": "REVIEW",
+          "master": {
+            "confidence": 0.5,
+            "conflicts": [],
+            "decision": "REVIEW",
+            "reasons": [
+              "AMBIGUOUS_ADDITIONAL_MODEL_NUMBER",
+              "MODEL_EVIDENCE_DIFFERS"
+            ]
+          },
+          "masterConfidence": 0.5,
+          "masterDecision": "REVIEW",
+          "reasons": [
+            "AMBIGUOUS_ADDITIONAL_MODEL_NUMBER",
+            "MODEL_EVIDENCE_DIFFERS"
+          ],
+          "variant": {
+            "confidence": 0.5,
+            "conflicts": [],
+            "decision": "REVIEW",
+            "reasons": [
+              "MASTER_NOT_CONFIRMED",
+              "COLOR_EVIDENCE_MISSING"
+            ]
+          },
+          "variantConfidence": 0.5,
+          "variantDecision": "REVIEW"
+        },
+        "right": "[\"provider-1\",\"merchant-b\",\"identity-numeric-b\"]"
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-b\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-c\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-b\",\"identity-b\"]",
+        "purpose": "CANDIDATE",
+        "result": {
+          "confidence": 0.95,
+          "conflicts": [],
+          "decision": "AUTO_MATCH",
+          "master": {
+            "confidence": 0.95,
+            "conflicts": [],
+            "decision": "AUTO_MATCH",
+            "reasons": [
+              "SAME_BRAND",
+              "SAME_MODEL_TOKEN_MULTISET",
+              "COMPATIBLE_VERSION_EVIDENCE",
+              "SAME_TECHNICAL_QUALIFIERS",
+              "COLOR_AUDIENCE_ORDER_IGNORED"
+            ]
+          },
+          "masterConfidence": 0.95,
+          "masterDecision": "AUTO_MATCH",
+          "reasons": [
+            "SAME_BRAND",
+            "SAME_MODEL_TOKEN_MULTISET",
+            "COMPATIBLE_VERSION_EVIDENCE",
+            "SAME_TECHNICAL_QUALIFIERS",
+            "COLOR_AUDIENCE_ORDER_IGNORED"
+          ],
+          "variant": {
+            "confidence": 0.99,
+            "conflicts": [
+              "COLOR_CONFLICT"
+            ],
+            "decision": "NO_MATCH",
+            "reasons": [
+              "EXPLICIT_VARIANT_CONFLICT"
+            ]
+          },
+          "variantConfidence": 0.99,
+          "variantDecision": "NO_MATCH"
+        },
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-c\"]"
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-b\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-conflict\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-b\",\"identity-b\"]",
+        "purpose": "CANDIDATE",
+        "result": {
+          "confidence": 0,
+          "conflicts": [
+            "VERSION_CONFLICT"
+          ],
+          "decision": "NO_MATCH",
+          "master": {
+            "confidence": 0.99,
+            "conflicts": [
+              "VERSION_CONFLICT"
+            ],
+            "decision": "NO_MATCH",
+            "reasons": [
+              "STRUCTURAL_CONFLICT"
+            ]
+          },
+          "masterConfidence": 0.99,
+          "masterDecision": "NO_MATCH",
+          "reasons": [
+            "STRUCTURAL_CONFLICT"
+          ],
+          "variant": {
+            "confidence": 0.99,
+            "conflicts": [
+              "VERSION_CONFLICT"
+            ],
+            "decision": "NO_MATCH",
+            "reasons": [
+              "MASTER_INCOMPATIBLE"
+            ]
+          },
+          "variantConfidence": 0.99,
+          "variantDecision": "NO_MATCH"
+        },
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-conflict\"]"
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-evo-b\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-evo-edition\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-b\",\"identity-evo-b\"]",
+        "purpose": "CANDIDATE",
+        "result": {
+          "confidence": 0.5,
+          "conflicts": [],
+          "decision": "REVIEW",
+          "master": {
+            "confidence": 0.5,
+            "conflicts": [],
+            "decision": "REVIEW",
+            "reasons": [
+              "MODEL_EVIDENCE_DIFFERS"
+            ]
+          },
+          "masterConfidence": 0.5,
+          "masterDecision": "REVIEW",
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS"
+          ],
+          "variant": {
+            "confidence": 0.5,
+            "conflicts": [],
+            "decision": "REVIEW",
+            "reasons": [
+              "MASTER_NOT_CONFIRMED",
+              "AUDIENCE_PRESENT_ON_ONE_SIDE"
+            ]
+          },
+          "variantConfidence": 0.5,
+          "variantDecision": "REVIEW"
+        },
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-evo-edition\"]"
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-review\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-c\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-b\",\"identity-review\"]",
+        "purpose": "CANDIDATE",
+        "result": {
+          "confidence": 0.5,
+          "conflicts": [],
+          "decision": "REVIEW",
+          "master": {
+            "confidence": 0.5,
+            "conflicts": [],
+            "decision": "REVIEW",
+            "reasons": [
+              "MODEL_EVIDENCE_DIFFERS"
+            ]
+          },
+          "masterConfidence": 0.5,
+          "masterDecision": "REVIEW",
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS"
+          ],
+          "variant": {
+            "confidence": 0.99,
+            "conflicts": [
+              "COLOR_CONFLICT"
+            ],
+            "decision": "NO_MATCH",
+            "reasons": [
+              "EXPLICIT_VARIANT_CONFLICT",
+              "MASTER_NOT_CONFIRMED"
+            ]
+          },
+          "variantConfidence": 0.99,
+          "variantDecision": "NO_MATCH"
+        },
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-c\"]"
+      },
+      {
+        "key": "[\"[\\\"provider-1\\\",\\\"merchant-b\\\",\\\"identity-review\\\"]\",\"[\\\"provider-2\\\",\\\"merchant-c\\\",\\\"identity-conflict\\\"]\"]",
+        "left": "[\"provider-1\",\"merchant-b\",\"identity-review\"]",
+        "purpose": "CANDIDATE",
+        "result": {
+          "confidence": 0,
+          "conflicts": [
+            "VERSION_CONFLICT"
+          ],
+          "decision": "NO_MATCH",
+          "master": {
+            "confidence": 0.99,
+            "conflicts": [
+              "VERSION_CONFLICT"
+            ],
+            "decision": "NO_MATCH",
+            "reasons": [
+              "STRUCTURAL_CONFLICT"
+            ]
+          },
+          "masterConfidence": 0.99,
+          "masterDecision": "NO_MATCH",
+          "reasons": [
+            "STRUCTURAL_CONFLICT"
+          ],
+          "variant": {
+            "confidence": 0.99,
+            "conflicts": [
+              "VERSION_CONFLICT"
+            ],
+            "decision": "NO_MATCH",
+            "reasons": [
+              "MASTER_INCOMPATIBLE"
+            ]
+          },
+          "variantConfidence": 0.99,
+          "variantDecision": "NO_MATCH"
+        },
+        "right": "[\"provider-2\",\"merchant-c\",\"identity-conflict\"]"
+      }
+    ],
+    "parses": [
+      {
+        "key": "[\"provider-1\",\"merchant-a\",\"identity-a\"]",
+        "parsed": {
+          "ambiguities": [],
+          "audience": [],
+          "brand": "acme",
+          "colors": [
+            "preto"
+          ],
+          "master": {
+            "brand": "acme",
+            "modelFamily": "comet",
+            "modelTokens": [
+              "comet"
+            ],
+            "productType": "SNEAKER",
+            "technicalQualifiers": [],
+            "version": "2",
+            "versionTokens": [
+              "v2"
+            ]
+          },
+          "modelFamily": "comet",
+          "modelTokens": [
+            "comet"
+          ],
+          "normalizedTokens": [
+            "tenis",
+            "acme",
+            "comet",
+            "v2",
+            "preto"
+          ],
+          "productType": "SNEAKER",
+          "raw": {
+            "brand": "Acme",
+            "name": "Tênis Acme Comet V2 Preto"
+          },
+          "technicalQualifiers": [],
+          "variant": {
+            "ambiguities": [],
+            "audience": [],
+            "colors": [
+              "preto"
+            ],
+            "gtin": null,
+            "mpn": null,
+            "size": null
+          },
+          "version": "2",
+          "versionTokens": [
+            "v2"
+          ]
+        }
+      },
+      {
+        "key": "[\"provider-1\",\"merchant-a\",\"identity-evo-a\"]",
+        "parsed": {
+          "ambiguities": [],
+          "audience": [
+            "MASCULINO"
+          ],
+          "brand": "adidas",
+          "colors": [
+            "branco"
+          ],
+          "master": {
+            "brand": "adidas",
+            "modelFamily": "adizero evo sl",
+            "modelTokens": [
+              "adizero",
+              "evo",
+              "sl"
+            ],
+            "productType": "SNEAKER",
+            "technicalQualifiers": [],
+            "version": null,
+            "versionTokens": []
+          },
+          "modelFamily": "adizero evo sl",
+          "modelTokens": [
+            "adizero",
+            "evo",
+            "sl"
+          ],
+          "normalizedTokens": [
+            "tenis",
+            "adidas",
+            "adizero",
+            "evo",
+            "sl",
+            "masculino",
+            "branco"
+          ],
+          "productType": "SNEAKER",
+          "raw": {
+            "brand": "Adidas",
+            "name": "Tênis Adidas Adizero EVO SL Masculino Branco"
+          },
+          "technicalQualifiers": [],
+          "variant": {
+            "ambiguities": [],
+            "audience": [
+              "MASCULINO"
+            ],
+            "colors": [
+              "branco"
+            ],
+            "gtin": null,
+            "mpn": null,
+            "size": null
+          },
+          "version": null,
+          "versionTokens": []
+        }
+      },
+      {
+        "key": "[\"provider-1\",\"merchant-a\",\"identity-numeric-a\"]",
+        "parsed": {
+          "ambiguities": [],
+          "audience": [
+            "FEMININO"
+          ],
+          "brand": "fila",
+          "colors": [
+            "bege"
+          ],
+          "master": {
+            "brand": "fila",
+            "modelFamily": "2 ride",
+            "modelTokens": [
+              "2",
+              "ride"
+            ],
+            "productType": "SNEAKER",
+            "technicalQualifiers": [],
+            "version": null,
+            "versionTokens": []
+          },
+          "modelFamily": "2 ride",
+          "modelTokens": [
+            "2",
+            "ride"
+          ],
+          "normalizedTokens": [
+            "tenis",
+            "fila",
+            "ride",
+            "2",
+            "feminino",
+            "bege"
+          ],
+          "productType": "SNEAKER",
+          "raw": {
+            "brand": "Fila",
+            "name": "Tênis Fila Ride 2 Feminino Bege"
+          },
+          "technicalQualifiers": [],
+          "variant": {
+            "ambiguities": [],
+            "audience": [
+              "FEMININO"
+            ],
+            "colors": [
+              "bege"
+            ],
+            "gtin": null,
+            "mpn": null,
+            "size": null
+          },
+          "version": null,
+          "versionTokens": []
+        }
+      },
+      {
+        "key": "[\"provider-1\",\"merchant-b\",\"identity-b\"]",
+        "parsed": {
+          "ambiguities": [],
+          "audience": [],
+          "brand": "acme",
+          "colors": [
+            "preto"
+          ],
+          "master": {
+            "brand": "acme",
+            "modelFamily": "comet",
+            "modelTokens": [
+              "comet"
+            ],
+            "productType": "SNEAKER",
+            "technicalQualifiers": [],
+            "version": "2",
+            "versionTokens": [
+              "v2"
+            ]
+          },
+          "modelFamily": "comet",
+          "modelTokens": [
+            "comet"
+          ],
+          "normalizedTokens": [
+            "tenis",
+            "acme",
+            "comet",
+            "v2",
+            "preto"
+          ],
+          "productType": "SNEAKER",
+          "raw": {
+            "brand": "Acme",
+            "name": "Tênis Acme Comet V2 Preto"
+          },
+          "technicalQualifiers": [],
+          "variant": {
+            "ambiguities": [],
+            "audience": [],
+            "colors": [
+              "preto"
+            ],
+            "gtin": null,
+            "mpn": null,
+            "size": null
+          },
+          "version": "2",
+          "versionTokens": [
+            "v2"
+          ]
+        }
+      },
+      {
+        "key": "[\"provider-1\",\"merchant-b\",\"identity-evo-b\"]",
+        "parsed": {
+          "ambiguities": [],
+          "audience": [
+            "MASCULINO"
+          ],
+          "brand": "adidas",
+          "colors": [
+            "branco"
+          ],
+          "master": {
+            "brand": "adidas",
+            "modelFamily": "adizero evo sl",
+            "modelTokens": [
+              "adizero",
+              "evo",
+              "sl"
+            ],
+            "productType": "SNEAKER",
+            "technicalQualifiers": [],
+            "version": null,
+            "versionTokens": []
+          },
+          "modelFamily": "adizero evo sl",
+          "modelTokens": [
+            "adizero",
+            "evo",
+            "sl"
+          ],
+          "normalizedTokens": [
+            "masculino",
+            "tenis",
+            "adidas",
+            "evo",
+            "sl",
+            "adizero",
+            "branco"
+          ],
+          "productType": "SNEAKER",
+          "raw": {
+            "brand": "Adidas",
+            "name": "Masculino Tênis Adidas EVO SL Adizero Branco"
+          },
+          "technicalQualifiers": [],
+          "variant": {
+            "ambiguities": [],
+            "audience": [
+              "MASCULINO"
+            ],
+            "colors": [
+              "branco"
+            ],
+            "gtin": null,
+            "mpn": null,
+            "size": null
+          },
+          "version": null,
+          "versionTokens": []
+        }
+      },
+      {
+        "key": "[\"provider-1\",\"merchant-b\",\"identity-numeric-b\"]",
+        "parsed": {
+          "ambiguities": [],
+          "audience": [
+            "FEMININO"
+          ],
+          "brand": "fila",
+          "colors": [],
+          "master": {
+            "brand": "fila",
+            "modelFamily": "1285710 2 ride",
+            "modelTokens": [
+              "1285710",
+              "2",
+              "ride"
+            ],
+            "productType": "SNEAKER",
+            "technicalQualifiers": [],
+            "version": null,
+            "versionTokens": []
+          },
+          "modelFamily": "1285710 2 ride",
+          "modelTokens": [
+            "1285710",
+            "2",
+            "ride"
+          ],
+          "normalizedTokens": [
+            "tenis",
+            "feminino",
+            "fila",
+            "ride",
+            "2",
+            "1285710"
+          ],
+          "productType": "SNEAKER",
+          "raw": {
+            "brand": "Fila",
+            "name": "Tênis Feminino Fila Ride 2 1285710"
+          },
+          "technicalQualifiers": [],
+          "variant": {
+            "ambiguities": [],
+            "audience": [
+              "FEMININO"
+            ],
+            "colors": [],
+            "gtin": null,
+            "mpn": null,
+            "size": null
+          },
+          "version": null,
+          "versionTokens": []
+        }
+      },
+      {
+        "key": "[\"provider-1\",\"merchant-b\",\"identity-review\"]",
+        "parsed": {
+          "ambiguities": [],
+          "audience": [],
+          "brand": "acme",
+          "colors": [
+            "preto"
+          ],
+          "master": {
+            "brand": "acme",
+            "modelFamily": "comet woven",
+            "modelTokens": [
+              "comet",
+              "woven"
+            ],
+            "productType": "SNEAKER",
+            "technicalQualifiers": [],
+            "version": "2",
+            "versionTokens": [
+              "v2"
+            ]
+          },
+          "modelFamily": "comet woven",
+          "modelTokens": [
+            "comet",
+            "woven"
+          ],
+          "normalizedTokens": [
+            "tenis",
+            "acme",
+            "comet",
+            "v2",
+            "woven",
+            "preto"
+          ],
+          "productType": "SNEAKER",
+          "raw": {
+            "brand": "Acme",
+            "name": "Tênis Acme Comet V2 Woven Preto"
+          },
+          "technicalQualifiers": [],
+          "variant": {
+            "ambiguities": [],
+            "audience": [],
+            "colors": [
+              "preto"
+            ],
+            "gtin": null,
+            "mpn": null,
+            "size": null
+          },
+          "version": "2",
+          "versionTokens": [
+            "v2"
+          ]
+        }
+      },
+      {
+        "key": "[\"provider-2\",\"merchant-c\",\"identity-c\"]",
+        "parsed": {
+          "ambiguities": [],
+          "audience": [],
+          "brand": "acme",
+          "colors": [
+            "branco"
+          ],
+          "master": {
+            "brand": "acme",
+            "modelFamily": "comet",
+            "modelTokens": [
+              "comet"
+            ],
+            "productType": "SNEAKER",
+            "technicalQualifiers": [],
+            "version": "2",
+            "versionTokens": [
+              "v2"
+            ]
+          },
+          "modelFamily": "comet",
+          "modelTokens": [
+            "comet"
+          ],
+          "normalizedTokens": [
+            "tenis",
+            "acme",
+            "comet",
+            "v2",
+            "branco"
+          ],
+          "productType": "SNEAKER",
+          "raw": {
+            "brand": "Acme",
+            "name": "Tênis Acme Comet V2 Branco"
+          },
+          "technicalQualifiers": [],
+          "variant": {
+            "ambiguities": [],
+            "audience": [],
+            "colors": [
+              "branco"
+            ],
+            "gtin": null,
+            "mpn": null,
+            "size": null
+          },
+          "version": "2",
+          "versionTokens": [
+            "v2"
+          ]
+        }
+      },
+      {
+        "key": "[\"provider-2\",\"merchant-c\",\"identity-conflict\"]",
+        "parsed": {
+          "ambiguities": [],
+          "audience": [],
+          "brand": "acme",
+          "colors": [
+            "preto"
+          ],
+          "master": {
+            "brand": "acme",
+            "modelFamily": "comet",
+            "modelTokens": [
+              "comet"
+            ],
+            "productType": "SNEAKER",
+            "technicalQualifiers": [],
+            "version": "3",
+            "versionTokens": [
+              "v3"
+            ]
+          },
+          "modelFamily": "comet",
+          "modelTokens": [
+            "comet"
+          ],
+          "normalizedTokens": [
+            "tenis",
+            "acme",
+            "comet",
+            "v3",
+            "preto"
+          ],
+          "productType": "SNEAKER",
+          "raw": {
+            "brand": "Acme",
+            "name": "Tênis Acme Comet V3 Preto"
+          },
+          "technicalQualifiers": [],
+          "variant": {
+            "ambiguities": [],
+            "audience": [],
+            "colors": [
+              "preto"
+            ],
+            "gtin": null,
+            "mpn": null,
+            "size": null
+          },
+          "version": "3",
+          "versionTokens": [
+            "v3"
+          ]
+        }
+      },
+      {
+        "key": "[\"provider-2\",\"merchant-c\",\"identity-evo-edition\"]",
+        "parsed": {
+          "ambiguities": [],
+          "audience": [],
+          "brand": "adidas",
+          "colors": [
+            "branco"
+          ],
+          "master": {
+            "brand": "adidas",
+            "modelFamily": "adizero audi evo f1 revolut sl team woven",
+            "modelTokens": [
+              "adizero",
+              "audi",
+              "evo",
+              "f1",
+              "revolut",
+              "sl",
+              "team",
+              "woven"
+            ],
+            "productType": "SNEAKER",
+            "technicalQualifiers": [],
+            "version": null,
+            "versionTokens": []
+          },
+          "modelFamily": "adizero audi evo f1 revolut sl team woven",
+          "modelTokens": [
+            "adizero",
+            "audi",
+            "evo",
+            "f1",
+            "revolut",
+            "sl",
+            "team",
+            "woven"
+          ],
+          "normalizedTokens": [
+            "tenis",
+            "adidas",
+            "adizero",
+            "evo",
+            "sl",
+            "woven",
+            "audi",
+            "revolut",
+            "f1",
+            "team",
+            "branco"
+          ],
+          "productType": "SNEAKER",
+          "raw": {
+            "brand": "Adidas",
+            "name": "Tênis Adidas Adizero EVO SL Woven Audi Revolut F1 Team Branco"
+          },
+          "technicalQualifiers": [],
+          "variant": {
+            "ambiguities": [],
+            "audience": [],
+            "colors": [
+              "branco"
+            ],
+            "gtin": null,
+            "mpn": null,
+            "size": null
+          },
+          "version": null,
+          "versionTokens": []
+        }
+      },
+      {
+        "key": "[\"provider-2\",\"merchant-c\",\"identity-missing\"]",
+        "parsed": {
+          "ambiguities": [],
+          "audience": [],
+          "brand": null,
+          "colors": [],
+          "master": {
+            "brand": null,
+            "modelFamily": "object unknown",
+            "modelTokens": [
+              "object",
+              "unknown"
+            ],
+            "productType": null,
+            "technicalQualifiers": [],
+            "version": null,
+            "versionTokens": []
+          },
+          "modelFamily": "object unknown",
+          "modelTokens": [
+            "object",
+            "unknown"
+          ],
+          "normalizedTokens": [
+            "unknown",
+            "object"
+          ],
+          "productType": null,
+          "raw": {
+            "name": "Unknown object"
+          },
+          "technicalQualifiers": [],
+          "variant": {
+            "ambiguities": [],
+            "audience": [],
+            "colors": [],
+            "gtin": null,
+            "mpn": null,
+            "size": null
+          },
+          "version": null,
+          "versionTokens": []
+        }
+      },
+      {
+        "key": "[\"provider-2\",\"merchant-c\",\"identity-solo\"]",
+        "parsed": {
+          "ambiguities": [],
+          "audience": [],
+          "brand": "solitary",
+          "colors": [],
+          "master": {
+            "brand": "solitary",
+            "modelFamily": "orbit",
+            "modelTokens": [
+              "orbit"
+            ],
+            "productType": "SANDAL",
+            "technicalQualifiers": [],
+            "version": null,
+            "versionTokens": []
+          },
+          "modelFamily": "orbit",
+          "modelTokens": [
+            "orbit"
+          ],
+          "normalizedTokens": [
+            "sandalia",
+            "solitary",
+            "orbit"
+          ],
+          "productType": "SANDAL",
+          "raw": {
+            "brand": "Solitary",
+            "name": "Sandália Solitary Orbit"
+          },
+          "technicalQualifiers": [],
+          "variant": {
+            "ambiguities": [],
+            "audience": [],
+            "colors": [],
+            "gtin": null,
+            "mpn": null,
+            "size": null
+          },
+          "version": null,
+          "versionTokens": []
+        }
+      }
+    ],
+    "promotionalCoverage": {
+      "reason": "Commercial eligibility is independent and is not an identity input.",
+      "status": "NOT_MEASURED"
+    },
+    "providers": [
+      "provider-1",
+      "provider-2"
+    ],
+    "runKey": "e8c60dafc857485daeea16ae59eedda73add40d6c98f627a04c65ad6af72734b",
+    "snapshots": [
+      {
+        "diagnostics": [],
+        "externalIdentityId": "identity-a",
+        "externalProductKey": "same-external-id",
+        "feedId": "feed-provider-1-merchant-a",
+        "input": {
+          "brand": "Acme",
+          "name": "Tênis Acme Comet V2 Preto"
+        },
+        "inputHash": "8ac083d28e123e2d3283d3e9e0b93351c977874c883572c465bd7a9aba79bfae",
+        "key": "[\"provider-1\",\"merchant-a\",\"identity-a\"]",
+        "merchantId": "merchant-a",
+        "observedVariants": [],
+        "productId": "product-a",
+        "provenance": [
+          {
+            "entity": "brands",
+            "field": "name",
+            "recordId": "brand-Acme"
+          },
+          {
+            "entity": "external_product_identities",
+            "field": "external_product_key",
+            "method": "merchant_provided",
+            "recordId": "identity-a"
+          },
+          {
+            "entity": "products",
+            "field": "main_name",
+            "recordId": "product-a"
+          }
+        ],
+        "providerId": "provider-1",
+        "scope": {
+          "kind": "PRODUCT_TITLE"
+        },
+        "timestamps": {
+          "lastSeenAt": "2026-09-29T00:00:00.000Z",
+          "updatedAt": "2026-09-29T00:00:00.000Z"
+        }
+      },
+      {
+        "diagnostics": [],
+        "externalIdentityId": "identity-evo-a",
+        "externalProductKey": "external-evo-a",
+        "feedId": "feed-provider-1-merchant-a",
+        "input": {
+          "brand": "Adidas",
+          "name": "Tênis Adidas Adizero EVO SL Masculino Branco"
+        },
+        "inputHash": "263eb4868f755ab7daff27095b9765bbe67878cbdf633e6309985aff1bddf16b",
+        "key": "[\"provider-1\",\"merchant-a\",\"identity-evo-a\"]",
+        "merchantId": "merchant-a",
+        "observedVariants": [],
+        "productId": "product-evo-a",
+        "provenance": [
+          {
+            "entity": "brands",
+            "field": "name",
+            "recordId": "brand-Adidas"
+          },
+          {
+            "entity": "external_product_identities",
+            "field": "external_product_key",
+            "method": "merchant_provided",
+            "recordId": "identity-evo-a"
+          },
+          {
+            "entity": "products",
+            "field": "main_name",
+            "recordId": "product-evo-a"
+          }
+        ],
+        "providerId": "provider-1",
+        "scope": {
+          "kind": "PRODUCT_TITLE"
+        },
+        "timestamps": {
+          "lastSeenAt": "2026-09-29T00:00:00.000Z",
+          "updatedAt": "2026-09-29T00:00:00.000Z"
+        }
+      },
+      {
+        "diagnostics": [],
+        "externalIdentityId": "identity-numeric-a",
+        "externalProductKey": "external-numeric-a",
+        "feedId": "feed-provider-1-merchant-a",
+        "input": {
+          "brand": "Fila",
+          "name": "Tênis Fila Ride 2 Feminino Bege"
+        },
+        "inputHash": "bee62571cf3f7434b66e67de370c02153adb397ba8e6003d4609a8061b68cc3c",
+        "key": "[\"provider-1\",\"merchant-a\",\"identity-numeric-a\"]",
+        "merchantId": "merchant-a",
+        "observedVariants": [],
+        "productId": "product-numeric-a",
+        "provenance": [
+          {
+            "entity": "brands",
+            "field": "name",
+            "recordId": "brand-Fila"
+          },
+          {
+            "entity": "external_product_identities",
+            "field": "external_product_key",
+            "method": "merchant_provided",
+            "recordId": "identity-numeric-a"
+          },
+          {
+            "entity": "products",
+            "field": "main_name",
+            "recordId": "product-numeric-a"
+          }
+        ],
+        "providerId": "provider-1",
+        "scope": {
+          "kind": "PRODUCT_TITLE"
+        },
+        "timestamps": {
+          "lastSeenAt": "2026-09-29T00:00:00.000Z",
+          "updatedAt": "2026-09-29T00:00:00.000Z"
+        }
+      },
+      {
+        "diagnostics": [],
+        "externalIdentityId": "identity-b",
+        "externalProductKey": "external-b",
+        "feedId": "feed-provider-1-merchant-b",
+        "input": {
+          "brand": "Acme",
+          "name": "Tênis Acme Comet V2 Preto"
+        },
+        "inputHash": "8ac083d28e123e2d3283d3e9e0b93351c977874c883572c465bd7a9aba79bfae",
+        "key": "[\"provider-1\",\"merchant-b\",\"identity-b\"]",
+        "merchantId": "merchant-b",
+        "observedVariants": [],
+        "productId": "product-b",
+        "provenance": [
+          {
+            "entity": "brands",
+            "field": "name",
+            "recordId": "brand-Acme"
+          },
+          {
+            "entity": "external_product_identities",
+            "field": "external_product_key",
+            "method": "merchant_provided",
+            "recordId": "identity-b"
+          },
+          {
+            "entity": "products",
+            "field": "main_name",
+            "recordId": "product-b"
+          }
+        ],
+        "providerId": "provider-1",
+        "scope": {
+          "kind": "PRODUCT_TITLE"
+        },
+        "timestamps": {
+          "lastSeenAt": "2026-09-29T00:00:00.000Z",
+          "updatedAt": "2026-09-29T00:00:00.000Z"
+        }
+      },
+      {
+        "diagnostics": [],
+        "externalIdentityId": "identity-evo-b",
+        "externalProductKey": "external-evo-b",
+        "feedId": "feed-provider-1-merchant-b",
+        "input": {
+          "brand": "Adidas",
+          "name": "Masculino Tênis Adidas EVO SL Adizero Branco"
+        },
+        "inputHash": "66c4666fd2f7b98b082d6c887e64b5636215b5f4ce032ba29f3a9cf03d664337",
+        "key": "[\"provider-1\",\"merchant-b\",\"identity-evo-b\"]",
+        "merchantId": "merchant-b",
+        "observedVariants": [],
+        "productId": "product-evo-b",
+        "provenance": [
+          {
+            "entity": "brands",
+            "field": "name",
+            "recordId": "brand-Adidas"
+          },
+          {
+            "entity": "external_product_identities",
+            "field": "external_product_key",
+            "method": "merchant_provided",
+            "recordId": "identity-evo-b"
+          },
+          {
+            "entity": "products",
+            "field": "main_name",
+            "recordId": "product-evo-b"
+          }
+        ],
+        "providerId": "provider-1",
+        "scope": {
+          "kind": "PRODUCT_TITLE"
+        },
+        "timestamps": {
+          "lastSeenAt": "2026-09-29T00:00:00.000Z",
+          "updatedAt": "2026-09-29T00:00:00.000Z"
+        }
+      },
+      {
+        "diagnostics": [],
+        "externalIdentityId": "identity-numeric-b",
+        "externalProductKey": "external-numeric-b",
+        "feedId": "feed-provider-1-merchant-b",
+        "input": {
+          "brand": "Fila",
+          "name": "Tênis Feminino Fila Ride 2 1285710"
+        },
+        "inputHash": "15a32ad0379e0cd93e2425a0648c2b037fe261e8839d23d9d4c2aefbc5da8ca1",
+        "key": "[\"provider-1\",\"merchant-b\",\"identity-numeric-b\"]",
+        "merchantId": "merchant-b",
+        "observedVariants": [],
+        "productId": "product-numeric-b",
+        "provenance": [
+          {
+            "entity": "brands",
+            "field": "name",
+            "recordId": "brand-Fila"
+          },
+          {
+            "entity": "external_product_identities",
+            "field": "external_product_key",
+            "method": "merchant_provided",
+            "recordId": "identity-numeric-b"
+          },
+          {
+            "entity": "products",
+            "field": "main_name",
+            "recordId": "product-numeric-b"
+          }
+        ],
+        "providerId": "provider-1",
+        "scope": {
+          "kind": "PRODUCT_TITLE"
+        },
+        "timestamps": {
+          "lastSeenAt": "2026-09-29T00:00:00.000Z",
+          "updatedAt": "2026-09-29T00:00:00.000Z"
+        }
+      },
+      {
+        "diagnostics": [],
+        "externalIdentityId": "identity-review",
+        "externalProductKey": "external-review",
+        "feedId": "feed-provider-1-merchant-b",
+        "input": {
+          "brand": "Acme",
+          "name": "Tênis Acme Comet V2 Woven Preto"
+        },
+        "inputHash": "0d59eaedb3554eb618eef590fb879eb0ad2df199c8321c16c108dbc9c3fe9bd4",
+        "key": "[\"provider-1\",\"merchant-b\",\"identity-review\"]",
+        "merchantId": "merchant-b",
+        "observedVariants": [],
+        "productId": "product-review",
+        "provenance": [
+          {
+            "entity": "brands",
+            "field": "name",
+            "recordId": "brand-Acme"
+          },
+          {
+            "entity": "external_product_identities",
+            "field": "external_product_key",
+            "method": "merchant_provided",
+            "recordId": "identity-review"
+          },
+          {
+            "entity": "products",
+            "field": "main_name",
+            "recordId": "product-review"
+          }
+        ],
+        "providerId": "provider-1",
+        "scope": {
+          "kind": "PRODUCT_TITLE"
+        },
+        "timestamps": {
+          "lastSeenAt": "2026-09-29T00:00:00.000Z",
+          "updatedAt": "2026-09-29T00:00:00.000Z"
+        }
+      },
+      {
+        "diagnostics": [],
+        "externalIdentityId": "identity-c",
+        "externalProductKey": "same-external-id",
+        "feedId": "feed-provider-2-merchant-c",
+        "input": {
+          "brand": "Acme",
+          "name": "Tênis Acme Comet V2 Branco"
+        },
+        "inputHash": "924eb85576f822dd45d3b7c26562f064dcdd5f246be37099bf2dc43359993039",
+        "key": "[\"provider-2\",\"merchant-c\",\"identity-c\"]",
+        "merchantId": "merchant-c",
+        "observedVariants": [],
+        "productId": "product-c",
+        "provenance": [
+          {
+            "entity": "brands",
+            "field": "name",
+            "recordId": "brand-Acme"
+          },
+          {
+            "entity": "external_product_identities",
+            "field": "external_product_key",
+            "method": "merchant_provided",
+            "recordId": "identity-c"
+          },
+          {
+            "entity": "products",
+            "field": "main_name",
+            "recordId": "product-c"
+          }
+        ],
+        "providerId": "provider-2",
+        "scope": {
+          "kind": "PRODUCT_TITLE"
+        },
+        "timestamps": {
+          "lastSeenAt": "2026-09-29T00:00:00.000Z",
+          "updatedAt": "2026-09-29T00:00:00.000Z"
+        }
+      },
+      {
+        "diagnostics": [],
+        "externalIdentityId": "identity-conflict",
+        "externalProductKey": "external-conflict",
+        "feedId": "feed-provider-2-merchant-c",
+        "input": {
+          "brand": "Acme",
+          "name": "Tênis Acme Comet V3 Preto"
+        },
+        "inputHash": "9a60f482b0eda408938a35c191f830b798a0ceeaf38a89fad2cb0ed177cac937",
+        "key": "[\"provider-2\",\"merchant-c\",\"identity-conflict\"]",
+        "merchantId": "merchant-c",
+        "observedVariants": [],
+        "productId": "product-conflict",
+        "provenance": [
+          {
+            "entity": "brands",
+            "field": "name",
+            "recordId": "brand-Acme"
+          },
+          {
+            "entity": "external_product_identities",
+            "field": "external_product_key",
+            "method": "merchant_provided",
+            "recordId": "identity-conflict"
+          },
+          {
+            "entity": "products",
+            "field": "main_name",
+            "recordId": "product-conflict"
+          }
+        ],
+        "providerId": "provider-2",
+        "scope": {
+          "kind": "PRODUCT_TITLE"
+        },
+        "timestamps": {
+          "lastSeenAt": "2026-09-29T00:00:00.000Z",
+          "updatedAt": "2026-09-29T00:00:00.000Z"
+        }
+      },
+      {
+        "diagnostics": [],
+        "externalIdentityId": "identity-evo-edition",
+        "externalProductKey": "external-evo-edition",
+        "feedId": "feed-provider-2-merchant-c",
+        "input": {
+          "brand": "Adidas",
+          "name": "Tênis Adidas Adizero EVO SL Woven Audi Revolut F1 Team Branco"
+        },
+        "inputHash": "85390bd82321e02d9b6b32fa5d6965cf4c4c2f324517df408e9113bf05004328",
+        "key": "[\"provider-2\",\"merchant-c\",\"identity-evo-edition\"]",
+        "merchantId": "merchant-c",
+        "observedVariants": [],
+        "productId": "product-evo-edition",
+        "provenance": [
+          {
+            "entity": "brands",
+            "field": "name",
+            "recordId": "brand-Adidas"
+          },
+          {
+            "entity": "external_product_identities",
+            "field": "external_product_key",
+            "method": "merchant_provided",
+            "recordId": "identity-evo-edition"
+          },
+          {
+            "entity": "products",
+            "field": "main_name",
+            "recordId": "product-evo-edition"
+          }
+        ],
+        "providerId": "provider-2",
+        "scope": {
+          "kind": "PRODUCT_TITLE"
+        },
+        "timestamps": {
+          "lastSeenAt": "2026-09-29T00:00:00.000Z",
+          "updatedAt": "2026-09-29T00:00:00.000Z"
+        }
+      },
+      {
+        "diagnostics": [],
+        "externalIdentityId": "identity-missing",
+        "externalProductKey": "external-missing",
+        "feedId": "feed-provider-2-merchant-c",
+        "input": {
+          "name": "Unknown object"
+        },
+        "inputHash": "7adeeb62f803d76e9f53929e7db7154fe56d93827adcb88e77db6c2dbe61bcb1",
+        "key": "[\"provider-2\",\"merchant-c\",\"identity-missing\"]",
+        "merchantId": "merchant-c",
+        "observedVariants": [],
+        "productId": "product-missing",
+        "provenance": [
+          {
+            "entity": "external_product_identities",
+            "field": "external_product_key",
+            "method": "merchant_provided",
+            "recordId": "identity-missing"
+          },
+          {
+            "entity": "products",
+            "field": "main_name",
+            "recordId": "product-missing"
+          }
+        ],
+        "providerId": "provider-2",
+        "scope": {
+          "kind": "PRODUCT_TITLE"
+        },
+        "timestamps": {
+          "lastSeenAt": "2026-09-29T00:00:00.000Z",
+          "updatedAt": "2026-09-29T00:00:00.000Z"
+        }
+      },
+      {
+        "diagnostics": [],
+        "externalIdentityId": "identity-solo",
+        "externalProductKey": "external-solo",
+        "feedId": "feed-provider-2-merchant-c",
+        "input": {
+          "brand": "Solitary",
+          "name": "Sandália Solitary Orbit"
+        },
+        "inputHash": "d35306d05aa59845c8202de7d2368d33b942c01ce73494cebe251145e1829ca7",
+        "key": "[\"provider-2\",\"merchant-c\",\"identity-solo\"]",
+        "merchantId": "merchant-c",
+        "observedVariants": [],
+        "productId": "product-solo",
+        "provenance": [
+          {
+            "entity": "brands",
+            "field": "name",
+            "recordId": "brand-Solitary"
+          },
+          {
+            "entity": "external_product_identities",
+            "field": "external_product_key",
+            "method": "merchant_provided",
+            "recordId": "identity-solo"
+          },
+          {
+            "entity": "products",
+            "field": "main_name",
+            "recordId": "product-solo"
+          }
+        ],
+        "providerId": "provider-2",
+        "scope": {
+          "kind": "PRODUCT_TITLE"
+        },
+        "timestamps": {
+          "lastSeenAt": "2026-09-29T00:00:00.000Z",
+          "updatedAt": "2026-09-29T00:00:00.000Z"
+        }
+      }
+    ],
+    "truncatedCandidates": [],
+    "unevaluatedPairs": [],
+    "versions": {
+      "adapter": "reconciled-entities-v1",
+      "candidates": "brand-type-token-dice-v1",
+      "grouping": "complete-pair-check-v1",
+      "matcher": "product-identity-v1.2",
+      "parser": "product-identity-v1.2",
+      "snapshot": "identity-input-v1"
+    },
+    "withoutCandidate": [
+      {
+        "key": "[\"provider-2\",\"merchant-c\",\"identity-missing\"]",
+        "reason": "BRAND_MISSING"
+      },
+      {
+        "key": "[\"provider-2\",\"merchant-c\",\"identity-solo\"]",
+        "reason": "NONE_IN_SEARCHED_BLOCKS"
+      }
+    ]
+  },
+  "measurements": {
+    "elapsedMs": 7.553627000000006,
+    "heapDeltaBytes": 856856
+  },
+  "status": "COMPLETE"
+}
