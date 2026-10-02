@@ -1,0 +1,1099 @@
+{
+  "source": "/tmp/product-identity-real-shadow-v1.json",
+  "purpose": "13 V1.4 KR7 identities in groups of 8 and 5, plus all other 141 Fila cohort identities to preserve same-brand top-K competition; no commercial fields",
+  "rows": [
+    {
+      "id": "020336ad-06a1-4a2b-a044-83bde9ee6d4a",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Feminino Branco e Preto Branco",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 8
+    },
+    {
+      "id": "2c967e2c-8891-4b00-992a-a0f7e4e5d023",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Branco e Vermelho Feminino Branco",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 8
+    },
+    {
+      "id": "38fd7310-28a0-4c58-a6e2-948458cb68de",
+      "name": "Tênis Fila KR7 Pro Speed Tech Verde",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 8
+    },
+    {
+      "id": "6f018f0a-e986-46bb-9d54-8758ebe849a6",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Feminino Verde",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 8
+    },
+    {
+      "id": "e8e0d19a-0266-448a-a930-2a9b1aeb5cbd",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Branco e Preto Masculino Preto",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 8
+    },
+    {
+      "id": "e9f7dbca-1451-4ff2-a013-9eceb2de00fe",
+      "name": "Tenis Fila Kr7 Pro Speed Tech Feminino Branco e Verde",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 8
+    },
+    {
+      "id": "11a371b6-0f87-4f09-97e9-00c1bde2d8f1",
+      "name": "Tenis Fila Kr7 Pro Speed Tech Feminino Branco e Preto",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 8
+    },
+    {
+      "id": "50d133f7-f77d-4c3a-acb5-f2a4f7f24f85",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Feminino Verde",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 8
+    },
+    {
+      "id": "327e0301-2836-4aa1-914f-c921ea0eae1e",
+      "name": "Tênis Feminino Fila Kr7 Pro Speed Tech Branco",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 5
+    },
+    {
+      "id": "7c16dd2e-5e33-484a-850c-cb4347791f1f",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Branco Masculino Branco",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 5
+    },
+    {
+      "id": "d565c006-70ae-40f2-af98-5a7b77613f78",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Branco Feminino Branco",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 5
+    },
+    {
+      "id": "f85c81f9-06ad-4bb1-b97b-50f4a2131baf",
+      "name": "Tenis Fila Kr7 Pro Speed Tech Branco e Verde",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 5
+    },
+    {
+      "id": "15b1429c-f87e-443e-a6e0-b4a3db79085c",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Branco",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb",
+      "previousGroupSize": 5
+    }
+  ],
+  "competitors": [
+    {
+      "id": "288bd986-e719-4699-89d1-a0c310e6d193",
+      "name": "Tênis Fila Float Maxxi 2 Feminino Branco/Laranja",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "3787d576-018c-45cb-addb-811a8ec5ff61",
+      "name": "Tênis Fila Float Maxxi 2 Pro Masculino Branco",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "49fbbf61-3338-4b74-a7ba-dc6c4fddd6ef",
+      "name": "Tênis Fila Float Maxxi 2 Masculino Cinza",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "4eda97d3-115d-4e15-acde-299d3913359d",
+      "name": "Tênis Fila Racer Carbon 3 Masculino Preto",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "4fddf191-7337-4ff1-89df-adffdbdd9d95",
+      "name": "Tênis Fila Racer Carbon Feminino Azul",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "604d277e-d74d-4241-97b0-68b9e6d4eb50",
+      "name": "Tênis Fila Racer Speedzone Masculino Vermelho",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "831c993d-33ab-400c-9706-385a63a3225c",
+      "name": "Tênis Fila Racer Carbon 3 Feminino Preto",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "8ba5ff4f-82b3-4a7f-9db3-589a334cb6a2",
+      "name": "Tênis Fila Racer Carbon 3 Masculino Branco",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "9bac1bc5-361b-431e-bed2-3a91303a1b37",
+      "name": "Tênis Fila Racer Carbon Feminino Vermelho",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "c2ab7df0-a56a-4148-9d24-8b2f327d38da",
+      "name": "Tênis Fila Racer Speedzone Masculino Preto",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "cb2e2593-9512-496b-83d6-ac174e9ef218",
+      "name": "Tênis Fila Float Maxxi 2 Pro Masculino Azul",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "d6c474ca-f405-4ccc-a49e-1670e66e92b2",
+      "name": "Tênis Fila Racer Speedzone Feminino Preto",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "f3825275-8d2c-4093-b0a9-bf8f846b81cb",
+      "name": "Tênis Fila Racer Speedzone Masculino Azul",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "f9332bce-f529-40eb-8123-781491a78e9a",
+      "name": "Tênis Fila Float Maxxi 2 Feminino Bege",
+      "brand": "Fila",
+      "merchant": "a4a35c12-9101-41a7-b64e-5673de4026a9",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "002ef47d-2cff-45a7-9fc9-b1306fc9fdba",
+      "name": "Tênis Fila Striker Masculino - Marinho/laranja/azul",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "03be7408-a2d4-437a-8e6a-efd7cb755771",
+      "name": "Tênis Fila Original Fitness Tennis Club II Masculino Incolor",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "046d270f-942b-403c-bfe3-313176473043",
+      "name": "Tênis Fila Feminino Float Maxxi 2 Pro Corrida Verde",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "05a70ff4-4c6e-4e23-a695-fe9b619a932f",
+      "name": "Tênis Fila Float Maxxi 2 Pro Masculino Bege",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "05c09e79-f9dc-4f95-a36b-999064f680e3",
+      "name": "Tênis Fila Racer Speedzone Tr Marrom e Bege Feminino Marrom",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "07a6472b-5140-4064-b697-a64ee0dfc511",
+      "name": "Tênis Fila Venture Tracer Lite Masculino Azul Marinho",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "0950b891-1560-4e45-99b5-30799ba81b2d",
+      "name": "Infantil - Tênis Esportivo Juvenil Fila Progress Lite Running Menino",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "0df05c6e-e665-406f-a281-7941e091865c",
+      "name": "Tênis Fila Street Fit 2 Feminino Rose e Cinza",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "0e9cedfc-38c4-4775-8ede-e504708b0070",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Preto Masculino Preto",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "0ea11ba1-09e6-404e-a838-030996d796b5",
+      "name": "Tênis Fila Euro Jogger Vintage Feminino Bege e Dourado",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "10508c2a-622c-407d-a4a1-56ff6c89c307",
+      "name": "Tênis Corrida Feminino Fila Racer Fastpace Off White",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "10c94b3d-a808-4ed5-9d67-73129895e8db",
+      "name": "Tênis Fila Kr7 Pro Speed Branco e Vermelho Masculino Branco",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "126a5e12-637e-4877-b84e-3e41170c2afb",
+      "name": "Tenis Fila Progress Lite Masculino Cinza/Dourado Cinza",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "135e63c8-2a9c-4c92-a416-30bc1f056ed0",
+      "name": "Tênis Fila KR7 Pro Speed Tech Feminino - Preto - fila",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "13f0938b-fe79-495b-8d0a-9d682f764983",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Masculino Incolor",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "15386ab1-3b50-4723-9a1a-0b04e3c983fd",
+      "name": "Tênis Fila Venture Tracer Lite Feminino Verde e Dourado",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "15ad7b1f-36a8-4ac5-b3ee-7058db32d915",
+      "name": "Tenis Casual Masculino Fila Euro Jogger Vintage Preto",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "15f074ea-032e-46f9-9149-1d3063eef1c1",
+      "name": "Tênis Fila Street Fit 3 Feminino Bege e Bordô",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "16332618-6526-4d58-8293-03e8a5c1b819",
+      "name": "Tênis Feminino Fila Venture Tracer Lite Branco",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "17247aeb-3054-4b8e-aef0-059d96f0dcaf",
+      "name": "Tênis Fila Float Maxxi 2 Pro Feminino-branco/limão/azul Royal",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "177dd0d2-ecdb-47cd-8dac-7e0bcaf919c6",
+      "name": "Tênis Fila Master Ace Clay Court Masculino - Verde - Fila",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "17fd8820-fce5-4147-beff-70389f6a0f65",
+      "name": "Tênis Fila Euro Jogger Vintage Preto e Bege",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "18683386-7cbd-4f27-a245-47f498e98f74",
+      "name": "Tênis Fila Racer Speedzone Verde e Azul Masculino Verde",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "1919015b-2afd-48ba-9bdd-103f1c565b72",
+      "name": "Tênis Fila Racer Speedzone Verde e Azul Feminino Verde",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "1ada981f-5340-471b-a77e-84cf6df8acae",
+      "name": "Tenis Fila Venture Tracer Lite Marinho e Bege",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "1ae3b77b-f968-490e-8c15-5aa239f32a9a",
+      "name": "Tênis Fila Racer Speedzone Bege e Marrom Feminino Bege",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "1b0b29a3-926e-4edd-829e-9d308792d8fe",
+      "name": "Tênis Fila Racer Speedzone Feminino Marinho e Rosa",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "1b2bd0b2-7f5f-407e-aa86-0112a30698ef",
+      "name": "Tênis Masculino Fila Maxxi Lite Running 1318157 Cinza/Marinho 38",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "216c84e4-f826-4d87-8813-bf5d152edc59",
+      "name": "Tênis Feminino Fila Venture Tracer Lite Marrom",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "236bcd53-ab5a-4977-a73c-55340c83f30f",
+      "name": "Tênis Fila Winner Clay Court Masculino - Preto - Fila",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "26399312-2edd-4249-a81a-614984026513",
+      "name": "Tênis Fila Float Maxxi 2 Pro Bege e Marrom Masculino Bege",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "278b223e-0a25-4fc2-895e-e4aa7439e1af",
+      "name": "Tênis Fila Float Maxxi 2 Pro Masculino Verde",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "284b1688-3e22-4261-acc8-72ae93a2a4ac",
+      "name": "Tênis Fila Runner 2k Masculino - Grafite/cinza/bege",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "296f5312-4597-4ada-8756-73634a817a33",
+      "name": "Tênis Fila Renno Classic Cinza Escuro Masculino Azul",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "29b41dfd-2dc7-462d-a6a8-42e01bb6514b",
+      "name": "Tênis Fila Venture Tracer Lite Marrom e Bege Masculino Marrom",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "2cc49511-4727-4723-b7bc-8e1fba8db4b0",
+      "name": "Tênis Feminino Fila Float Maxxi 2 Pro Bege",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "2fd9f431-951d-43c4-bc49-5777242369e6",
+      "name": "Tênis Fila Racer Carbon 3 Feminino Preto e Cinza",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "304b7f36-1d84-4c69-ada1-f5f32fbb0220",
+      "name": "Tênis Fila Venture Tracer Lite Feminino Branco",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "3174f1f7-e2bd-4e3e-aaa5-e9908a107a81",
+      "name": "Tênis Corrida Feminino Fila Racer Carbon 3 Branco E Vermelho",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "35b81c5e-4ec1-4ed1-80fe-d92adc762145",
+      "name": "Tênis Fila Euro Jogger Vintage Marrom e Preto",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "3757dec8-6d55-4c65-ba8f-cdfa55e2afe4",
+      "name": "Tênis Fila Maxxi Lite Masculino Azul Marinho",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "393e0ce0-f70a-404d-bb6e-fcb2c2971621",
+      "name": "Tênis Fila Venture Tracer Lite Cinza Escuro",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "3f38de17-f5e2-4d37-9e10-f569b3f95089",
+      "name": "Tênis Fila Masculino Venture Tracer Lite Casual Verde",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "3f7d8b37-bbbc-431c-8d05-5216f9105425",
+      "name": "Tênis Fila Original Fitness Tennis Club II Masculino Incolor",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "410c2385-a39a-41b7-a3c4-27644ba3ba05",
+      "name": "Tênis Fila Racer Fastpace Masculino - Verde/azul/branco",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "42a53616-e2a3-4631-bcbb-2d5f2f146664",
+      "name": "Tênis Fila Racer Speedzone Tr Marrom e Bege Masculino Marrom",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "446e317d-811d-4ca5-8d00-491729014bca",
+      "name": "Tenis Fila Racer Fastpace Feminino Off-White",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "466f760e-57ef-433c-8e18-e399952caea1",
+      "name": "Tênis Fila Racer Skytrail Masculino - Bege Claro/oliva/verde Limão",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "46ef2c14-e678-4191-9fe0-61567b17c43c",
+      "name": "Tênis Fila Masculino Progress Lite Treino Azul Marinho",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "47290a6e-ff75-4156-b43e-789c76cc7125",
+      "name": "Tenis Fila Racer T2 Xtreme Masculino - Laranja Vibrante/preto",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "47a9e092-e72b-4bad-b791-aa6a16f7703d",
+      "name": "Tênis Fila Racer Curve 2 Feminino Preto e Bege",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "483ea755-bca9-406b-9631-81749c8cf9b5",
+      "name": "Tênis Fila Skywind Feminino - Marinho/verde/rosa",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "49928365-af4e-4693-b251-fb6522e8e779",
+      "name": "Tênis Fila Racer Speedzone Tr Cinza Escuro e Preto Masculino Azul",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "4a28c0f6-c7be-456b-b9b6-e3396b11137c",
+      "name": "Tênis Fila Speed Lite Feminino Marinho e Cobre",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "4b05cf04-bf61-4bad-9f71-233984c7f7eb",
+      "name": "Tênis Fila Float Maxxi 2 - Feminino - Branco/limão/azul Royal",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "4b8d95c6-a6ea-42ca-8788-036e32f47c52",
+      "name": "Tênis Fila Racer Skytrail Masculino-bege/oliva/marrom",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "4ef5501c-4371-4d4a-b586-8d6c47c60bb8",
+      "name": "Tênis Fila Original Fitness Tennis Club II Masculino Bege",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "57f8029e-ac57-4774-9989-c65cbc156ec6",
+      "name": "Tênis Fila KR7 Pro Speed Tech Masculino - Verde - fila",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "5c3b2bf4-67dd-4705-8c2b-54f2e9691f9d",
+      "name": "Tênis Masculino Fila Float Maxxi 2 Pro Azul Claro",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "652f2bad-4611-4aab-8539-fccd2db76ea7",
+      "name": "Tenis Fila Venture Tracer Lite Feminino Off-White",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "65691241-c815-4791-8782-e9e08668bc41",
+      "name": "Tênis Fila KR7 Pro Speed Tech Feminino - Vermelho - fila",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "691d47d1-e71a-426a-b198-e8a2a53b68e8",
+      "name": "Tênis Fila Racer Curve 2 Masculino - Preto/laranja/azul",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "697565a0-9c1e-47d3-8e9b-334f9c77a71a",
+      "name": "Tênis Fila Striker Masculino-cinza Claro/marinho/vermelho",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "6bf03136-37db-4ba9-9cd1-004d01bf773e",
+      "name": "Tênis Masculino Fila Kr7 Pro Speed Tech Preto",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "7166d670-32c2-4a69-bd9a-010fe3656e68",
+      "name": "Tênis Fila Racer Skytrail Feminino - Bege Claro/oliva/verde Limão",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "79495fb0-e982-45dc-904e-109d86821cba",
+      "name": "Tênis Fila Racer Speedzone Tr Cinza Escuro e Preto Feminino Azul",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "86617e28-427b-4c3e-835c-bef316e4bf00",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Verde Limão",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "896f3951-eb55-4edc-9682-e11f5eb944c1",
+      "name": "Tênis Fila Float Maxxi 2 Pro Verde Claro Feminino Verde",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "93cf7dec-bc98-4a63-80db-e9e135395635",
+      "name": "Tenis Fila Float Maxxi 2 Pro Feminino Branco e Marrom",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "99d67374-a5b5-4fe0-8d54-e9ef7b9ca190",
+      "name": "Tênis Fila Euro Jogger Vintage Cinza Escuro Masculino Azul",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "9aaa88be-c660-4be2-af0e-70806c8e6134",
+      "name": "Tênis Fila Venture Tracer Lite Verde Claro Feminino Verde",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "9ad10987-65a7-4dac-9b21-9630ce8f73d5",
+      "name": "Tênis Fila Original Fitness Tennis Club II Masculino Preto",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "9d24ec43-76df-4594-8f53-5f309d4882bf",
+      "name": "Tênis Casual Masculino Fila Euro Jogger Vintage Azul Marinho",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "a40bf008-c1eb-4891-861a-69355dac7dea",
+      "name": "Tênis Fila Original Fitness Tennis Club Feminino Branco",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "a59b0576-6324-4288-be8d-c15cac4b80b3",
+      "name": "Tênis Fila Float Maxxi 2 Pro Masculino-branco/limão/azul Royal",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "a6e64796-d0f5-4d7c-a91a-1c16c3e0da7f",
+      "name": "Tênis Fila Street Fit 3 Cinza Escuro Masculino Azul",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "a7790ffa-e74d-4cfb-b33c-9bef7b8e47bb",
+      "name": "Tenis Fila Float Maxxi 2 Pro Off-White e Marrom",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "ad13b03c-3938-43b0-8be0-e6342360227b",
+      "name": "Tênis Masculino Running Fila Float Maxxi 2 Pro Fila Preto",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "c410f9b1-15b5-4cc1-96bf-5a0a9faf12dc",
+      "name": "Tênis Fila Float Maxxi 2 Pro Bege e Marrom Feminino Bege",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "c5cb66df-0767-404d-993d-dae6f885ab80",
+      "name": "Tênis Fila Venture Tracer Lite Marrom Escuro Masculino Marrom",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "cd72d1a7-a9cd-4f44-a362-4c65eb62ee28",
+      "name": "Tênis Fila Venture Tracer Lite Azul Marinho Masculino Azul",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "d055f731-421e-4118-977d-d7dc36d35121",
+      "name": "Tênis Fila Racer Carbon Tri Feminino - Azul Marinho - fila",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "dae0384c-bd58-4adc-8140-8eeb79a9f314",
+      "name": "Tênis Fila Float Maxxi 2 Pro II Feminino Branco e Verde",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "db18b1c1-1213-4c94-ae86-186ed979fc28",
+      "name": "Tênis Fila Feminino Venture Tracer Lite Casual Off-white",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "de2e1af9-cdb8-4518-8c7f-4c7a9524eddd",
+      "name": "Tênis Fila Original Fitness Tennis Club II Feminino Branco",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "dfa0f57f-8cab-4526-ad91-8608f5278bb3",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Masculino Vermelho",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "e4e25881-f28f-4ebe-8e9e-46e43d64c6e2",
+      "name": "Tênis Fila KR7 Pro Speed Tech Masculino - Branco - fila",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "e623f7e6-dfe5-4570-9ca1-fca7f428142c",
+      "name": "Tênis Fila Original Fitness Tennis Club Feminino Bege",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "ea080026-d4b5-44de-8c44-ddeb908aeee5",
+      "name": "Tênis Fila Racer Fastpace Feminino - Preto/cobre/grafite",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "ed4cee8a-dccd-480f-8ab6-fc6f6af428c8",
+      "name": "Tênis Fila Float Maxxi 2 Masculino - Marrom/preto/dourado",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "f11b3568-dec0-424a-8a35-fa59b9cbde50",
+      "name": "Tênis Fila KR7 Pro Speed Tech Feminino - Verde - fila",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "f5d17753-626a-4af5-8371-ff81387ae1fe",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Feminino Preto",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "fc638073-d9dc-49ea-b943-ed88f279f4d8",
+      "name": "Tênis Fila Float Maxxi 2 Pro Branco e Verde Limão",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "fceca8a8-e1d8-4e02-a444-06b25821d3b3",
+      "name": "Tênis Fila Venture Tracer Lite Marrom Escuro Feminino Marrom",
+      "brand": "Fila",
+      "merchant": "b2d6fb50-3d45-4c0e-ba1f-726f36f4888f",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "01084159-ed97-4780-bea3-9225a24d16c1",
+      "name": "Tênis Fila Euro Jogger Sport II Cinza e Marinho",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "0135ef5d-0616-465c-a6eb-56a36b446d31",
+      "name": "Tênis Fila Float Maxxi 2 Pro Feminino Azul",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "0428b3d5-af59-49bf-ba9e-84d32cb87ac7",
+      "name": "Tênis Fila KR6 Feminino Verde Limão e Branco",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "066ed2ac-167e-490d-9180-dbdbfdd3b1c4",
+      "name": "Tênis Fila ACD Classic Feminino Off White",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "08c4ccf9-6189-40de-b40f-1e95241d83b8",
+      "name": "Tênis Fila ACD Classic SE Feminino Marrom e Preto",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "0a4d4261-6ac7-4210-b182-40e83dd7fe6e",
+      "name": "Tênis Fila ACD Classic Feminino Rosa Claro",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "13bddd1d-cd6c-40c8-9a6f-6dbae8721a21",
+      "name": "Tênis Fila ACD Classic Verde Oliva e Preto",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "15770184-ad16-4ba8-9804-825f424525ff",
+      "name": "Tênis Fila Float Maxxi 2 Pro Laranja e Preto",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "189c0344-71af-444a-8be2-c6433adaf8a5",
+      "name": "Tênis Fila Float Maxxi 2 Pro Feminino Preto e Grafite",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "1919cc2e-2a43-468f-bace-f2f7f6515ad7",
+      "name": "Tênis Fila Progress Lite Feminino Azul e Branco",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "1e0c4820-3989-47fb-bd3c-ea96ee0ea304",
+      "name": "Tênis Fila ACD Classic Preto e Cinza Claro",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "21be1c03-9fca-4c50-a19c-5cc644f71c1f",
+      "name": "Sandália Fila Drifter Bubble Feminina Verde Oliva",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "25eda18f-a75e-4949-bc13-57dadb412d03",
+      "name": "Tênis Fila Racer Skytrail Feminino Preto e Cinza",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "26bfc411-71b2-4b82-9dfb-c81a85a0cec8",
+      "name": "Tênis Fila Racer Comet Feminino Bege e Branco",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "27dcb61e-9d72-4ac6-b369-65b8fdc1da08",
+      "name": "Tênis Fila Float Maxxi 2 Pro Feminino Verde e Azul",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "2905c0a0-0c00-4a81-81a0-b7a44e6119c1",
+      "name": "Tênis Fila Original Fitness Tennis Club II Branco",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "2b8f7f05-0177-44db-b417-a5dd8d576bf1",
+      "name": "Tênis Fila Racer Speedzone Feminino Branco e Azul",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "2bba22b9-8d19-4666-a6ea-d6280180ee93",
+      "name": "Tênis Fila Tennis 88 T-Toe Feminino Branco e Bege",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "2e6e6330-a582-48d6-8b06-325d16c51024",
+      "name": "Tênis Fila Float Maxxi 2 Pro Feminino Verde",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "2f4244b5-04c2-4a78-99d6-c123009cd72f",
+      "name": "Tenis Fila Kr6 Frame Feminino Vermelho e Amarelo",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "36b19622-ff36-4d4e-a6bd-6cd2bc25da81",
+      "name": "Tênis Fila Float Maxxi 2 Pro Feminino Preto",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "3c86a92f-44a3-4320-8cce-fcd18355fcd4",
+      "name": "Tênis Fila Racer Speedzone Feminino Branco e Prata",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "3df5ef45-ceec-42b7-ac90-304d1d818d69",
+      "name": "Tênis Fila Float Maxxi 2 Pro Branco e Marinho",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "4dd9a99d-fe3a-494a-a1b9-ac43e10e5cdc",
+      "name": "Tênis Fila Float Maxxi 2 Pro Branco e Verde Limão",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "7a00f3dd-2354-44d1-8001-ca236f979cc6",
+      "name": "Tênis Fila Euro Jogger Sport II Feminino Preto e Rosa",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "7c4e894d-4cf3-475b-be44-25542815c098",
+      "name": "Tênis Fila Float Maxxi 2 Pro Feminino Branco e Marinho",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "8e081f6d-8511-4a6f-b79b-c4a4fa0cdbc3",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Verde Limão",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "a0da1683-4d42-4555-b0a2-e2946868b2fc",
+      "name": "Tênis Fila Float Maxxi 2 Pro II Feminino Branco e Verde",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "af4cfca9-1353-46ce-9855-66a86d3b0165",
+      "name": "Tênis Fila Original Fitness Tennis Club II Branco e Marinho",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "c5acc68e-eab5-4836-a3cb-981022b64082",
+      "name": "Tênis Fila Euro Jogger Sport II Feminino Cinza e Bege",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "e63ccd1e-1cd4-42ee-87c5-d6054b2a5a7d",
+      "name": "Tênis Fila Kr7 Pro Speed Tech Feminino Verde Limão",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "ea55d802-98f1-44dd-a307-3c54140441e7",
+      "name": "Tênis Fila Original Fitness Bold Feminino Branco e Rosa",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    },
+    {
+      "id": "fd43dfcb-6b02-4056-8a89-bbf892f1613f",
+      "name": "Tênis Fila Original Fitness Bold Feminino Preto e Branco",
+      "brand": "Fila",
+      "merchant": "cb115bef-7003-40cc-9f7f-1425d6351f47",
+      "provider": "4d10ac31-e1f0-4cdc-aac1-a6ef466764fb"
+    }
+  ]
+}

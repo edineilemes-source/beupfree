@@ -55,13 +55,18 @@ function tokenize(value: string): string[] {
   // Unlike the generic attribute tokenizer, retain decimal generation markers.
   return value.normalize("NFKC").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toLowerCase().replace(/\bslip[\s-]+on\b/g, "slipon")
-    .match(/[a-z0-9]+(?:\.[0-9]+)*/g)?.map(t => t === "slipon" ? "slip-on" : t) ?? [];
+    .match(/[a-z0-9]+(?:\.[0-9]+[a-z0-9]*)*/g)?.map(t => t === "slipon" ? "slip-on" : t) ?? [];
 }
 
 // Identity-only extension: does not change taxonomy or operational color rules.
 // Keep precise colorway descriptors distinct; sand is not automatically beige.
 export const IDENTITY_COLOR_ALIASES = [
   ...COLOR_DICTIONARY.flatMap(c => c.aliases.map(alias => ({ parts: tokenize(alias), value: c.value }))),
+  // Small identity-only suffix vocabulary. Preserve shades in Variant evidence:
+  // verde-claro is not proof of the same colorway as verde or verde-escuro.
+  ...["verde", "azul", "rosa", "cinza"].flatMap(base =>
+    ["claro", "escuro", ...(base === "verde" ? ["limao"] : [])]
+      .map(shade => ({ parts: [base, shade], value: `${base}-${shade}` }))),
   ...["coral", "chalk", "sand", "taupe", "cream", "ivory", "olive", "teal", "mint", "lavender", "salmon", "burgundy"].map(value => ({ parts: [value], value })),
 ].sort((a, b) => b.parts.length - a.parts.length);
 
@@ -104,6 +109,15 @@ export function parseProductIdentity(input: ProductIdentityInput): ProductIdenti
   // Only leading product-type words are consumed: model words remain evidence.
   const productType = types[tokens[0]] ?? null;
   if (productType) tokens.shift();
+  // Whole numeric sneaker-model token + explicit V generation only. Never split
+  // alphabetic model codes, decimal codes, leading zeroes or reference/SKU text.
+  if (productType === "SNEAKER" && brand &&
+      !tokens.some(t => ["sku", "mpn", "ref", "referencia", "codigo"].includes(t))) {
+    tokens = tokens.flatMap(t => {
+      const joined = /^([1-9]\d{2,3})v([1-9]\d?)$/.exec(t);
+      return joined ? [joined[1], `v${joined[2]}`] : [t];
+    });
+  }
   const colors: string[] = [];
   const colorAliases = IDENTITY_COLOR_ALIASES;
   // Colors are removed only from a suffix, avoiding arbitrary deletion inside models.
@@ -113,7 +127,10 @@ export function parseProductIdentity(input: ProductIdentityInput): ProductIdenti
     if (!color) break;
     // A new descriptor before an already extracted color can still be a model
     // word ("Easy Sand Cinza"). Require an explicit colorway separator there.
-    const extended = !COLOR_DICTIONARY.some(c => c.value === color.value);
+    const compoundShade = color.parts.length === 2 &&
+      ["verde", "azul", "rosa", "cinza"].includes(color.parts[0]) &&
+      ["claro", "escuro", "limao"].includes(color.parts[1]);
+    const extended = !compoundShade && !COLOR_DICTIONARY.some(c => c.value === color.value);
     const separator = new RegExp(`\\b${color.parts.join("[\\s-]+")}\\s*[/,+&-]`, "i").test(input.name);
     if (extended && colors.length && !connectedColor && !separator) {
       ambiguities.push("COLOR_MODEL_BOUNDARY_UNCERTAIN");

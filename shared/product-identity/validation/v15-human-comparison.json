@@ -1,0 +1,547 @@
+{
+  "total": 247,
+  "human": {
+    "YES": 157,
+    "NO": 87,
+    "UNSURE": 3
+  },
+  "before": {
+    "AUTO_MATCH": {
+      "YES": 147,
+      "NO": 0,
+      "UNSURE": 0
+    },
+    "REVIEW": {
+      "YES": 10,
+      "NO": 53,
+      "UNSURE": 1
+    },
+    "NO_MATCH": {
+      "YES": 0,
+      "NO": 34,
+      "UNSURE": 2
+    }
+  },
+  "after": {
+    "AUTO_MATCH": {
+      "YES": 148,
+      "NO": 0,
+      "UNSURE": 0
+    },
+    "REVIEW": {
+      "YES": 9,
+      "NO": 53,
+      "UNSURE": 1
+    },
+    "NO_MATCH": {
+      "YES": 0,
+      "NO": 34,
+      "UNSURE": 2
+    }
+  },
+  "decisionChanges": [
+    {
+      "id": "PID-0191",
+      "human": {
+        "sameMaster": "YES",
+        "sameVariant": "UNSURE",
+        "notes": "Blind labeling: same commercial master model. Variant identity not established from title evidence alone."
+      },
+      "names": [
+        "Tênis New Balance Fresh Foam X 1080 V14 Feminino Branco",
+        "Tênis New Balance Fresh Foam X 1080v14 Feminino - Verde Claro"
+      ],
+      "before": {
+        "decision": "REVIEW",
+        "confidence": 0.5,
+        "reasons": [
+          "MODEL_EVIDENCE_DIFFERS",
+          "VERSION_PRESENT_ON_ONE_SIDE"
+        ],
+        "conflicts": [],
+        "masterDecision": "REVIEW",
+        "variantDecision": "REVIEW",
+        "masterConfidence": 0.5,
+        "variantConfidence": 0.5,
+        "master": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS",
+            "VERSION_PRESENT_ON_ONE_SIDE"
+          ],
+          "conflicts": []
+        },
+        "variant": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MASTER_NOT_CONFIRMED",
+            "COLOR_EVIDENCE_MISSING"
+          ],
+          "conflicts": []
+        }
+      },
+      "after": {
+        "decision": "AUTO_MATCH",
+        "confidence": 0.95,
+        "reasons": [
+          "SAME_BRAND",
+          "SAME_MODEL_TOKEN_MULTISET",
+          "COMPATIBLE_VERSION_EVIDENCE",
+          "SAME_TECHNICAL_QUALIFIERS",
+          "COLOR_AUDIENCE_ORDER_IGNORED"
+        ],
+        "conflicts": [],
+        "masterDecision": "AUTO_MATCH",
+        "variantDecision": "NO_MATCH",
+        "masterConfidence": 0.95,
+        "variantConfidence": 0.99,
+        "master": {
+          "decision": "AUTO_MATCH",
+          "confidence": 0.95,
+          "reasons": [
+            "SAME_BRAND",
+            "SAME_MODEL_TOKEN_MULTISET",
+            "COMPATIBLE_VERSION_EVIDENCE",
+            "SAME_TECHNICAL_QUALIFIERS",
+            "COLOR_AUDIENCE_ORDER_IGNORED"
+          ],
+          "conflicts": []
+        },
+        "variant": {
+          "decision": "NO_MATCH",
+          "confidence": 0.99,
+          "reasons": [
+            "EXPLICIT_VARIANT_CONFLICT"
+          ],
+          "conflicts": [
+            "COLOR_CONFLICT"
+          ]
+        }
+      },
+      "parseChanged": [
+        false,
+        true
+      ]
+    },
+    {
+      "id": "PID-0192",
+      "human": {
+        "sameMaster": "NO",
+        "sameVariant": "NO",
+        "notes": "Blind labeling: distinct commercial master product due to model, generation, edition or explicit functional difference."
+      },
+      "names": [
+        "Tênis Puma Flyer Beta Wns Bdp Feminino Bordô",
+        "Tênis Puma Flyer Lite 3 WNS BDP Feminino Azul Claro"
+      ],
+      "before": {
+        "decision": "REVIEW",
+        "confidence": 0.5,
+        "reasons": [
+          "MODEL_EVIDENCE_DIFFERS"
+        ],
+        "conflicts": [],
+        "masterDecision": "REVIEW",
+        "variantDecision": "REVIEW",
+        "masterConfidence": 0.5,
+        "variantConfidence": 0.5,
+        "master": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS"
+          ],
+          "conflicts": []
+        },
+        "variant": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MASTER_NOT_CONFIRMED",
+            "COLOR_EVIDENCE_MISSING"
+          ],
+          "conflicts": []
+        }
+      },
+      "after": {
+        "decision": "REVIEW",
+        "confidence": 0.5,
+        "reasons": [
+          "MODEL_EVIDENCE_DIFFERS"
+        ],
+        "conflicts": [],
+        "masterDecision": "REVIEW",
+        "variantDecision": "NO_MATCH",
+        "masterConfidence": 0.5,
+        "variantConfidence": 0.99,
+        "master": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS"
+          ],
+          "conflicts": []
+        },
+        "variant": {
+          "decision": "NO_MATCH",
+          "confidence": 0.99,
+          "reasons": [
+            "EXPLICIT_VARIANT_CONFLICT",
+            "MASTER_NOT_CONFIRMED"
+          ],
+          "conflicts": [
+            "COLOR_CONFLICT"
+          ]
+        }
+      },
+      "parseChanged": [
+        false,
+        true
+      ]
+    }
+  ],
+  "reasonChanges": [
+    {
+      "id": "PID-0177",
+      "human": {
+        "sameMaster": "NO",
+        "sameVariant": "NO",
+        "notes": "Blind labeling: distinct commercial master product due to model, generation, edition or explicit functional difference."
+      },
+      "names": [
+        "Tênis Olympikus Swift 5 Feminino Rosa Claro",
+        "Tênis Olympikus Era Feminino Rosa Claro"
+      ],
+      "before": {
+        "decision": "REVIEW",
+        "confidence": 0.5,
+        "reasons": [
+          "MODEL_EVIDENCE_DIFFERS"
+        ],
+        "conflicts": [],
+        "masterDecision": "REVIEW",
+        "variantDecision": "REVIEW",
+        "masterConfidence": 0.5,
+        "variantConfidence": 0.5,
+        "master": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS"
+          ],
+          "conflicts": []
+        },
+        "variant": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MASTER_NOT_CONFIRMED",
+            "COLOR_EVIDENCE_MISSING"
+          ],
+          "conflicts": []
+        }
+      },
+      "after": {
+        "decision": "REVIEW",
+        "confidence": 0.5,
+        "reasons": [
+          "MODEL_EVIDENCE_DIFFERS"
+        ],
+        "conflicts": [],
+        "masterDecision": "REVIEW",
+        "variantDecision": "REVIEW",
+        "masterConfidence": 0.5,
+        "variantConfidence": 0.5,
+        "master": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS"
+          ],
+          "conflicts": []
+        },
+        "variant": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MASTER_NOT_CONFIRMED"
+          ],
+          "conflicts": []
+        }
+      },
+      "parseChanged": [
+        true,
+        true
+      ]
+    },
+    {
+      "id": "PID-0188",
+      "human": {
+        "sameMaster": "YES",
+        "sameVariant": "UNSURE",
+        "notes": "Blind labeling: same commercial master model. Variant identity not established from title evidence alone."
+      },
+      "names": [
+        "Tênis New Balance Fresh Foam X 1080 V14 Feminino Branco",
+        "Tênis New Balance Fresh Foam X 1080v14 Feminino - Lilás"
+      ],
+      "before": {
+        "decision": "REVIEW",
+        "confidence": 0.5,
+        "reasons": [
+          "MODEL_EVIDENCE_DIFFERS",
+          "VERSION_PRESENT_ON_ONE_SIDE"
+        ],
+        "conflicts": [],
+        "masterDecision": "REVIEW",
+        "variantDecision": "REVIEW",
+        "masterConfidence": 0.5,
+        "variantConfidence": 0.5,
+        "master": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS",
+            "VERSION_PRESENT_ON_ONE_SIDE"
+          ],
+          "conflicts": []
+        },
+        "variant": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MASTER_NOT_CONFIRMED",
+            "COLOR_EVIDENCE_MISSING"
+          ],
+          "conflicts": []
+        }
+      },
+      "after": {
+        "decision": "REVIEW",
+        "confidence": 0.5,
+        "reasons": [
+          "MODEL_EVIDENCE_DIFFERS"
+        ],
+        "conflicts": [],
+        "masterDecision": "REVIEW",
+        "variantDecision": "REVIEW",
+        "masterConfidence": 0.5,
+        "variantConfidence": 0.5,
+        "master": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS"
+          ],
+          "conflicts": []
+        },
+        "variant": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MASTER_NOT_CONFIRMED",
+            "COLOR_EVIDENCE_MISSING"
+          ],
+          "conflicts": []
+        }
+      },
+      "parseChanged": [
+        false,
+        true
+      ]
+    },
+    {
+      "id": "PID-0191",
+      "human": {
+        "sameMaster": "YES",
+        "sameVariant": "UNSURE",
+        "notes": "Blind labeling: same commercial master model. Variant identity not established from title evidence alone."
+      },
+      "names": [
+        "Tênis New Balance Fresh Foam X 1080 V14 Feminino Branco",
+        "Tênis New Balance Fresh Foam X 1080v14 Feminino - Verde Claro"
+      ],
+      "before": {
+        "decision": "REVIEW",
+        "confidence": 0.5,
+        "reasons": [
+          "MODEL_EVIDENCE_DIFFERS",
+          "VERSION_PRESENT_ON_ONE_SIDE"
+        ],
+        "conflicts": [],
+        "masterDecision": "REVIEW",
+        "variantDecision": "REVIEW",
+        "masterConfidence": 0.5,
+        "variantConfidence": 0.5,
+        "master": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS",
+            "VERSION_PRESENT_ON_ONE_SIDE"
+          ],
+          "conflicts": []
+        },
+        "variant": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MASTER_NOT_CONFIRMED",
+            "COLOR_EVIDENCE_MISSING"
+          ],
+          "conflicts": []
+        }
+      },
+      "after": {
+        "decision": "AUTO_MATCH",
+        "confidence": 0.95,
+        "reasons": [
+          "SAME_BRAND",
+          "SAME_MODEL_TOKEN_MULTISET",
+          "COMPATIBLE_VERSION_EVIDENCE",
+          "SAME_TECHNICAL_QUALIFIERS",
+          "COLOR_AUDIENCE_ORDER_IGNORED"
+        ],
+        "conflicts": [],
+        "masterDecision": "AUTO_MATCH",
+        "variantDecision": "NO_MATCH",
+        "masterConfidence": 0.95,
+        "variantConfidence": 0.99,
+        "master": {
+          "decision": "AUTO_MATCH",
+          "confidence": 0.95,
+          "reasons": [
+            "SAME_BRAND",
+            "SAME_MODEL_TOKEN_MULTISET",
+            "COMPATIBLE_VERSION_EVIDENCE",
+            "SAME_TECHNICAL_QUALIFIERS",
+            "COLOR_AUDIENCE_ORDER_IGNORED"
+          ],
+          "conflicts": []
+        },
+        "variant": {
+          "decision": "NO_MATCH",
+          "confidence": 0.99,
+          "reasons": [
+            "EXPLICIT_VARIANT_CONFLICT"
+          ],
+          "conflicts": [
+            "COLOR_CONFLICT"
+          ]
+        }
+      },
+      "parseChanged": [
+        false,
+        true
+      ]
+    },
+    {
+      "id": "PID-0192",
+      "human": {
+        "sameMaster": "NO",
+        "sameVariant": "NO",
+        "notes": "Blind labeling: distinct commercial master product due to model, generation, edition or explicit functional difference."
+      },
+      "names": [
+        "Tênis Puma Flyer Beta Wns Bdp Feminino Bordô",
+        "Tênis Puma Flyer Lite 3 WNS BDP Feminino Azul Claro"
+      ],
+      "before": {
+        "decision": "REVIEW",
+        "confidence": 0.5,
+        "reasons": [
+          "MODEL_EVIDENCE_DIFFERS"
+        ],
+        "conflicts": [],
+        "masterDecision": "REVIEW",
+        "variantDecision": "REVIEW",
+        "masterConfidence": 0.5,
+        "variantConfidence": 0.5,
+        "master": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS"
+          ],
+          "conflicts": []
+        },
+        "variant": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MASTER_NOT_CONFIRMED",
+            "COLOR_EVIDENCE_MISSING"
+          ],
+          "conflicts": []
+        }
+      },
+      "after": {
+        "decision": "REVIEW",
+        "confidence": 0.5,
+        "reasons": [
+          "MODEL_EVIDENCE_DIFFERS"
+        ],
+        "conflicts": [],
+        "masterDecision": "REVIEW",
+        "variantDecision": "NO_MATCH",
+        "masterConfidence": 0.5,
+        "variantConfidence": 0.99,
+        "master": {
+          "decision": "REVIEW",
+          "confidence": 0.5,
+          "reasons": [
+            "MODEL_EVIDENCE_DIFFERS"
+          ],
+          "conflicts": []
+        },
+        "variant": {
+          "decision": "NO_MATCH",
+          "confidence": 0.99,
+          "reasons": [
+            "EXPLICIT_VARIANT_CONFLICT",
+            "MASTER_NOT_CONFIRMED"
+          ],
+          "conflicts": [
+            "COLOR_CONFLICT"
+          ]
+        }
+      },
+      "parseChanged": [
+        false,
+        true
+      ]
+    }
+  ],
+  "humanNoToAutoMatch": 0,
+  "humanUnsureToAutoMatch": 0,
+  "passed": true,
+  "baselineVerifiedAgainstPreEditExecution": true,
+  "changedParseRecords": [
+    {
+      "id": "PID-0177",
+      "side": "futFanatics"
+    },
+    {
+      "id": "PID-0177",
+      "side": "dafiti"
+    },
+    {
+      "id": "PID-0188",
+      "side": "dafiti"
+    },
+    {
+      "id": "PID-0191",
+      "side": "dafiti"
+    },
+    {
+      "id": "PID-0192",
+      "side": "dafiti"
+    },
+    {
+      "id": "PID-0242",
+      "side": "dafiti"
+    }
+  ]
+}

@@ -169,10 +169,11 @@ test("ambiguous variant association is diagnosed, cannot select or transfer a va
   a.selectedVariantId = "v1";
   assert.equal(runReconciledShadow([a, b]).status, "FAILED");
 });
-test("V1.2 frozen artifacts and 247 historical pair decisions remain intact", () => {
+test("V1.2 frozen labels, matcher and historical parses remain auditable with explicit V1.5 parse deltas", () => {
   const root = new URL("../../shared/product-identity/", import.meta.url);
   const expected = {
-    "parser.ts": "d13e37922e2a243be4640eddc681db2f71858c93c92af56dd8c306a85b501e08",
+    // Authorized V1.5 parser replacement; historical parses stay in immutable golden.
+    "parser.ts": "bd50efcc685958bef534a92e3a9f856e19334d1830d9d1b0971dd04c97165126",
     "matcher.ts": "52bd2c2307496ff149e4c5dbb07bbf0e48d02432cf271e7b8af575cf788b686f",
     "identity.test.ts": "df4512d4ad331a4bdbb70b91584c59269bb5ce3158e69025574e9d28cb013500",
     "validation/golden-v1.json": "6024db9bbfb06b1975d5bb13fb30e7ae028d7519d49e4e4ac1085717c1fa56a9",
@@ -181,14 +182,20 @@ test("V1.2 frozen artifacts and 247 historical pair decisions remain intact", ()
   for (const [file, hash] of Object.entries(expected)) assert.equal(createHash("sha256").update(readFileSync(new URL(file, root))).digest("hex"), hash);
   const golden = JSON.parse(readFileSync(new URL("validation/golden-v1.json", root), "utf8"));
   const totals = { AUTO_MATCH: 0, REVIEW: 0, NO_MATCH: 0 };
+  const currentTotals = { ...totals };
+  const changedParses: string[] = [];
   for (const c of golden.cases) {
     const a = parseProductIdentity(c.futFanatics.identity.raw), b = parseProductIdentity(c.dafiti.identity.raw);
-    assert.deepEqual(a, c.futFanatics.identity);
-    assert.deepEqual(b, c.dafiti.identity);
-    totals[matchProductIdentities(a, b).masterDecision]++;
+    if (canonical(a) !== canonical(c.futFanatics.identity)) changedParses.push(`${c.id}:futFanatics`);
+    if (canonical(b) !== canonical(c.dafiti.identity)) changedParses.push(`${c.id}:dafiti`);
+    totals[matchProductIdentities(c.futFanatics.identity, c.dafiti.identity).masterDecision]++;
+    currentTotals[matchProductIdentities(a, b).masterDecision]++;
   }
   assert.equal(golden.cases.length, 247);
   assert.deepEqual(totals, { AUTO_MATCH: 147, REVIEW: 64, NO_MATCH: 36 });
+  assert.deepEqual(currentTotals, { AUTO_MATCH: 148, REVIEW: 63, NO_MATCH: 36 });
+  assert.deepEqual(changedParses, ["PID-0177:futFanatics", "PID-0177:dafiti", "PID-0188:dafiti",
+    "PID-0191:dafiti", "PID-0192:dafiti", "PID-0242:dafiti"]);
 });
 test("adapter normalizes actual entity Date timestamps and preserves variant provenance/order", () => {
   const a = row("a", "Tênis Acme Comet");

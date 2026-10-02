@@ -1,0 +1,72 @@
+{
+  "shared/product-identity/parser.ts": {
+    "before": "d13e37922e2a243be4640eddc681db2f71858c93c92af56dd8c306a85b501e08",
+    "after": "bd50efcc685958bef534a92e3a9f856e19334d1830d9d1b0971dd04c97165126",
+    "unchanged": false
+  },
+  "server/productIdentity/candidates.ts": {
+    "before": "19e20aff931615f3cf471f6177d462ef0a4884fc716c7f54737412a05cdbd6b6",
+    "after": "7553627960fa5fb1d10cfaf9825db4ce865056c5cb378914af0618a70b61a9ff",
+    "unchanged": false
+  },
+  "shared/product-identity/identity.test.ts": {
+    "before": "df4512d4ad331a4bdbb70b91584c59269bb5ce3158e69025574e9d28cb013500",
+    "after": "df4512d4ad331a4bdbb70b91584c59269bb5ce3158e69025574e9d28cb013500",
+    "unchanged": true
+  },
+  "server/productIdentity/shadow.ts": {
+    "before": "c1c8662f62b36c8208775bcc017bfd94bac550c31bb1393418ada50916dc76a5",
+    "after": "c1c8662f62b36c8208775bcc017bfd94bac550c31bb1393418ada50916dc76a5",
+    "unchanged": true
+  },
+  "server/productIdentity/contracts.ts": {
+    "before": "24149512c00435973b6f6d5b2740b6928847eca3feed94a993a474b22b361af5",
+    "after": "948c5ab107bf27e89de5d821207de9dbd3e85d86bbc900278caeaa904c19203a",
+    "unchanged": false
+  },
+  "shared/product-identity/validation/golden-v1.json": {
+    "before": "6024db9bbfb06b1975d5bb13fb30e7ae028d7519d49e4e4ac1085717c1fa56a9",
+    "after": "6024db9bbfb06b1975d5bb13fb30e7ae028d7519d49e4e4ac1085717c1fa56a9",
+    "unchanged": true
+  },
+  "shared/product-identity/validation/labeling-v1.json": {
+    "before": "5d269cfd8596cff3d37a56287adc64e142420b6f04f229d880959d919c2c599d",
+    "after": "5d269cfd8596cff3d37a56287adc64e142420b6f04f229d880959d919c2c599d",
+    "unchanged": true
+  },
+  "shared/product-identity/matcher.ts": {
+    "before": "52bd2c2307496ff149e4c5dbb07bbf0e48d02432cf271e7b8af575cf788b686f",
+    "after": "52bd2c2307496ff149e4c5dbb07bbf0e48d02432cf271e7b8af575cf788b686f",
+    "unchanged": true
+  },
+  "server/productIdentity/adapter.ts": {
+    "before": "e059625fea508ab5e41d472ca224101d030171c0bb4137d7fdfadcb8804d918b",
+    "after": "e059625fea508ab5e41d472ca224101d030171c0bb4137d7fdfadcb8804d918b",
+    "unchanged": true
+  },
+  "server/productIdentity/grouping.ts": {
+    "before": "7e30eb5e2d2086054ec816194bac38844b3e9856a99a1bff6a7b27c0cf6f9e16",
+    "after": "7e30eb5e2d2086054ec816194bac38844b3e9856a99a1bff6a7b27c0cf6f9e16",
+    "unchanged": true
+  },
+  "scripts/product-identity-real-shadow.ts": {
+    "before": "aa69ca448458a7d552691f1343d2eb805e4a815d4a80a070eae0d68425091098",
+    "after": "aa69ca448458a7d552691f1343d2eb805e4a815d4a80a070eae0d68425091098",
+    "unchanged": true
+  },
+  "scripts/product-identity-real-shadow.test.ts": {
+    "before": "87b64067320ba71a55f561bd953e80907271bfa080980786cc98bf7ecc653091",
+    "after": "87b64067320ba71a55f561bd953e80907271bfa080980786cc98bf7ecc653091",
+    "unchanged": true
+  },
+  "package.json": {
+    "before": "1a0e5ad1c92f678d66dca7880b7b5865b1607c586520b66385fab89ed88b35b6",
+    "after": "ae0bb2259dcaee7251e4dcb62a39a06ad48ae15b1f86f85bd67c53668f4b6a47",
+    "unchanged": false
+  },
+  "/tmp/product-identity-real-shadow-v1.json": {
+    "before": "b4f363ef24dde5868339f3c89e8af6b8a2d2c74b7ae4426ad4b6684438d8ade3",
+    "after": "b4f363ef24dde5868339f3c89e8af6b8a2d2c74b7ae4426ad4b6684438d8ade3",
+    "unchanged": true
+  }
+}
