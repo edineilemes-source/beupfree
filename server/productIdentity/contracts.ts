@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const VERSIONS = {
   adapter: "reconciled-entities-v1", snapshot: "identity-input-v1",
-  candidates: "brand-type-token-dice-v1", parser: "product-identity-v1.2",
+  candidates: "structural-first-bridge-token-dice-v1.5", parser: "product-identity-v1.5",
   matcher: "product-identity-v1.2", grouping: "complete-pair-check-v1",
 } as const;
 export const compare = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
