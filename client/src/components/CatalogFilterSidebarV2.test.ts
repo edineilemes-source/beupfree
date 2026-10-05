@@ -51,3 +51,12 @@ test("sem preço não cria chip de preço ou limites selecionados", () => {
   assert.ok(input(html, "input-price-min").includes('value=""'));
   assert.ok(input(html, "input-price-max").includes('value=""'));
 });
+
+test("seleções zeradas da API continuam como controles e chips removíveis", () => {
+  const html = render("marca=Asics&cor=preto&tamanho=40&genero=Masculino&modalidade=Corrida");
+  for (const label of ["Preto", "40", "Masculino", "Corrida", "Asics"]) {
+    assert.ok(html.toLowerCase().includes(label.toLowerCase()), label);
+  }
+  assert.ok(html.includes('data-testid="chip-cor-preto"'));
+  assert.ok(html.includes('data-testid="button-limpar-todos"'));
+});

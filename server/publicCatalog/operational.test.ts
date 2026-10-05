@@ -12,3 +12,14 @@ function disable(){delete process.env.UPPULSE_PUBLIC_CATALOG_SOURCE;delete proce
 test("lista operacional pagina e encaminha filtros server-side",async()=>{enable();try{const res=response();await createOperationalPublicCatalogHandlers(()=>repo).list(request({limit:"5000",offset:"100",sort:"price-asc",marca:"Marca,Outra",desconto:"20% - 29%",q:"tênis azul"}),res,()=>assert.fail("não deveria cair no demo"));assert.equal(res.headers["X-UpPulse-Catalog-Source"],"operational");assert.equal(res.body.total,1);assert.equal(res.body.limit,100);assert.equal(res.body.offset,100);assert.equal(res.body.serverDriven,true);assert.equal(res.body.catalogSource,"operational");assert.equal(res.body.demonstrative,false);assert.equal(res.body.products[0].demonstrative,false);assert.equal(res.body.products[0].bestOffer.demonstrative,false);assert.equal(res.body.products[0].bestOffer.storeLabel,"Loja");assert.equal(repo.filters.sort,"price-asc");assert.deepEqual(repo.filters.brands,["Marca","Outra"]);assert.deepEqual(repo.filters.discountBuckets,["20% - 29%"]);assert.equal(repo.filters.search,"tênis azul")}finally{disable()}});
 test("detalhe agrega ofertas operacionais e clique redireciona sem abrir destino",async()=>{enable();try{const handlers=createOperationalPublicCatalogHandlers(()=>repo),detail=response(),click=response();await handlers.detail(request({}, {id:"p1"}),detail,()=>assert.fail());await handlers.click(request({}, {offerId:"o1"}),click,()=>assert.fail());assert.equal(detail.body.id,"p1");assert.equal(detail.body.demonstrative,false);assert.equal(detail.body.offers[0].id,"o1");assert.equal(detail.body.offers[0].demonstrative,false);assert.equal(click.redirectUrl,"https://affiliate.test/x")}finally{disable()}});
 test("gate retirado devolve controle ao catálogo demo",async()=>{disable();let next=false;await createOperationalPublicCatalogHandlers(()=>repo).list(request(),response(),()=>{next=true});assert.equal(next,true)});
+
+test("merchant e style multi-select chegam ao repository com outros filtros e busca",async()=>{
+ enable();try{
+  const res=response();
+  await createOperationalPublicCatalogHandlers(()=>repo).list(request({merchant:"Loja A,Loja B",style:"PERFORMANCE,LIFESTYLE",marca:"Nike,Adidas",q:"air max",priceMin:"300",priceMax:"500"}),res,()=>assert.fail());
+  assert.deepEqual(repo.filters.merchants,["Loja A","Loja B"]);
+  assert.deepEqual(repo.filters.styles,["PERFORMANCE","LIFESTYLE"]);
+  assert.deepEqual(repo.filters.brands,["Nike","Adidas"]);
+  assert.equal(repo.filters.search,"air max");assert.equal(repo.filters.priceMin,300);assert.equal(repo.filters.priceMax,500);
+ }finally{disable()}
+});
