@@ -15,6 +15,7 @@ import {
   FRETE_OPTIONS,
   AVALIACAO_BUCKETS,
   countActiveFilters,
+  preserveSelectedFacets,
 } from "@/lib/catalogFilters";
 
 import {
@@ -139,12 +140,13 @@ interface Props {
 }
 
 export default function CatalogFilterSidebar({
-  facets,
+  facets: availableFacets,
   filters,
   onToggle,
   onPriceChange,
   onClearAll,
 }: Props) {
+  const facets = preserveSelectedFacets(availableFacets, filters);
   const [showAllBrands, setShowAllBrands] = useState(false);
   const [brandQuery, setBrandQuery] = useState("");
 

@@ -514,7 +514,7 @@ export function computeCrossFacets(
 
   return {
     brands: withSelected(marca.brands, filters.marca),
-    colors: cor.colors,
+    colors: preserveSelectedFacets(cor, filters).colors,
     desconto: desconto.desconto,
     frete: frete.frete,
     sizes: withSelected(tamanho.sizes, filters.tamanho).sort(
@@ -544,4 +544,16 @@ export function countActiveFilters(f: CatalogFilters): number {
     f.avaliacao.length +
     (f.price ? 1 : 0)
   );
+}
+
+// Apply to API and local facets alike; never manufacture positive counts.
+export function preserveSelectedFacets(facets: CatalogFacets, filters: Pick<CatalogFilters, MultiFilterKey>): CatalogFacets {
+  const result = { ...facets };
+  const dimensions = { brands: "marca", sizes: "tamanho", generos: "genero", idades: "idade", modalidades: "modalidade", tipos: "tipo" } as const;
+  for (const [facet, filter] of Object.entries(dimensions) as [keyof typeof dimensions, MultiFilterKey][]) {
+    result[facet] = withSelected(facets[facet].filter(item => item.count > 0 || filters[filter].includes(item.label)), filters[filter]);
+  }
+  const colors = facets.colors.filter(item => item.count > 0 || filters.cor.includes(item.value));
+  result.colors = [...colors, ...filters.cor.filter(value => !colors.some(item => item.value === value)).map(value => ({ value, label: value, count: 0 }))];
+  return result;
 }
