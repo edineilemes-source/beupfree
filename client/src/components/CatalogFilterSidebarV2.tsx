@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -9,7 +9,6 @@ import {
   X,
 } from "lucide-react";
 import {
-  CatalogFilters,
   CatalogFacets,
   MultiFilterKey,
   DESCONTO_BUCKETS,
@@ -17,6 +16,11 @@ import {
   AVALIACAO_BUCKETS,
   countActiveFilters,
 } from "@/lib/catalogFilters";
+
+import {
+  type CatalogUrlFilters, type CatalogPrice,
+  catalogPriceControls, changeCatalogPrice, localCatalogFilters,
+} from "@/lib/catalogState";
 
 const PINNED_BRANDS = ["Nike", "Adidas", "Olympikus"];
 
@@ -128,9 +132,9 @@ function Chip({ label, onRemove, testId }: { label: string; onRemove: () => void
 
 interface Props {
   facets: CatalogFacets;
-  filters: CatalogFilters;
+  filters: CatalogUrlFilters;
   onToggle: (key: MultiFilterKey, value: string) => void;
-  onPriceChange: (price: [number, number] | null) => void;
+  onPriceChange: (price: CatalogPrice | null) => void;
   onClearAll: () => void;
 }
 
@@ -144,16 +148,12 @@ export default function CatalogFilterSidebar({
   const [showAllBrands, setShowAllBrands] = useState(false);
   const [brandQuery, setBrandQuery] = useState("");
 
-  const priceMin = facets.priceMin;
-  const priceMax = facets.priceMax || 1;
-  const price = filters.price ?? [priceMin, priceMax];
-
-  const clamp = (n: number) =>
-    Math.min(priceMax, Math.max(priceMin, Number.isFinite(n) ? n : priceMin));
-  const setMin = (raw: number) =>
-    onPriceChange([Math.min(clamp(raw), price[1]), price[1]]);
-  const setMax = (raw: number) =>
-    onPriceChange([price[0], Math.max(clamp(raw), price[0])]);
+  const bounds = catalogPriceControls(filters.price, facets.priceMin, facets.priceMax);
+  const priceMin = bounds.min;
+  const priceMax = bounds.max;
+  const price = bounds.values;
+  const setMin = (raw: string) => onPriceChange(changeCatalogPrice(filters.price, 0, raw, bounds));
+  const setMax = (raw: string) => onPriceChange(changeCatalogPrice(filters.price, 1, raw, bounds));
 
   const span = Math.max(1, priceMax - priceMin);
   const leftPct = ((price[0] - priceMin) / span) * 100;
@@ -174,7 +174,7 @@ export default function CatalogFilterSidebar({
   const visibleBrands = brandQuery ? searchedBrands : pinnedBrands;
   const expandableBrands = brandQuery || !showAllBrands ? [] : otherBrands;
 
-  const activeCount = countActiveFilters(filters);
+  const activeCount = countActiveFilters(localCatalogFilters(filters));
   const hasActive = activeCount > 0;
 
   const chips: { key: MultiFilterKey; value: string; label: string }[] = [];
@@ -242,7 +242,9 @@ export default function CatalogFilterSidebar({
               ))}
               {priceChanged && (
                 <Chip
-                  label={`R$ ${price[0]} – R$ ${price[1]}`}
+                  label={filters.price?.[0] == null ? `Até R$ ${filters.price?.[1]}`
+                    : filters.price[1] == null ? `A partir de R$ ${filters.price[0]}`
+                      : `R$ ${filters.price[0]} – R$ ${filters.price[1]}`}
                   onRemove={() => onPriceChange(null)}
                   testId="chip-price"
                 />
@@ -383,7 +385,7 @@ export default function CatalogFilterSidebar({
               min={priceMin}
               max={priceMax}
               value={price[0]}
-              onChange={(e) => setMin(Number(e.target.value))}
+              onChange={(e) => setMin(e.target.value)}
               className="beup-range"
               aria-label="Preço mínimo"
               data-testid="range-price-min"
@@ -393,7 +395,7 @@ export default function CatalogFilterSidebar({
               min={priceMin}
               max={priceMax}
               value={price[1]}
-              onChange={(e) => setMax(Number(e.target.value))}
+              onChange={(e) => setMax(e.target.value)}
               className="beup-range"
               aria-label="Preço máximo"
               data-testid="range-price-max"
@@ -408,8 +410,9 @@ export default function CatalogFilterSidebar({
                   type="number"
                   min={priceMin}
                   max={priceMax}
-                  value={price[0]}
-                  onChange={(e) => setMin(Number(e.target.value))}
+                  value={filters.price?.[0] ?? ""}
+                  placeholder={String(price[0])}
+                  onChange={(e) => setMin(e.target.value)}
                   className="w-full bg-transparent text-xs text-foreground outline-none"
                   data-testid="input-price-min"
                 />
@@ -423,8 +426,9 @@ export default function CatalogFilterSidebar({
                   type="number"
                   min={priceMin}
                   max={priceMax}
-                  value={price[1]}
-                  onChange={(e) => setMax(Number(e.target.value))}
+                  value={filters.price?.[1] ?? ""}
+                  placeholder={String(price[1])}
+                  onChange={(e) => setMax(e.target.value)}
                   className="w-full bg-transparent text-xs text-foreground outline-none"
                   data-testid="input-price-max"
                 />
