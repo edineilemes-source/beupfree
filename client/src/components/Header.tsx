@@ -10,6 +10,8 @@ import { useAuth } from "@/context/AuthContext";
 import AuthDialog from "@/components/AuthDialog";
 import { PUBLIC_DEMO_MODE } from "@/lib/publicDemo";
 
+import { catalogLocation, querySearch } from "@/lib/catalogState";
+
 const SEARCH_BORDER = "hsl(160 55% 38%)";
 
 const NAV: { label: string; href: string }[] = [
@@ -48,17 +50,8 @@ export default function Header() {
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const q = searchQuery.trim();
-    // Preserva filtros já ativos na URL (marca, gênero etc.) ao buscar.
-    const params = new URLSearchParams(search);
-    if (q) {
-      params.set("busca", q);
-    } else {
-      params.delete("busca");
-    }
-    params.delete("q");
-    const qs = params.toString();
-    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
+    // The URL contains all persistent filters, including either price bound.
+    setLocation(catalogLocation(querySearch(search, searchQuery)));
   };
 
   return (

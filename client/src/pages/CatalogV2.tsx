@@ -5,25 +5,28 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import CatalogFilterSidebar from "@/components/CatalogFilterSidebarV2";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Package, Search, Tag, X } from "lucide-react";
+import { Search, Tag, X } from "lucide-react";
 import { NEON, DARK, GREEN_GLOW, alpha } from "@/lib/brand";
 import heroBgUrl from "@assets/fundo_rascunho_be_up_1783981500992.png";
 import {
   CatalogProduct,
-  CatalogFilters,
   CatalogFacets,
   MultiFilterKey,
-  EMPTY_FILTERS,
   applyFilters,
   computeCrossFacets,
   brandNameOf,
   categoryNameOf,
   discountOf,
   priceOf,
-  normalizeColor,
 } from "@/lib/catalogFilters";
+import CatalogResults from "@/components/CatalogResults";
+import {
+  type CatalogPrice, type CatalogSortMode,
+  filtersFromSearch, queryFromSearch, toggleFilterSearch, priceSearch,
+  clearFiltersSearch, querySearch, catalogLocation, localCatalogFilters,
+  catalogRequestParams, catalogScope, catalogPage, catalogEmptyState,
+} from "@/lib/catalogState";
 import FavoriteButton from "@/components/FavoriteButton";
 import { useFavorites } from "@/context/FavoritesContext";
 import type { FavoriteProduct } from "@/types/favorites";
@@ -50,56 +53,10 @@ interface ProductsResponse {
   products: CatalogProduct[];
 }
 
-type SortMode = "maior-desconto" | "relevantes" | "menor-preco" | "recentes";
+type SortMode = CatalogSortMode;
 
 // 21 cards por página no desktop: 7 linhas × 3 colunas.
 const PAGE_SIZE = 21;
-const URL_FILTER_KEYS: MultiFilterKey[] = [
-  "marca",
-  "cor",
-  "desconto",
-  "frete",
-  "tamanho",
-  "genero",
-  "idade",
-  "modalidade",
-  "tipo",
-  "avaliacao",
-];
-
-function filtersFromSearch(search: string): CatalogFilters {
-  const params = new URLSearchParams(search);
-  const next: CatalogFilters = {
-    marca: [],
-    cor: [],
-    desconto: [],
-    frete: [],
-    tamanho: [],
-    genero: [],
-    idade: [],
-    modalidade: [],
-    tipo: [],
-    avaliacao: [],
-    price: null,
-  };
-
-  for (const key of URL_FILTER_KEYS) {
-    const raw = params.get(key);
-    if (raw) {
-      next[key] = raw
-        .split(",")
-        .map((value) => value.trim())
-        .filter(Boolean);
-      if (key === "cor") {
-        next.cor = next.cor
-          .map((value) => normalizeColor(value)?.value)
-          .filter((value): value is string => Boolean(value));
-      }
-    }
-  }
-
-  return next;
-}
 
 function normalizeText(value: string): string {
   return value
@@ -324,39 +281,23 @@ export default function CatalogV2() {
   const { registerProducts } = useFavorites();
   const search = useSearch();
   const [, setLocation] = useLocation();
-  const [filters, setFilters] = useState<CatalogFilters>(() =>
-    filtersFromSearch(search),
-  );
-  const [page, setPage] = useState(1);
+  const filters = useMemo(() => filtersFromSearch(search), [search]);
+  const query = useMemo(() => queryFromSearch(search), [search]);
   const [sortMode, setSortMode] = useState<SortMode>("maior-desconto");
+  const scope = catalogScope(filters, query, sortMode);
+  const [pagination, setPagination] = useState({ scope, page: 1 });
+  // Reset synchronously with the query inputs, including browser back/forward.
+  if (pagination.scope !== scope) setPagination({ scope, page: 1 });
+  const page = catalogPage(pagination, scope);
   const resultsStartRef = useRef<HTMLDivElement>(null);
   const scrollAfterPageChangeRef = useRef(false);
 
-  useEffect(() => {
-    setFilters(filtersFromSearch(search));
-  }, [search]);
-
-  const query = useMemo(() => {
-    const params = new URLSearchParams(search);
-    const officialQuery = params.get("busca");
-    return (officialQuery?.trim() ? officialQuery : params.get("q") ?? "").trim();
-  }, [search]);
   const queryTokens = useMemo(
     () => normalizeText(query).split(/\s+/).filter(Boolean),
     [query],
   );
 
-  const clearQuery = () => {
-    const params = new URLSearchParams(search);
-    params.delete("busca");
-    params.delete("q");
-    const qs = params.toString();
-    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
-  };
-
-  useEffect(() => {
-    setPage(1);
-  }, [filters, sortMode, query]);
+  const clearQuery = () => setLocation(catalogLocation(querySearch(search, "")));
 
   useEffect(() => {
     if (!scrollAfterPageChangeRef.current) return;
@@ -383,16 +324,13 @@ export default function CatalogV2() {
     const boundedPage = Math.max(1, Math.min(totalPages, nextPage));
     if (boundedPage === page) return;
     scrollAfterPageChangeRef.current = true;
-    setPage(boundedPage);
+    setPagination({ scope, page: boundedPage });
   };
 
   const { data, isLoading, isError } = useQuery<ProductsResponse>({
     queryKey: ["/api/products", "catalog-v2", page, sortMode, query, filters],
     queryFn: async () => {
-      const params = new URLSearchParams({limit:String(PAGE_SIZE),offset:String((page-1)*PAGE_SIZE),sort:({"maior-desconto":"discount-desc","relevantes":"recommended","menor-preco":"price-asc","recentes":"recent-desc"} as const)[sortMode]});
-      if(query)params.set("q",query);
-      for(const [key,values] of Object.entries(filters))if(Array.isArray(values)&&values.length)params.set(key,values.join(","));
-      if(filters.price){params.set("priceMin",String(filters.price[0]));params.set("priceMax",String(filters.price[1]));}
+      const params = catalogRequestParams(filters, query, sortMode, page, PAGE_SIZE);
       const res = await fetch(`/api/products?${params}`);
       if (!res.ok) throw new Error("Falha ao carregar produtos");
       const response=(await res.json()) as ProductsResponse;
@@ -423,8 +361,9 @@ export default function CatalogV2() {
     [products, queryTokens],
   );
   const serverDriven=data?.serverDriven===true;
-  const facets = useMemo(() => serverDriven&&data?.facets?data.facets:computeCrossFacets(searched, filters), [serverDriven,data?.facets,searched, filters]);
-  const filtered = useMemo(() => serverDriven?products:applyFilters(searched, filters), [serverDriven,products,searched, filters]);
+  const localFilters = useMemo(() => localCatalogFilters(filters), [filters]);
+  const facets = useMemo(() => serverDriven&&data?.facets?data.facets:computeCrossFacets(searched, localFilters), [serverDriven,data?.facets,searched, localFilters]);
+  const filtered = useMemo(() => serverDriven?products:applyFilters(searched, localFilters), [serverDriven,products,searched, localFilters]);
   const sorted = useMemo(() => {
     const next = [...filtered];
     if(serverDriven)return next;
@@ -455,33 +394,13 @@ export default function CatalogV2() {
     [page, sorted,serverDriven],
   );
 
-  const toggle = (key: MultiFilterKey, value: string) => {
-    const list = filters[key];
-    const next = {
-      ...filters,
-      [key]: list.includes(value)
-        ? list.filter((item) => item !== value)
-        : [...list, value],
-    };
-    setFilters(next);
-    const params = new URLSearchParams(search);
-    const values = next[key];
-    if (values.length > 0) params.set(key, values.join(","));
-    else params.delete(key);
-    const qs = params.toString();
-    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
-  };
+  const toggle = (key: MultiFilterKey, value: string) =>
+    setLocation(catalogLocation(toggleFilterSearch(search, key, value)));
 
-  const setPrice = (price: [number, number] | null) =>
-    setFilters((prev) => ({ ...prev, price }));
+  const setPrice = (price: CatalogPrice | null) =>
+    setLocation(catalogLocation(priceSearch(search, price)));
 
-  const clearAll = () => {
-    const params = new URLSearchParams(search);
-    URL_FILTER_KEYS.forEach((key) => params.delete(key));
-    const qs = params.toString();
-    setFilters(EMPTY_FILTERS);
-    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
-  };
+  const clearAll = () => setLocation(catalogLocation(clearFiltersSearch(search)));
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/35">
@@ -540,8 +459,8 @@ export default function CatalogV2() {
           </div>
         </div>
 
-        <div className="flex w-full flex-col gap-5 px-4 pb-8 md:flex-row">
-          {!isLoading && products.length > 0 && (
+        <CatalogResults
+          sidebar={
             <CatalogFilterSidebar
               facets={facets}
               filters={filters}
@@ -549,108 +468,79 @@ export default function CatalogV2() {
               onPriceChange={setPrice}
               onClearAll={clearAll}
             />
-          )}
-
-          <div ref={resultsStartRef} className="min-w-0 flex-1">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : isError ? (
-              <Card className="p-8 text-center"><Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground"/><h2 className="mb-2 text-lg font-medium">Não foi possível carregar o catálogo</h2><p className="text-muted-foreground">Tente novamente em instantes.</p></Card>
-            ) : products.length === 0 ? (
-              <Card className="p-8 text-center">
-                <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                <h2 className="mb-2 text-lg font-medium" data-testid="text-empty-catalog">
-                  Nenhum produto disponível ainda
-                </h2>
-                <p className="text-muted-foreground">
-                  {catalogDemonstrative
-                    ? "O snapshot demonstrativo ainda não possui produtos publicados."
-                    : "Nosso catálogo está sendo atualizado. Volte em breve para conferir as melhores ofertas!"}
-                </p>
-              </Card>
-            ) : filtered.length === 0 ? (
-              <Card className="p-8 text-center">
-                <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                <h2 className="mb-2 text-lg font-medium" data-testid="text-no-results">
-                  Nenhum produto para os filtros selecionados
-                </h2>
-                <p className="text-muted-foreground">
-                  Tente remover alguns filtros para ver mais resultados.
-                </p>
-              </Card>
-            ) : (
-              <>
-                <div
-                  className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                  data-testid="grid-catalog-products"
-                >
-                  {visible.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      id={product.id}
-                      name={product.mainName}
-                      brand={brandNameOf(product)}
-                      price={priceOf(product)}
-                      oldPrice={
-                        product.bestOffer?.originalPrice
-                          ? parseFloat(product.bestOffer.originalPrice)
-                          : undefined
-                      }
-                      discount={discountOf(product) || undefined}
-                      image={product.mainImageUrl || ""}
-                      category={categoryNameOf(product)}
-                      affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
-                      referenceUrl={product.bestOffer?.referenceUrl ?? undefined}
-                      marketplaceName={product.bestOffer?.marketplaceName ?? undefined}
-                      sellerName={product.bestOffer?.sellerName ?? undefined}
-                      freeShipping={product.bestOffer?.freeShipping || false}
-                      averageRating={product.averageRating}
-                      totalReviews={product.totalReviews}
-                      lastSeenAt={product.bestOffer?.lastSeenAt}
-                      demonstrative={product.demonstrative ?? product.bestOffer?.demonstrative ?? catalogDemonstrative}
-                    />
-                  ))}
-                </div>
-
-                {totalPages > 1 && (
-                  <div className="mt-8 flex items-center justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page === 1}
-                      onClick={() => goToPage(page - 1)}
-                      data-testid="button-page-prev"
-                    >
-                      Anterior
-                    </Button>
-                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((pageNumber) => (
-                      <Button
-                        key={pageNumber}
-                        variant={page === pageNumber ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => goToPage(pageNumber)}
-                        data-testid={`button-page-${pageNumber}`}
-                      >
-                        {pageNumber}
-                      </Button>
-                    ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page >= totalPages}
-                      onClick={() => goToPage(page + 1)}
-                      data-testid="button-page-next"
-                    >
-                      Próxima
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
+          }
+          isLoading={isLoading}
+          isError={isError}
+          emptyState={catalogEmptyState(resultTotal, filters, query)}
+          demonstrative={catalogDemonstrative}
+          resultsRef={resultsStartRef}
+        >
+          <div
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            data-testid="grid-catalog-products"
+          >
+            {visible.map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                name={product.mainName}
+                brand={brandNameOf(product)}
+                price={priceOf(product)}
+                oldPrice={
+                  product.bestOffer?.originalPrice
+                    ? parseFloat(product.bestOffer.originalPrice)
+                    : undefined
+                }
+                discount={discountOf(product) || undefined}
+                image={product.mainImageUrl || ""}
+                category={categoryNameOf(product)}
+                affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
+                referenceUrl={product.bestOffer?.referenceUrl ?? undefined}
+                marketplaceName={product.bestOffer?.marketplaceName ?? undefined}
+                sellerName={product.bestOffer?.sellerName ?? undefined}
+                freeShipping={product.bestOffer?.freeShipping || false}
+                averageRating={product.averageRating}
+                totalReviews={product.totalReviews}
+                lastSeenAt={product.bestOffer?.lastSeenAt}
+                demonstrative={product.demonstrative ?? product.bestOffer?.demonstrative ?? catalogDemonstrative}
+              />
+            ))}
           </div>
-        </div>
+
+          {totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === 1}
+                onClick={() => goToPage(page - 1)}
+                data-testid="button-page-prev"
+              >
+                Anterior
+              </Button>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((pageNumber) => (
+                <Button
+                  key={pageNumber}
+                  variant={page === pageNumber ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => goToPage(pageNumber)}
+                  data-testid={`button-page-${pageNumber}`}
+                >
+                  {pageNumber}
+                </Button>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => goToPage(page + 1)}
+                data-testid="button-page-next"
+              >
+                Próxima
+              </Button>
+            </div>
+          )}
+        </CatalogResults>
       </main>
 
       <Footer />
