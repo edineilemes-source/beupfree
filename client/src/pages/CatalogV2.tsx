@@ -1,3 +1,4 @@
+import {DEMOGRAPHIC_FILTER_VERSION} from "@shared/demographicTaxonomy";
 import {COLOR_FILTER_CONTRACT_VERSION} from "@shared/colorTaxonomy";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -331,7 +332,7 @@ export default function CatalogV2() {
   };
 
   const { data, isLoading, isError, error } = useQuery<ProductsResponse>({
-    queryKey: ["/api/products", COLOR_FILTER_CONTRACT_VERSION, page, sortMode, query, filters],
+    queryKey: ["/api/products", COLOR_FILTER_CONTRACT_VERSION, DEMOGRAPHIC_FILTER_VERSION, page, sortMode, query, filters],
     queryFn: async () => {
       const params = catalogRequestParams(filters, query, sortMode, page, PAGE_SIZE);
       const res = await fetch(`/api/products?${params}`);

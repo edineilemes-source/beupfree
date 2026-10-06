@@ -50,7 +50,7 @@ test("T06 definir preço preserva multi-select, busca e parâmetros não relacio
 
 for (const [key, value] of [
   ["marca", "Adidas"], ["desconto", "50% ou mais"], ["cor", "preto"],
-  ["tamanho", "40"], ["genero", "Masculino"], ["idade", "Adulto"],
+  ["tamanho", "40"], ["genero", "masculino"], ["idade", "adulto"],
   ["modalidade", "Corrida"], ["tipo", "Calçados"], ["frete", "Não"],
   ["avaliacao", "4 estrelas ou mais"],
 ] as const) {

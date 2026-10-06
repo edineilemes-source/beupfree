@@ -15,9 +15,9 @@ import { catalogLocation, querySearch } from "@/lib/catalogState";
 const SEARCH_BORDER = "hsl(160 55% 38%)";
 
 const NAV: { label: string; href: string }[] = [
-  { label: "Masculino", href: "/catalogo?genero=Masculino" },
-  { label: "Feminino", href: "/catalogo?genero=Feminino" },
-  { label: "Infantil", href: "/catalogo?idade=Infantil" },
+  { label: "Masculino", href: "/catalogo?genero=masculino" },
+  { label: "Feminino", href: "/catalogo?genero=feminino" },
+  { label: "Infantil", href: "/catalogo?idade=infantil" },
   { label: "Acessórios", href: "/catalogo?tipo=Acessórios" },
   { label: "Marcas", href: "/catalogo" },
 ];

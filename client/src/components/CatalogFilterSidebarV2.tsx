@@ -1,3 +1,4 @@
+import {demographicLabel, demographicSelection} from "@shared/demographicTaxonomy";
 import React, { useState } from "react";
 import {
   ChevronDown,
@@ -188,8 +189,8 @@ export default function CatalogFilterSidebar({
   filters.tamanho.forEach((v) =>
     chips.push({ key: "tamanho", value: v, label: `Tamanho ${v}` }),
   );
-  filters.genero.forEach((v) => chips.push({ key: "genero", value: v, label: v }));
-  filters.idade.forEach((v) => chips.push({ key: "idade", value: v, label: v }));
+  filters.genero.forEach((v) => chips.push({ key: "genero", value: v, label: demographicLabel("genero",v) }));
+  filters.idade.forEach((v) => chips.push({ key: "idade", value: v, label: demographicLabel("idade",v) }));
   filters.modalidade.forEach((v) => chips.push({ key: "modalidade", value: v, label: v }));
   filters.avaliacao.forEach((v) => chips.push({ key: "avaliacao", value: v, label: v }));
   filters.desconto.forEach((v) => chips.push({ key: "desconto", value: v, label: v }));
@@ -464,9 +465,9 @@ export default function CatalogFilterSidebar({
                   key={g.label}
                   label={g.label}
                   count={g.count}
-                  checked={filters.genero.includes(g.label)}
-                  onToggle={() => onToggle("genero", g.label)}
-                  testId={`filter-genero-${g.label}`}
+                  checked={demographicSelection("genero", filters.genero).includes(g.value)}
+                  onToggle={() => onToggle("genero", g.value)}
+                  testId={`filter-genero-${g.value}`}
                 />
               ))}
             </div>
@@ -482,9 +483,9 @@ export default function CatalogFilterSidebar({
                   key={i.label}
                   label={i.label}
                   count={i.count}
-                  checked={filters.idade.includes(i.label)}
-                  onToggle={() => onToggle("idade", i.label)}
-                  testId={`filter-idade-${i.label}`}
+                  checked={demographicSelection("idade", filters.idade).includes(i.value)}
+                  onToggle={() => onToggle("idade", i.value)}
+                  testId={`filter-idade-${i.value}`}
                 />
               ))}
             </div>

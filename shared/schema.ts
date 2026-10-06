@@ -1,3 +1,4 @@
+import type {Demographics, Gender, AgeGroup} from "./demographicTaxonomy";
 import type {ColorInterpretation} from "./colorTaxonomy";
 import { sql, relations } from "drizzle-orm";
 import { 
@@ -400,6 +401,10 @@ export const catalogSearchProducts = pgTable("catalog_search_products", {
   merchantId: varchar("merchant_id", {length:36}).notNull().references(()=>commerceMerchants.id),
   representativeOfferId: varchar("representative_offer_id", {length:36}).notNull().references(()=>offers.id),
   productName: text("product_name").notNull(), brandRaw: text("brand_raw").notNull(), brandNormalized: text("brand_normalized").notNull(),
+  genderNormalized: varchar("gender_normalized", {length:20}).$type<Gender>(),
+  ageGroupNormalized: varchar("age_group_normalized", {length:20}).$type<AgeGroup>(),
+  demographicTaxonomyVersion: varchar("demographic_taxonomy_version", {length:80}),
+  demographicEvidence: jsonb("demographic_evidence").$type<Demographics>(),
   audienceRaw: text("audience_raw"), audienceNormalized: varchar("audience_normalized",{length:20}).notNull(),
   universe: varchar("universe",{length:40}).notNull(), style: varchar("style",{length:40}).notNull(),
   activities: text("activities").array().notNull().default(sql`ARRAY[]::text[]`),
@@ -414,7 +419,12 @@ export const catalogSearchProducts = pgTable("catalog_search_products", {
   classifierVersion: varchar("classifier_version",{length:80}).notNull(), normalizerVersion: varchar("normalizer_version",{length:80}).notNull(),
   sourceSnapshot: text("source_snapshot").notNull(), projectionVersion: varchar("projection_version",{length:80}).notNull(),
   sourceUpdatedAt: timestamp("source_updated_at").notNull(), projectedAt: timestamp("projected_at").notNull(),
-}, table=>[uniqueIndex("uq_catalog_search_product_merchant").on(table.productId,table.merchantId),index("idx_catalog_search_color_families").using("gin",table.colorFamilyIds)]);
+}, table=>[uniqueIndex("uq_catalog_search_product_merchant").on(table.productId,table.merchantId),index("idx_catalog_search_color_families").using("gin",table.colorFamilyIds),
+ index("idx_catalog_search_gender").on(table.merchantId,table.genderNormalized,table.productId),
+ index("idx_catalog_search_age_group").on(table.merchantId,table.ageGroupNormalized,table.productId),
+ check("catalog_gender_values",sql`${table.genderNormalized} IN ('MASCULINO','FEMININO','UNISSEX')`),
+ check("catalog_age_group_values",sql`${table.ageGroupNormalized} IN ('ADULTO','INFANTIL','BEBE')`),
+]);
 
 // ============================================
 // ORIGENS DE COLETA
