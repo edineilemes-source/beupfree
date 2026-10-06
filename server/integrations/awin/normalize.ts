@@ -1,3 +1,4 @@
+import {awinDemographicEvidence} from "./demographics";
 import { createHash } from "node:crypto";
 import type { AwinFeedItem, AwinInvalidItem, AwinRawEnvelope, NormalizedAwinItem } from "./types";
 import { AWIN_PROVIDER } from "./types";
@@ -152,7 +153,7 @@ export function normalizeAwinItem(item: AwinFeedItem, options: { feedId: string;
   return {
     productKey, variantKey, offerKey,
     product: {
-      name: name!, description: value(raw, "description"), shortDescription: value(raw, "product_short_description"), brand, colour,
+      demographicEvidence: awinDemographicEvidence(raw), name: name!, description: value(raw, "description"), shortDescription: value(raw, "product_short_description"), brand, colour,
       model: value(raw, "product_model"), modelNumber: value(raw, "model_number"), productType: value(raw, "product_type"),
       condition: value(raw, "condition"), specifications: value(raw, "specifications"), keywords: value(raw, "keywords"),
       identifiers: { awProductId, merchantProductId, parentProductId: parentId, ean, upc: value(raw, "upc"), mpn: value(raw, "mpn"), gtin },

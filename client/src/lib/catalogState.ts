@@ -1,3 +1,4 @@
+import {demographicSelection, demographicId} from "@shared/demographicTaxonomy";
 import {colorSelection} from "@shared/colorTaxonomy";
 import {
   type CatalogFilters,
@@ -30,6 +31,7 @@ export function filtersFromSearch(search: string): CatalogUrlFilters {
   };
   for (const key of URL_FILTER_KEYS) {
     filters[key] = (params.get(key) ?? "").split(",").map(value => value.trim()).filter(Boolean);
+    if (key === "genero" || key === "idade") filters[key] = demographicSelection(key, params.getAll(key));
     if (key === "cor") {
       // Stable families; keep invalid constraints visible and removable.
       filters.cor = Array.from(new Set(params.getAll("cor").flatMap(raw=>raw.split(",")).map(v=>v.trim()).filter(Boolean).map(colorSelection))).sort();
@@ -50,9 +52,11 @@ export function queryFromSearch(search: string): string {
 export function toggleFilterSearch(search: string, key: MultiFilterKey, value: string): string {
   const params = new URLSearchParams(search);
   if(key === "cor") value=colorSelection(value);
+  if(key === "genero" || key === "idade") { const id=demographicId(key,value); if(!id) return search; value=id; }
   const values = filtersFromSearch(search)[key];
   const next = values.includes(value) ? values.filter(item => item !== value) : [...values, value];
-  if (next.length) params.set(key, (key==="cor"?next.sort():next).join(","));
+  const canonical = key === "genero" || key === "idade" ? demographicSelection(key,next) : key === "cor" ? next.sort() : next;
+  if (canonical.length) params.set(key, canonical.join(","));
   else params.delete(key);
   return params.toString();
 }
@@ -103,7 +107,8 @@ export function catalogRequestParams(
   const params = new URLSearchParams({ limit: String(pageSize), offset: String((page - 1) * pageSize), sort: sorts[sort] });
   if (query) params.set("q", query);
   for (const key of URL_FILTER_KEYS) {
-    if (filters[key].length) params.set(key, filters[key].join(","));
+    const values = key === "genero" || key === "idade" ? demographicSelection(key,filters[key]) : filters[key];
+    if (values.length) params.set(key, values.join(","));
   }
   return new URLSearchParams(priceSearch(params.toString(), filters.price));
 }

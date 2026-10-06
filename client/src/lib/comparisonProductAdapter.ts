@@ -109,10 +109,10 @@ function inferredAttribute(value: string | null): NormalizedAttribute<string> | 
 function productAttributes(product: CatalogProduct): ProductAttributes {
   const colors = colorAttributes(product);
   const gender = inferredAttribute(genderOf(product));
+  if(gender && product.gender !== undefined) gender.provenance="catalog";
   const size = inferredAttribute(sizeOf(product));
-  const ageGroup = ageOf(product) === "Infantil"
-    ? inferredAttribute("Infantil")
-    : undefined;
+  const ageGroup = inferredAttribute(ageOf(product));
+  if(ageGroup && product.ageGroup !== undefined) ageGroup.provenance="catalog";
   const modality = modalityOf(product);
   const sports = modality && modality !== "Casual"
     ? [inferredAttribute(modality)!]

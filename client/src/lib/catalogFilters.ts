@@ -1,3 +1,4 @@
+import {GENDERS, AGE_GROUPS, titleDemographics, demographicSelection, demographicFacets, type Gender, type AgeGroup} from "@shared/demographicTaxonomy";
 import {normalizeColorName, translateColorName} from "@shared/colorNormalization";
 import {interpretColor, colorFamily} from "@shared/colorTaxonomy";
 
@@ -19,6 +20,9 @@ export interface CatalogBestOffer {
 export interface CatalogProduct {
   id: string;
   mainName: string;
+  gender?: Gender|null;
+  ageGroup?: AgeGroup|null;
+  demographicTaxonomyVersion?: string|null;
   mainImageUrl: string | null;
   primaryColor: string | null;
   canonicalColorIds?: string[];
@@ -137,36 +141,14 @@ export function colorsOf(p: CatalogProduct): NormalizedColor[] {
 // sem o atributo simplesmente não entram quando aquele filtro está ativo.
 // ---------------------------------------------------------------------------
 
-const GENDER_RULES: { label: string; terms: string[] }[] = [
-  { label: "Unissex", terms: ["unissex"] },
-  { label: "Feminino", terms: ["feminino", "feminina", "menina", "mulher"] },
-  { label: "Masculino", terms: ["masculino", "masculina", "menino", "homem"] },
-];
-
+// Explicit canonical fields (including null) are authoritative in API responses.
 export function genderOf(p: CatalogProduct): string | null {
-  const lower = p.mainName.toLowerCase();
-  for (const rule of GENDER_RULES) {
-    if (rule.terms.some((t) => lower.includes(t))) return rule.label;
-  }
-  return null;
+  const value = p.gender !== undefined ? p.gender : titleDemographics(p.mainName).gender.value;
+  return GENDERS.find(x => x.value === value)?.label ?? null;
 }
-
-const INFANTIL_TERMS = [
-  "infantil",
-  "criança",
-  "crianca",
-  "kids",
-  "menino",
-  "menina",
-  "bebê",
-  "bebe",
-  "juvenil",
-  "baby",
-];
-
-export function ageOf(p: CatalogProduct): string {
-  const lower = p.mainName.toLowerCase();
-  return INFANTIL_TERMS.some((t) => lower.includes(t)) ? "Infantil" : "Adulto";
+export function ageOf(p: CatalogProduct): string | null {
+  const value = p.ageGroup !== undefined ? p.ageGroup : titleDemographics(p.mainName).ageGroup.value;
+  return AGE_GROUPS.find(x => x.value === value)?.label ?? null;
 }
 
 // Tamanhos BR de calçado ficam entre 16 e 48. A convenção dos títulos do ML é
@@ -324,10 +306,11 @@ export function applyFilters(products: CatalogProduct[], f: CatalogFilters): Cat
     }
     if (f.genero.length > 0) {
       const g = genderOf(p);
-      if (!g || !f.genero.includes(g)) return false;
+      if (!g || !demographicSelection("genero",f.genero).includes(g.toLowerCase())) return false;
     }
     if (f.idade.length > 0) {
-      if (!f.idade.includes(ageOf(p))) return false;
+      const age = ageOf(p);
+      if (!age || !demographicSelection("idade",f.idade).includes(AGE_GROUPS.find(x=>x.label===age)!.id)) return false;
     }
     if (f.modalidade.length > 0) {
       const m = modalityOf(p);
@@ -351,8 +334,8 @@ export interface CatalogFacets {
   desconto: Record<string, number>;
   frete: { Sim: number; Não: number };
   sizes: { label: string; count: number }[];
-  generos: { label: string; count: number }[];
-  idades: { label: string; count: number }[];
+  generos: { value: string; label: string; count: number }[];
+  idades: { value: string; label: string; count: number }[];
   modalidades: { label: string; count: number }[];
   tipos: { label: string; count: number }[];
   avaliacoes: Record<string, number>;
@@ -360,8 +343,6 @@ export interface CatalogFacets {
   priceMax: number;
 }
 
-const GENDER_ORDER = ["Masculino", "Feminino", "Unissex"];
-const IDADE_ORDER = ["Adulto", "Infantil"];
 const TIPO_ORDER = ["Calçados", "Acessórios"];
 
 export function computeFacets(products: CatalogProduct[]): CatalogFacets {
@@ -408,7 +389,8 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
     const genero = genderOf(p);
     if (genero) bump(generoCounts, genero);
 
-    bump(idadeCounts, ageOf(p));
+    const age = ageOf(p);
+    if (age) bump(idadeCounts, age);
 
     const modalidade = modalityOf(p);
     if (modalidade) bump(modalidadeCounts, modalidade);
@@ -445,8 +427,8 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
       .filter((label) => m.has(label))
       .map((label) => ({ label, count: m.get(label) ?? 0 }));
 
-  const generos = orderedFacet(generoCounts, GENDER_ORDER);
-  const idades = orderedFacet(idadeCounts, IDADE_ORDER);
+  const generos = demographicFacets("genero", GENDERS.map(x=>({value:x.value,count:generoCounts.get(x.label)??0})));
+  const idades = demographicFacets("idade", AGE_GROUPS.map(x=>({value:x.value,count:idadeCounts.get(x.label)??0})));
   const modalidades = Array.from(modalidadeCounts.entries())
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
@@ -515,8 +497,8 @@ export function computeCrossFacets(
     sizes: withSelected(tamanho.sizes, filters.tamanho).sort(
       (a, b) => Number(a.label) - Number(b.label),
     ),
-    generos: withSelected(genero.generos, filters.genero),
-    idades: withSelected(idade.idades, filters.idade),
+    generos: genero.generos,
+    idades: idade.idades,
     modalidades: withSelected(modalidade.modalidades, filters.modalidade),
     tipos: withSelected(tipo.tipos, filters.tipo),
     avaliacoes: avaliacao.avaliacoes,
@@ -544,9 +526,13 @@ export function countActiveFilters(f: CatalogFilters): number {
 // Apply to API and local facets alike; never manufacture positive counts.
 export function preserveSelectedFacets(facets: CatalogFacets, filters: Pick<CatalogFilters, MultiFilterKey>): CatalogFacets {
   const result = { ...facets };
-  const dimensions = { brands: "marca", sizes: "tamanho", generos: "genero", idades: "idade", modalidades: "modalidade", tipos: "tipo" } as const;
+  const dimensions = { brands: "marca", sizes: "tamanho", modalidades: "modalidade", tipos: "tipo" } as const;
   for (const [facet, filter] of Object.entries(dimensions) as [keyof typeof dimensions, MultiFilterKey][]) {
     result[facet] = withSelected(facets[facet].filter(item => item.count > 0 || filters[filter].includes(item.label)), filters[filter]);
+  }
+  for (const [facet, dimension] of [["generos","genero"],["idades","idade"]] as const) {
+    const selected=demographicSelection(dimension,filters[dimension]);
+    result[facet]=demographicFacets(dimension,facets[facet]).filter(x=>x.count>0||selected.includes(x.value));
   }
   const colors = facets.colors.filter(item => item.count > 0 || filters.cor.includes(item.value));
   result.colors = [...colors, ...filters.cor.filter(value => !colors.some(item => item.value === value)).map(value => ({ value, label: colorFamily(value)?.label??value, count: 0 }))];
