@@ -20,6 +20,18 @@ test("T22/T23 selected zero options retained; unselected zero omitted without mu
  const raw={...computeFacets([]),brands:[{label:"unused",count:0}]};
  const f={...EMPTY_FILTERS,marca:["Nike"],cor:["preto"],tamanho:["40"],genero:["Masculino"],modalidade:["Corrida"]};
  const facets=preserveSelectedFacets(raw,f);
- assert.deepEqual(facets.brands,[{label:"Nike",count:0}]); assert.deepEqual(facets.colors,[{value:"preto",label:"preto",count:0}]); assert.equal(facets.sizes[0].label,"40"); assert.equal(raw.brands[0].label,"unused");
+ assert.deepEqual(facets.brands,[{label:"Nike",count:0}]); assert.deepEqual(facets.colors,[{value:"preto",label:"Preto",count:0}]); assert.equal(facets.sizes[0].label,"40"); assert.equal(raw.brands[0].label,"unused");
  assert.equal(computeCrossFacets([],f).colors[0].value,"preto");
+});
+
+test("V3 family facets deduplicate shades, disjunction keeps other dimensions and selected zero",()=>{
+ const rows=[product("Nike",40,"azul marinho/navy/azul",200),product("Nike",40,"preto denim",300),product("Adidas",41,"preto",150),product("Nike",40,"incolor",220)];
+ const f={...EMPTY_FILTERS,marca:["Nike"],tamanho:["40"],cor:["azul"]};
+ assert.deepEqual(applyFilters(rows,f).map(p=>p.primaryColor),["azul marinho/navy/azul"]);
+ const facets=computeCrossFacets(rows,f);
+ assert.deepEqual(facets.colors,[{value:"azul",label:"Azul",count:1},{value:"preto",label:"Preto",count:1}]);
+ assert.equal(applyFilters(rows,{...f,cor:["azul","preto"]}).length,2);
+ const zero=computeCrossFacets(rows,{...f,cor:["metalico"]});
+ assert.deepEqual(zero.colors.find(c=>c.value==="metalico"),{value:"metalico",label:"Metálico",count:0});
+ assert.deepEqual(computeFacets([{...rows[0],colorFamilyIds:[]}]).colors,[]);
 });

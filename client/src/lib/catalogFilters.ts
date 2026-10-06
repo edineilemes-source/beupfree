@@ -1,4 +1,5 @@
-import { normalizeColorName, translateColorName } from "@shared/colorNormalization";
+import {normalizeColorName, translateColorName} from "@shared/colorNormalization";
+import {interpretColor, colorFamily} from "@shared/colorTaxonomy";
 
 export interface CatalogBestOffer {
   id?: string;
@@ -20,6 +21,9 @@ export interface CatalogProduct {
   mainName: string;
   mainImageUrl: string | null;
   primaryColor: string | null;
+  canonicalColorIds?: string[];
+  colorFamilyIds?: string[];
+  colorTaxonomyVersion?: string|null;
   colors?: Array<{
     name: string;
     normalized: string;
@@ -108,30 +112,21 @@ export interface NormalizedColor {
   label: string;
 }
 
+// Display/comparison compatibility; filtering uses colorsOf and family IDs below.
 export function normalizeColor(value: string | null | undefined): NormalizedColor | null {
   const label = translateColorName(value);
   if (!label) return null;
   const normalized = normalizeColorName(label);
   if (!normalized) return null;
-  return {
-    value: normalized,
-    label,
-  };
+  return { value: normalized, label };
 }
 
 export function colorsOf(p: CatalogProduct): NormalizedColor[] {
-  const colors = new Map<string, NormalizedColor>();
-  for (const color of p.colors ?? []) {
-    const translated = normalizeColor(color.name || color.normalized);
-    if (!translated) continue;
-    colors.set(translated.value, translated);
-  }
-  // Compatibilidade enquanto registros antigos ainda não passaram pelo backfill.
-  if (colors.size === 0) {
-    const legacy = normalizeColor(p.primaryColor);
-    if (legacy) colors.set(legacy.value, legacy);
-  }
-  return Array.from(colors.values());
+  // An explicit array (including empty) is authoritative. No legacy fallback.
+  const ids = p.colorFamilyIds !== undefined ? p.colorFamilyIds
+    : (p.colors?.length ? p.colors.map(c=>c.name || c.normalized) : [p.primaryColor])
+      .flatMap(raw=>interpretColor(raw).colorFamilyIds);
+  return Array.from(new Set(ids)).flatMap(id=>{const f=colorFamily(id);return f?[{value:f.id,label:f.label}]:[];});
 }
 
 // ---------------------------------------------------------------------------
@@ -554,6 +549,6 @@ export function preserveSelectedFacets(facets: CatalogFacets, filters: Pick<Cata
     result[facet] = withSelected(facets[facet].filter(item => item.count > 0 || filters[filter].includes(item.label)), filters[filter]);
   }
   const colors = facets.colors.filter(item => item.count > 0 || filters.cor.includes(item.value));
-  result.colors = [...colors, ...filters.cor.filter(value => !colors.some(item => item.value === value)).map(value => ({ value, label: value, count: 0 }))];
+  result.colors = [...colors, ...filters.cor.filter(value => !colors.some(item => item.value === value)).map(value => ({ value, label: colorFamily(value)?.label??value, count: 0 }))];
   return result;
 }

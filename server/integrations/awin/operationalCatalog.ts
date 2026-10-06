@@ -1,8 +1,9 @@
+import {interpretColor, COLOR_NORMALIZER_VERSION, type ColorInterpretation, type ColorClassification} from "@shared/colorTaxonomy";
 import type { Audience } from "./dafitiCuration";
 import type { CatalogEligibility, ProductActivity, ProductStyle, ProductUniverse, TaxonomyConfidence } from "./productTaxonomy";
 
 export const CATALOG_CLASSIFIER_VERSION = "uppulse-taxonomy-v3";
-export const CATALOG_NORMALIZER_VERSION = "uppulse-normalizer-v1";
+export const CATALOG_NORMALIZER_VERSION = COLOR_NORMALIZER_VERSION;
 export type CatalogOperationalState = "CATALOG_ELIGIBLE"|"QUARANTINED"|"OUT_OF_SCOPE"|"PUBLISHED"|"PAUSED";
 export type NormalizationStatus = "NORMALIZED_SAFE"|"RAW_ONLY"|"SUSPICIOUS";
 
@@ -23,17 +24,10 @@ export function normalizeCatalogSize(value:unknown,audience:Audience|"UNKNOWN"="
  return {raw,normalized:null,status:"RAW_ONLY",reasonCode:"SIZE_UNMAPPED_RAW_ONLY"};
 }
 
-const knownColours=new Map<string,string>([
- ["preto","preto"],["branco","branco"],["bege","bege"],["cinza","cinza"],["marrom","marrom"],["azul","azul"],["azul marinho","azul marinho"],["rosa","rosa"],["verde","verde"],["vermelho","vermelho"],["roxo","roxo"],["laranja","laranja"],["nude","nude"],["caramelo","caramelo"],["prata","prata"],["cafe","café"],["grafite","grafite"],["dourado","dourado"],["amarelo","amarelo"],["off-white","off-white"],["multicolorido","multicolorido"],["vinho","vinho"],["pink","pink"],["bordo","bordô"],["lilas","lilás"],["caqui","cáqui"],["coral","coral"],["rose","rosê"],["verde militar","verde militar"],["incolor","incolor"]
-]);
-const fold=(value:string)=>value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase("pt-BR").trim();
-export type ColourNormalization={raw:string|null;normalized:string[]|null;status:NormalizationStatus;compound:boolean;reasonCode:string};
+export type ColourNormalization={raw:string|null;normalized:string[]|null;status:ColorClassification;compound:boolean;reasonCode:string;taxonomy:ColorInterpretation};
 export function normalizeCatalogColour(value:unknown):ColourNormalization{
- const raw=String(value??"").trim();if(!raw)return {raw:null,normalized:null,status:"SUSPICIOUS",compound:false,reasonCode:"COLOUR_MISSING"};
- const parts=raw.split(/\s*[\/+,&]\s*/).filter(Boolean),compound=parts.length>1;
- const normalized=parts.map(part=>knownColours.get(fold(part))).filter((part):part is string=>Boolean(part));
- if(normalized.length===parts.length)return {raw,normalized:Array.from(new Set(normalized)),status:"NORMALIZED_SAFE",compound,reasonCode:compound?"COLOUR_COMPOUND_EXPLICIT":"COLOUR_KNOWN"};
- return {raw,normalized:null,status:"RAW_ONLY",compound,reasonCode:"COLOUR_UNMAPPED_RAW_ONLY"};
+ const taxonomy=interpretColor(typeof value==="string"?value:null);
+ return {raw:taxonomy.rawColor,normalized:taxonomy.projectionEligible?taxonomy.canonicalColors:null,status:taxonomy.classification,compound:taxonomy.canonicalColorIds.length>1,reasonCode:taxonomy.reasonCodes[0],taxonomy};
 }
 
 export function validatePromotion(input:{currentPrice:number;previousPrice:number;discountPercent:number;currency:string}):{valid:boolean;calculatedPercent:number|null;reasonCodes:string[]}{
@@ -46,7 +40,7 @@ export function auditAffiliateUrl(value:unknown):{literal:string|null;valid:bool
 }
 
 export interface OperationalTaxonomy{universe:ProductUniverse;style:ProductStyle;activities:ProductActivity[];confidence:TaxonomyConfidence;reasonCodes:string[];classifierVersion:string;}
-export interface OperationalCatalogVariant{id:string;merchantVariationIdentity:string;sizeRaw:string|null;sizeNormalized:number|null;sizeStatus:NormalizationStatus;colorRaw:string|null;colorNormalized:string[]|null;colorStatus:NormalizationStatus;available:boolean;}
+export interface OperationalCatalogVariant{id:string;merchantVariationIdentity:string;sizeRaw:string|null;sizeNormalized:number|null;sizeStatus:NormalizationStatus;colorRaw:string|null;colorNormalized:string[]|null;colorStatus:NormalizationStatus|ColorClassification;colorTaxonomy?:ColorInterpretation;available:boolean;}
 export interface OperationalCatalogProduct{
  id:string;brand:string;name:string;description:string|null;audience:Audience;catalogStatus:CatalogOperationalState;
  taxonomy:OperationalTaxonomy;pricing:{currentPrice:number;previousPrice:number;discountPercent:number;merchantDiscountPercent:number;currency:string;promotionEvidence:string};

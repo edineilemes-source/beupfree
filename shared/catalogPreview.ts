@@ -5,7 +5,7 @@ export interface CatalogPreviewProduct {
   id:string; brand:string; name:string; description:string|null; audience:"MASCULINO"|"FEMININO"|"UNISSEX"|"INFANTIL"|"UNKNOWN";
   taxonomy:{universe:string;style:string;activities:string[];confidence:string};
   pricing:{currentPrice:number;previousPrice:number;discountPercent:number;currency:string};
-  variants:CatalogPreviewVariant[]; normalizedSizes:number[]; normalizedColors:string[]; primaryImage:string|null; images:string[];
+  variants:CatalogPreviewVariant[]; normalizedSizes:number[]; normalizedColors:string[]; colorFamilyIds?:string[]; colorTaxonomyVersion?:string|null; primaryImage:string|null; images:string[];
   merchant:{id:string;name:string}; affiliateUrl:string; representativeOfferId:string;
 }
 export interface CatalogPreviewFacet { value:string; count:number }

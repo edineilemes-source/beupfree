@@ -1,3 +1,4 @@
+import type {ColorInterpretation} from "./colorTaxonomy";
 import { sql, relations } from "drizzle-orm";
 import { 
   pgTable, 
@@ -385,10 +386,35 @@ export const productCatalogClassifications = pgTable("product_catalog_classifica
 export const productVariantNormalizations = pgTable("product_variant_normalizations", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`), variantId: varchar("variant_id", { length: 36 }).notNull().references(() => productVariants.id, { onDelete: "cascade" }),
   sizeRaw: text("size_raw"), sizeNormalized: decimal("size_normalized", { precision: 6, scale: 2 }), sizeStatus: varchar("size_status", { length: 30 }).notNull(),
+  colourTaxonomy: jsonb("colour_taxonomy").$type<ColorInterpretation>(),
   colourRaw: text("colour_raw"), colourNormalized: text("colour_normalized").array(), colourStatus: varchar("colour_status", { length: 30 }).notNull(),
   normalizerVersion: varchar("normalizer_version", { length: 80 }).notNull(), normalizedAt: timestamp("normalized_at").notNull(),
   reasonCodes: text("reason_codes").array().notNull().default(sql`ARRAY[]::text[]`), createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [uniqueIndex("uq_product_variant_normalizations_version").on(table.variantId, table.normalizerVersion), index("idx_variant_normalizations_variant_latest").on(table.variantId, table.normalizedAt)]);
+
+// Rebuildable read projection. Schema rollout is a separate authorized operation.
+export const catalogSearchProducts = pgTable("catalog_search_products", {
+  id: varchar("id", {length:36}).primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id", {length:36}).notNull().references(()=>products.id),
+  providerId: varchar("provider_id", {length:36}).notNull().references(()=>commerceProviders.id),
+  merchantId: varchar("merchant_id", {length:36}).notNull().references(()=>commerceMerchants.id),
+  representativeOfferId: varchar("representative_offer_id", {length:36}).notNull().references(()=>offers.id),
+  productName: text("product_name").notNull(), brandRaw: text("brand_raw").notNull(), brandNormalized: text("brand_normalized").notNull(),
+  audienceRaw: text("audience_raw"), audienceNormalized: varchar("audience_normalized",{length:20}).notNull(),
+  universe: varchar("universe",{length:40}).notNull(), style: varchar("style",{length:40}).notNull(),
+  activities: text("activities").array().notNull().default(sql`ARRAY[]::text[]`),
+  currentPrice: decimal("current_price",{precision:10,scale:2}).notNull(), previousPrice: decimal("previous_price",{precision:10,scale:2}).notNull(),
+  discountPercent: decimal("discount_percent",{precision:7,scale:3}).notNull(), currency: varchar("currency",{length:10}).notNull(),
+  available: boolean("available").notNull().default(false),
+  normalizedSizes: decimal("normalized_sizes",{precision:6,scale:2}).array().notNull().default(sql`ARRAY[]::numeric[]`),
+  normalizedColors: text("normalized_colors").array().notNull().default(sql`ARRAY[]::text[]`),
+  colorFamilyIds: text("color_family_ids").array().notNull().default(sql`ARRAY[]::text[]`),
+  colorTaxonomyVersion: varchar("color_taxonomy_version",{length:80}),
+  primaryImageUrl: text("primary_image_url"), catalogState: varchar("catalog_state",{length:30}).notNull(),
+  classifierVersion: varchar("classifier_version",{length:80}).notNull(), normalizerVersion: varchar("normalizer_version",{length:80}).notNull(),
+  sourceSnapshot: text("source_snapshot").notNull(), projectionVersion: varchar("projection_version",{length:80}).notNull(),
+  sourceUpdatedAt: timestamp("source_updated_at").notNull(), projectedAt: timestamp("projected_at").notNull(),
+}, table=>[uniqueIndex("uq_catalog_search_product_merchant").on(table.productId,table.merchantId),index("idx_catalog_search_color_families").using("gin",table.colorFamilyIds)]);
 
 // ============================================
 // ORIGENS DE COLETA

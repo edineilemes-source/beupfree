@@ -1,3 +1,4 @@
+import {COLOR_FILTER_CONTRACT_VERSION} from "@shared/colorTaxonomy";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
@@ -47,6 +48,8 @@ interface ProductsResponse {
   limit?: number;
   offset?: number;
   serverDriven?: boolean;
+  colorTaxonomyVersion?: string;
+  colorFilterContractVersion?: string;
   catalogSource?: "demo" | "operational";
   demonstrative?: boolean;
   facets?: CatalogFacets;
@@ -327,12 +330,20 @@ export default function CatalogV2() {
     setPagination({ scope, page: boundedPage });
   };
 
-  const { data, isLoading, isError } = useQuery<ProductsResponse>({
-    queryKey: ["/api/products", "catalog-v2", page, sortMode, query, filters],
+  const { data, isLoading, isError, error } = useQuery<ProductsResponse>({
+    queryKey: ["/api/products", COLOR_FILTER_CONTRACT_VERSION, page, sortMode, query, filters],
     queryFn: async () => {
       const params = catalogRequestParams(filters, query, sortMode, page, PAGE_SIZE);
       const res = await fetch(`/api/products?${params}`);
-      if (!res.ok) throw new Error("Falha ao carregar produtos");
+      if (!res.ok) {
+        if (res.status === 400) {
+          const body = await res.json().catch(() => null);
+          if (body?.code === "INVALID_COLOR_FAMILY" || body?.code === "INVALID_COLOR_PARAMETERS") {
+            throw new Error("Remova a seleção de cor inválida nos filtros e escolha uma família de cor.");
+          }
+        }
+        throw new Error("Falha ao carregar produtos");
+      }
       const response=(await res.json()) as ProductsResponse;
       if(response.serverDriven)return response;
       const fallback=await fetch("/api/products?limit=5000");
@@ -471,6 +482,7 @@ export default function CatalogV2() {
           }
           isLoading={isLoading}
           isError={isError}
+          errorMessage={error?.message}
           emptyState={catalogEmptyState(resultTotal, filters, query)}
           demonstrative={catalogDemonstrative}
           resultsRef={resultsStartRef}

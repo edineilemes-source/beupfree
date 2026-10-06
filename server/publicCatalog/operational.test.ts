@@ -23,3 +23,24 @@ test("merchant e style multi-select chegam ao repository com outros filtros e bu
   assert.equal(repo.filters.search,"air max");assert.equal(repo.filters.priceMin,300);assert.equal(repo.filters.priceMax,500);
  }finally{disable()}
 });
+
+test("V3 cor parsed into stable families, versions, display preserved and family facet labels",async()=>{
+ const {COLOR_TAXONOMY_VERSION,COLOR_FILTER_CONTRACT_VERSION}=await import("@shared/colorTaxonomy");
+ enable();try{
+  const v3row={...row,normalized_colors:["azul-marinho"],color_family_ids:["azul"],color_taxonomy_version:COLOR_TAXONOMY_VERSION};
+  const mocked:any={...repo,listProducts:async(f:any)=>{mocked.filters=f;return[v3row];},getFacets:async()=>({colors:[{value:"azul",count:1},{value:"metalico",count:0}]})};
+  const res=response();await createOperationalPublicCatalogHandlers(()=>mocked).list(request({cor:"navy,preto",marca:"Marca",tamanho:"40"}),res,()=>assert.fail());
+  assert.deepEqual(mocked.filters.colors,["azul","preto"]);assert.deepEqual(mocked.filters.brands,["Marca"]);assert.deepEqual(mocked.filters.sizes,[40]);
+  assert.equal(res.body.colorTaxonomyVersion,COLOR_TAXONOMY_VERSION);assert.equal(res.body.colorFilterContractVersion,COLOR_FILTER_CONTRACT_VERSION);
+  assert.deepEqual(res.body.products[0].colorFamilyIds,["azul"]);assert.equal(res.body.products[0].primaryColor,"azul-marinho");assert.deepEqual(res.body.products[0].canonicalColorIds,["azul-marinho"]);
+  assert.deepEqual(res.body.facets.colors[0],{value:"azul",label:"Azul",count:1});
+ }finally{disable();}
+});
+test("V3 invalid or repeated cor rejects before any repository/database access",async()=>{
+ enable();try{
+  for(const cor of ["pretolino","incolor","preto/branco","azul mystery",["azul","preto"],{bad:"azul"}]){
+   let accesses=0;const res=response();await createOperationalPublicCatalogHandlers(()=>{accesses++;throw new Error("must not access");}).list(request({cor}),res,()=>assert.fail());
+   assert.equal(res.statusCode,400);assert.match(res.body.code,/INVALID_COLOR_(FAMILY|PARAMETERS)/);assert.equal(accesses,0);
+  }
+ }finally{disable();}
+});
