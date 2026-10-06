@@ -1,8 +1,8 @@
+import {colorSelection} from "@shared/colorTaxonomy";
 import {
   type CatalogFilters,
   type MultiFilterKey,
   countActiveFilters,
-  normalizeColor,
 } from "./catalogFilters";
 
 // Null endpoints are open bounds, never values inferred from a facet.
@@ -31,9 +31,8 @@ export function filtersFromSearch(search: string): CatalogUrlFilters {
   for (const key of URL_FILTER_KEYS) {
     filters[key] = (params.get(key) ?? "").split(",").map(value => value.trim()).filter(Boolean);
     if (key === "cor") {
-      // Preserve the existing color vocabulary; its audit findings are outside V1.
-      filters.cor = filters.cor.map(value => normalizeColor(value)?.value)
-        .filter((value): value is string => Boolean(value));
+      // Stable families; keep invalid constraints visible and removable.
+      filters.cor = Array.from(new Set(params.getAll("cor").flatMap(raw=>raw.split(",")).map(v=>v.trim()).filter(Boolean).map(colorSelection))).sort();
     }
   }
   const min = priceFromParam(params.get("priceMin"));
@@ -50,9 +49,10 @@ export function queryFromSearch(search: string): string {
 
 export function toggleFilterSearch(search: string, key: MultiFilterKey, value: string): string {
   const params = new URLSearchParams(search);
+  if(key === "cor") value=colorSelection(value);
   const values = filtersFromSearch(search)[key];
   const next = values.includes(value) ? values.filter(item => item !== value) : [...values, value];
-  if (next.length) params.set(key, next.join(","));
+  if (next.length) params.set(key, (key==="cor"?next.sort():next).join(","));
   else params.delete(key);
   return params.toString();
 }

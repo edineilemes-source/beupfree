@@ -1,0 +1,6000 @@
+[
+  {
+    "rawColor": "preto",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "preto"
+    ],
+    "familyIds": [
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 19397
+  },
+  {
+    "rawColor": "branco",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "branco"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 9991
+  },
+  {
+    "rawColor": "Preto",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "preto"
+    ],
+    "familyIds": [
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 5890
+  },
+  {
+    "rawColor": "bege",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "bege"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 4928
+  },
+  {
+    "rawColor": "cinza",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "cinza"
+    ],
+    "familyIds": [
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 4778
+  },
+  {
+    "rawColor": "marrom",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "marrom"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 4216
+  },
+  {
+    "rawColor": "azul",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "azul"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 3799
+  },
+  {
+    "rawColor": "Branco",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "branco"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 3652
+  },
+  {
+    "rawColor": "azul marinho",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 2934
+  },
+  {
+    "rawColor": "incolor",
+    "classification": "REVIEW",
+    "canonicalColorIds": [
+      "incolor"
+    ],
+    "familyIds": [],
+    "residualTerms": [
+      "incolor"
+    ],
+    "quantity": 2912
+  },
+  {
+    "rawColor": "rosa",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "rosa"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 2634
+  },
+  {
+    "rawColor": "verde",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "verde"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 2477
+  },
+  {
+    "rawColor": "Azul",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "azul"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 1593
+  },
+  {
+    "rawColor": "Cinza",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "cinza"
+    ],
+    "familyIds": [
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 1411
+  },
+  {
+    "rawColor": "Verde",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "verde"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 1381
+  },
+  {
+    "rawColor": "Azul-marinho",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 1078
+  },
+  {
+    "rawColor": "off-white white",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "off-white"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 977
+  },
+  {
+    "rawColor": "Vermelho",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "vermelho"
+    ],
+    "familyIds": [
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 976
+  },
+  {
+    "rawColor": "preto black",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "preto"
+    ],
+    "familyIds": [
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 958
+  },
+  {
+    "rawColor": "vermelho",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "vermelho"
+    ],
+    "familyIds": [
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 897
+  },
+  {
+    "rawColor": "roxo",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "roxo"
+    ],
+    "familyIds": [
+      "roxo"
+    ],
+    "residualTerms": [],
+    "quantity": 779
+  },
+  {
+    "rawColor": "branco white",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "branco"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 738
+  },
+  {
+    "rawColor": "Rosa",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "rosa"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 672
+  },
+  {
+    "rawColor": "Bege",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "bege"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 652
+  },
+  {
+    "rawColor": "laranja",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "laranja"
+    ],
+    "familyIds": [
+      "laranja"
+    ],
+    "residualTerms": [],
+    "quantity": 650
+  },
+  {
+    "rawColor": "nude",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "nude"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 548
+  },
+  {
+    "rawColor": "caramelo",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "caramelo"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 470
+  },
+  {
+    "rawColor": "prata",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "prata"
+    ],
+    "familyIds": [
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 450
+  },
+  {
+    "rawColor": "Marrom",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "marrom"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 418
+  },
+  {
+    "rawColor": "Roxo",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "roxo"
+    ],
+    "familyIds": [
+      "roxo"
+    ],
+    "residualTerms": [],
+    "quantity": 389
+  },
+  {
+    "rawColor": "café",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "cafe"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 352
+  },
+  {
+    "rawColor": "branco/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "preto"
+    ],
+    "familyIds": [
+      "branco",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 350
+  },
+  {
+    "rawColor": "grafite",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "grafite"
+    ],
+    "familyIds": [
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 344
+  },
+  {
+    "rawColor": "dourado",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "dourado"
+    ],
+    "familyIds": [
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 331
+  },
+  {
+    "rawColor": "amarelo",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "amarelo"
+    ],
+    "familyIds": [
+      "amarelo"
+    ],
+    "residualTerms": [],
+    "quantity": 318
+  },
+  {
+    "rawColor": "preto verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "verde"
+    ],
+    "familyIds": [
+      "preto",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 268
+  },
+  {
+    "rawColor": "Amarelo",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "amarelo"
+    ],
+    "familyIds": [
+      "amarelo"
+    ],
+    "residualTerms": [],
+    "quantity": 265
+  },
+  {
+    "rawColor": "Laranja",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "laranja"
+    ],
+    "familyIds": [
+      "laranja"
+    ],
+    "residualTerms": [],
+    "quantity": 259
+  },
+  {
+    "rawColor": "off-white",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "off-white"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 250
+  },
+  {
+    "rawColor": "branco azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "azul"
+    ],
+    "familyIds": [
+      "branco",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 246
+  },
+  {
+    "rawColor": "multicolorido",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "multicolorido"
+    ],
+    "familyIds": [
+      "multicolorido"
+    ],
+    "residualTerms": [],
+    "quantity": 237
+  },
+  {
+    "rawColor": "branco verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "verde"
+    ],
+    "familyIds": [
+      "branco",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 232
+  },
+  {
+    "rawColor": "branco rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "rosa"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 226
+  },
+  {
+    "rawColor": "preto rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "rosa"
+    ],
+    "familyIds": [
+      "preto",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 189
+  },
+  {
+    "rawColor": "bege white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "branco"
+    ],
+    "familyIds": [
+      "bege",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 169
+  },
+  {
+    "rawColor": "vinho",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "vinho"
+    ],
+    "familyIds": [
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 165
+  },
+  {
+    "rawColor": "pink",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "pink"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 154
+  },
+  {
+    "rawColor": "preto pink",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "pink"
+    ],
+    "familyIds": [
+      "preto",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 154
+  },
+  {
+    "rawColor": "café/marrom",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cafe",
+      "marrom"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 145
+  },
+  {
+    "rawColor": "preto white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "branco"
+    ],
+    "familyIds": [
+      "preto",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 126
+  },
+  {
+    "rawColor": "bordô",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "bordo"
+    ],
+    "familyIds": [
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 118
+  },
+  {
+    "rawColor": "lilás",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "lilas"
+    ],
+    "familyIds": [
+      "roxo"
+    ],
+    "residualTerms": [],
+    "quantity": 116
+  },
+  {
+    "rawColor": "laranja/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "laranja",
+      "preto"
+    ],
+    "familyIds": [
+      "laranja",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 113
+  },
+  {
+    "rawColor": "cinza/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "preto"
+    ],
+    "familyIds": [
+      "cinza",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 101
+  },
+  {
+    "rawColor": "cinza verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "verde"
+    ],
+    "familyIds": [
+      "cinza",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 100
+  },
+  {
+    "rawColor": "preto azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "azul"
+    ],
+    "familyIds": [
+      "preto",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 97
+  },
+  {
+    "rawColor": "marrom/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "preto"
+    ],
+    "familyIds": [
+      "marrom",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 93
+  },
+  {
+    "rawColor": "azul/azul marinho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 91
+  },
+  {
+    "rawColor": "cinza azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "azul"
+    ],
+    "familyIds": [
+      "cinza",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 89
+  },
+  {
+    "rawColor": "preto/rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "rosa"
+    ],
+    "familyIds": [
+      "preto",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 79
+  },
+  {
+    "rawColor": "incolor carbon",
+    "classification": "REVIEW",
+    "canonicalColorIds": [
+      "incolor"
+    ],
+    "familyIds": [],
+    "residualTerms": [
+      "incolor",
+      "carbon"
+    ],
+    "quantity": 77
+  },
+  {
+    "rawColor": "cáqui",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "caqui"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 74
+  },
+  {
+    "rawColor": "preto denim",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "preto"
+    ],
+    "familyIds": [
+      "preto"
+    ],
+    "residualTerms": [
+      "denim"
+    ],
+    "quantity": 74
+  },
+  {
+    "rawColor": "Bordô",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "bordo"
+    ],
+    "familyIds": [
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 73
+  },
+  {
+    "rawColor": "Multicores",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "multicolorido"
+    ],
+    "familyIds": [
+      "multicolorido"
+    ],
+    "residualTerms": [],
+    "quantity": 68
+  },
+  {
+    "rawColor": "verde militar",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "verde-militar"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 65
+  },
+  {
+    "rawColor": "coral",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "coral"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 63
+  },
+  {
+    "rawColor": "grafite/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "grafite",
+      "preto"
+    ],
+    "familyIds": [
+      "cinza",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 63
+  },
+  {
+    "rawColor": "azul verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "verde"
+    ],
+    "familyIds": [
+      "azul",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 62
+  },
+  {
+    "rawColor": "cinza grey",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "cinza"
+    ],
+    "familyIds": [
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 61
+  },
+  {
+    "rawColor": "preto/vermelho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "vermelho"
+    ],
+    "familyIds": [
+      "preto",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 61
+  },
+  {
+    "rawColor": "prata velho",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "prata-velho"
+    ],
+    "familyIds": [
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 60
+  },
+  {
+    "rawColor": "rosa pink",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "rosa",
+      "pink"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 58
+  },
+  {
+    "rawColor": "azul marinho/branco/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "branco",
+      "preto"
+    ],
+    "familyIds": [
+      "azul",
+      "branco",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 56
+  },
+  {
+    "rawColor": "cinza rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "rosa"
+    ],
+    "familyIds": [
+      "cinza",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 56
+  },
+  {
+    "rawColor": "laranja coral",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "laranja",
+      "coral"
+    ],
+    "familyIds": [
+      "laranja",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 55
+  },
+  {
+    "rawColor": "Prata",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "prata"
+    ],
+    "familyIds": [
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 55
+  },
+  {
+    "rawColor": "azul marinho verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "verde"
+    ],
+    "familyIds": [
+      "azul",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 54
+  },
+  {
+    "rawColor": "bege azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "azul"
+    ],
+    "familyIds": [
+      "bege",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 53
+  },
+  {
+    "rawColor": "marrom brown",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "marrom"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 52
+  },
+  {
+    "rawColor": "rosê",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "rose"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 50
+  },
+  {
+    "rawColor": "azul/azul marinho azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 49
+  },
+  {
+    "rawColor": "marrom denim",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "marrom"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [
+      "denim"
+    ],
+    "quantity": 45
+  },
+  {
+    "rawColor": "azul marinho/verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "verde"
+    ],
+    "familyIds": [
+      "azul",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 44
+  },
+  {
+    "rawColor": "branco/off-white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "off-white"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 43
+  },
+  {
+    "rawColor": "cinza white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "branco"
+    ],
+    "familyIds": [
+      "cinza",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 41
+  },
+  {
+    "rawColor": "verde green",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "verde"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 39
+  },
+  {
+    "rawColor": "azul/branco",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "branco"
+    ],
+    "familyIds": [
+      "azul",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 38
+  },
+  {
+    "rawColor": "azul/preto azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "preto"
+    ],
+    "familyIds": [
+      "azul",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 38
+  },
+  {
+    "rawColor": "azul marinho rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "rosa"
+    ],
+    "familyIds": [
+      "azul",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 36
+  },
+  {
+    "rawColor": "pink/preto rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "pink",
+      "preto",
+      "rosa"
+    ],
+    "familyIds": [
+      "rosa",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 36
+  },
+  {
+    "rawColor": "preto/rosê nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "rose",
+      "nude"
+    ],
+    "familyIds": [
+      "preto",
+      "rosa",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 36
+  },
+  {
+    "rawColor": "azul marinho/branco",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "branco"
+    ],
+    "familyIds": [
+      "azul",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 35
+  },
+  {
+    "rawColor": "branco denim",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "branco"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [
+      "denim"
+    ],
+    "quantity": 35
+  },
+  {
+    "rawColor": "preto natural",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "preto"
+    ],
+    "familyIds": [
+      "preto"
+    ],
+    "residualTerms": [
+      "natural"
+    ],
+    "quantity": 35
+  },
+  {
+    "rawColor": "azul blue",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "azul"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 34
+  },
+  {
+    "rawColor": "azul/branco azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "branco"
+    ],
+    "familyIds": [
+      "azul",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 34
+  },
+  {
+    "rawColor": "branco/preto/vermelho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "preto",
+      "vermelho"
+    ],
+    "familyIds": [
+      "branco",
+      "preto",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 33
+  },
+  {
+    "rawColor": "pink/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "pink",
+      "preto"
+    ],
+    "familyIds": [
+      "rosa",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 32
+  },
+  {
+    "rawColor": "azul marinho navy",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 31
+  },
+  {
+    "rawColor": "Dourado",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "dourado"
+    ],
+    "familyIds": [
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 31
+  },
+  {
+    "rawColor": "azul/azul marinho/bege azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "azul-marinho",
+      "bege"
+    ],
+    "familyIds": [
+      "azul",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 30
+  },
+  {
+    "rawColor": "bege caqui",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "caqui"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 30
+  },
+  {
+    "rawColor": "bege verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "verde"
+    ],
+    "familyIds": [
+      "bege",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 30
+  },
+  {
+    "rawColor": "bege/nude/off-white white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "nude",
+      "off-white"
+    ],
+    "familyIds": [
+      "bege",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 30
+  },
+  {
+    "rawColor": "branco/nude nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "nude"
+    ],
+    "familyIds": [
+      "branco",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 30
+  },
+  {
+    "rawColor": "cinza pink",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "pink"
+    ],
+    "familyIds": [
+      "cinza",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 30
+  },
+  {
+    "rawColor": "dourado/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "dourado",
+      "preto"
+    ],
+    "familyIds": [
+      "metalico",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 30
+  },
+  {
+    "rawColor": "marrom azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "azul"
+    ],
+    "familyIds": [
+      "marrom",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 29
+  },
+  {
+    "rawColor": "bege/caramelo",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "caramelo"
+    ],
+    "familyIds": [
+      "bege",
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 28
+  },
+  {
+    "rawColor": "pink/preto pink",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "pink",
+      "preto"
+    ],
+    "familyIds": [
+      "rosa",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 28
+  },
+  {
+    "rawColor": "prata/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "prata",
+      "preto"
+    ],
+    "familyIds": [
+      "metalico",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 27
+  },
+  {
+    "rawColor": "preto red",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "vermelho"
+    ],
+    "familyIds": [
+      "preto",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 27
+  },
+  {
+    "rawColor": "rosa rose",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "rosa"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [
+      "rose"
+    ],
+    "quantity": 27
+  },
+  {
+    "rawColor": "bege nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "nude"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 26
+  },
+  {
+    "rawColor": "branco carbon",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "branco"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [
+      "carbon"
+    ],
+    "quantity": 26
+  },
+  {
+    "rawColor": "branco/cinza",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "cinza"
+    ],
+    "familyIds": [
+      "branco",
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 26
+  },
+  {
+    "rawColor": "branco/cinza/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "cinza",
+      "preto"
+    ],
+    "familyIds": [
+      "branco",
+      "cinza",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 26
+  },
+  {
+    "rawColor": "branco/vermelho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "vermelho"
+    ],
+    "familyIds": [
+      "branco",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 26
+  },
+  {
+    "rawColor": "onça",
+    "classification": "UNKNOWN",
+    "canonicalColorIds": [],
+    "familyIds": [],
+    "residualTerms": [
+      "onça"
+    ],
+    "quantity": 26
+  },
+  {
+    "rawColor": "preto blue",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "azul"
+    ],
+    "familyIds": [
+      "preto",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 26
+  },
+  {
+    "rawColor": "azul/rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "rosa"
+    ],
+    "familyIds": [
+      "azul",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 25
+  },
+  {
+    "rawColor": "castanho",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "castanho"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 24
+  },
+  {
+    "rawColor": "verde oliva",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "oliva"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 24
+  },
+  {
+    "rawColor": "cinza/grafite",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "grafite"
+    ],
+    "familyIds": [
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 23
+  },
+  {
+    "rawColor": "jeans azul",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "azul"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [
+      "jeans"
+    ],
+    "quantity": 22
+  },
+  {
+    "rawColor": "marrom caqui",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "caqui"
+    ],
+    "familyIds": [
+      "marrom",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 22
+  },
+  {
+    "rawColor": "preto carbon",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "preto"
+    ],
+    "familyIds": [
+      "preto"
+    ],
+    "residualTerms": [
+      "carbon"
+    ],
+    "quantity": 22
+  },
+  {
+    "rawColor": "bege/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "preto"
+    ],
+    "familyIds": [
+      "bege",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 21
+  },
+  {
+    "rawColor": "preto khaki",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "caqui"
+    ],
+    "familyIds": [
+      "preto",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 21
+  },
+  {
+    "rawColor": "preto/rosa rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "rosa"
+    ],
+    "familyIds": [
+      "preto",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 21
+  },
+  {
+    "rawColor": "vermelho azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "vermelho",
+      "azul"
+    ],
+    "familyIds": [
+      "vermelho",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 21
+  },
+  {
+    "rawColor": "branco blue",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "azul"
+    ],
+    "familyIds": [
+      "branco",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 20
+  },
+  {
+    "rawColor": "branco pink",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "pink"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 20
+  },
+  {
+    "rawColor": "cobre",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "cobre"
+    ],
+    "familyIds": [
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 20
+  },
+  {
+    "rawColor": "laranja/verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "laranja",
+      "verde"
+    ],
+    "familyIds": [
+      "laranja",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 20
+  },
+  {
+    "rawColor": "preto gold",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "dourado"
+    ],
+    "familyIds": [
+      "preto",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 20
+  },
+  {
+    "rawColor": "roxo azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "roxo",
+      "azul"
+    ],
+    "familyIds": [
+      "roxo",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 20
+  },
+  {
+    "rawColor": "bege beige",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "bege"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 19
+  },
+  {
+    "rawColor": "branco/preto white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "preto"
+    ],
+    "familyIds": [
+      "branco",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 19
+  },
+  {
+    "rawColor": "verde azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "verde",
+      "azul"
+    ],
+    "familyIds": [
+      "verde",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 19
+  },
+  {
+    "rawColor": "amarelo white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "branco"
+    ],
+    "familyIds": [
+      "amarelo",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 18
+  },
+  {
+    "rawColor": "azul navy",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 18
+  },
+  {
+    "rawColor": "bege/off-white white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "off-white"
+    ],
+    "familyIds": [
+      "bege",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 18
+  },
+  {
+    "rawColor": "lilás lavanda",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "lilas",
+      "lavanda"
+    ],
+    "familyIds": [
+      "roxo"
+    ],
+    "residualTerms": [],
+    "quantity": 18
+  },
+  {
+    "rawColor": "off-white offwhite",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "off-white"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 18
+  },
+  {
+    "rawColor": "preto nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "nude"
+    ],
+    "familyIds": [
+      "preto",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 18
+  },
+  {
+    "rawColor": "azul/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "preto"
+    ],
+    "familyIds": [
+      "azul",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 17
+  },
+  {
+    "rawColor": "bege khaki",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "caqui"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 17
+  },
+  {
+    "rawColor": "branco/laranja",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "laranja"
+    ],
+    "familyIds": [
+      "branco",
+      "laranja"
+    ],
+    "residualTerms": [],
+    "quantity": 17
+  },
+  {
+    "rawColor": "caramelo/marrom",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "caramelo",
+      "marrom"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 17
+  },
+  {
+    "rawColor": "amarelo/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "preto"
+    ],
+    "familyIds": [
+      "amarelo",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 16
+  },
+  {
+    "rawColor": "azul marinho/bege",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "bege"
+    ],
+    "familyIds": [
+      "azul",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 16
+  },
+  {
+    "rawColor": "azul marinho/marrom",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "marrom"
+    ],
+    "familyIds": [
+      "azul",
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 16
+  },
+  {
+    "rawColor": "bege rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "rosa"
+    ],
+    "familyIds": [
+      "bege",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 16
+  },
+  {
+    "rawColor": "bege/multicolorido",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "multicolorido"
+    ],
+    "familyIds": [
+      "bege",
+      "multicolorido"
+    ],
+    "residualTerms": [],
+    "quantity": 16
+  },
+  {
+    "rawColor": "café natural",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "cafe"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [
+      "natural"
+    ],
+    "quantity": 16
+  },
+  {
+    "rawColor": "café/marrom/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cafe",
+      "marrom",
+      "preto"
+    ],
+    "familyIds": [
+      "marrom",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 16
+  },
+  {
+    "rawColor": "caramelo/castanho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "caramelo",
+      "castanho"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 16
+  },
+  {
+    "rawColor": "verde/verde militar/verde oliva",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "verde",
+      "verde-militar",
+      "oliva"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 16
+  },
+  {
+    "rawColor": "amarelo/branco",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "branco"
+    ],
+    "familyIds": [
+      "amarelo",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 15
+  },
+  {
+    "rawColor": "azul marinho denim",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [
+      "denim"
+    ],
+    "quantity": 15
+  },
+  {
+    "rawColor": "bege natural",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "bege"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [
+      "natural"
+    ],
+    "quantity": 15
+  },
+  {
+    "rawColor": "branco/pink",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "pink"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 15
+  },
+  {
+    "rawColor": "marrom black",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "preto"
+    ],
+    "familyIds": [
+      "marrom",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 15
+  },
+  {
+    "rawColor": "pink/preto/rosa rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "pink",
+      "preto",
+      "rosa"
+    ],
+    "familyIds": [
+      "rosa",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 15
+  },
+  {
+    "rawColor": "preto neon",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "preto"
+    ],
+    "familyIds": [
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 15
+  },
+  {
+    "rawColor": "azul marinho white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "branco"
+    ],
+    "familyIds": [
+      "azul",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 14
+  },
+  {
+    "rawColor": "branco black",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "preto"
+    ],
+    "familyIds": [
+      "branco",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 14
+  },
+  {
+    "rawColor": "branco natural",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "branco"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [
+      "natural"
+    ],
+    "quantity": 14
+  },
+  {
+    "rawColor": "branco/lilás rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "lilas",
+      "rosa"
+    ],
+    "familyIds": [
+      "branco",
+      "roxo",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 14
+  },
+  {
+    "rawColor": "branco/marrom",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "marrom"
+    ],
+    "familyIds": [
+      "branco",
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 14
+  },
+  {
+    "rawColor": "branco/pink/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "pink",
+      "preto"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 14
+  },
+  {
+    "rawColor": "branco/rosa rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "rosa"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 14
+  },
+  {
+    "rawColor": "cinza denim",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "cinza"
+    ],
+    "familyIds": [
+      "cinza"
+    ],
+    "residualTerms": [
+      "denim"
+    ],
+    "quantity": 14
+  },
+  {
+    "rawColor": "incolor azul",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "incolor",
+      "azul"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [
+      "incolor"
+    ],
+    "quantity": 14
+  },
+  {
+    "rawColor": "incolor rosa",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "incolor",
+      "rosa"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [
+      "incolor"
+    ],
+    "quantity": 14
+  },
+  {
+    "rawColor": "jeans",
+    "classification": "UNKNOWN",
+    "canonicalColorIds": [],
+    "familyIds": [],
+    "residualTerms": [
+      "jeans"
+    ],
+    "quantity": 14
+  },
+  {
+    "rawColor": "rosa coral",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "rosa",
+      "coral"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 14
+  },
+  {
+    "rawColor": "roxo rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "roxo",
+      "rosa"
+    ],
+    "familyIds": [
+      "roxo",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 14
+  },
+  {
+    "rawColor": "bege/cinza",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "cinza"
+    ],
+    "familyIds": [
+      "bege",
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 13
+  },
+  {
+    "rawColor": "bordô/vinho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bordo",
+      "vinho"
+    ],
+    "familyIds": [
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 13
+  },
+  {
+    "rawColor": "branco/preto/rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "preto",
+      "rosa"
+    ],
+    "familyIds": [
+      "branco",
+      "preto",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 13
+  },
+  {
+    "rawColor": "marrom white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "branco"
+    ],
+    "familyIds": [
+      "marrom",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 13
+  },
+  {
+    "rawColor": "pink/rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "pink",
+      "rosa"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 13
+  },
+  {
+    "rawColor": "pink/rosa rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "pink",
+      "rosa"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 13
+  },
+  {
+    "rawColor": "azul denim",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "azul"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [
+      "denim"
+    ],
+    "quantity": 12
+  },
+  {
+    "rawColor": "azul/azul marinho/vermelho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "azul-marinho",
+      "vermelho"
+    ],
+    "familyIds": [
+      "azul",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 12
+  },
+  {
+    "rawColor": "branco/grafite",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "grafite"
+    ],
+    "familyIds": [
+      "branco",
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 12
+  },
+  {
+    "rawColor": "branco/pink pink",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "pink"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 12
+  },
+  {
+    "rawColor": "branco/prata",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "prata"
+    ],
+    "familyIds": [
+      "branco",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 12
+  },
+  {
+    "rawColor": "caramelo/castanho/marrom/terracota",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "caramelo",
+      "castanho",
+      "marrom",
+      "terracota"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 12
+  },
+  {
+    "rawColor": "cinza black",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "preto"
+    ],
+    "familyIds": [
+      "cinza",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 12
+  },
+  {
+    "rawColor": "Creme",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "creme"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 12
+  },
+  {
+    "rawColor": "dourado carbon",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "dourado"
+    ],
+    "familyIds": [
+      "metalico"
+    ],
+    "residualTerms": [
+      "carbon"
+    ],
+    "quantity": 12
+  },
+  {
+    "rawColor": "incolor white",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "incolor",
+      "branco"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [
+      "incolor"
+    ],
+    "quantity": 12
+  },
+  {
+    "rawColor": "marrom nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "nude"
+    ],
+    "familyIds": [
+      "marrom",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 12
+  },
+  {
+    "rawColor": "preto bronze",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "bronze"
+    ],
+    "familyIds": [
+      "preto",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 12
+  },
+  {
+    "rawColor": "preto rose",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "preto"
+    ],
+    "familyIds": [
+      "preto"
+    ],
+    "residualTerms": [
+      "rose"
+    ],
+    "quantity": 12
+  },
+  {
+    "rawColor": "preto sand",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "areia"
+    ],
+    "familyIds": [
+      "preto",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 12
+  },
+  {
+    "rawColor": "rosa/verde rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "rosa",
+      "verde"
+    ],
+    "familyIds": [
+      "rosa",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 12
+  },
+  {
+    "rawColor": "amarelo/roxo",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "roxo"
+    ],
+    "familyIds": [
+      "amarelo",
+      "roxo"
+    ],
+    "residualTerms": [],
+    "quantity": 11
+  },
+  {
+    "rawColor": "azul lavanda",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "lavanda"
+    ],
+    "familyIds": [
+      "azul",
+      "roxo"
+    ],
+    "residualTerms": [],
+    "quantity": 11
+  },
+  {
+    "rawColor": "azul marinho/laranja",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "laranja"
+    ],
+    "familyIds": [
+      "azul",
+      "laranja"
+    ],
+    "residualTerms": [],
+    "quantity": 11
+  },
+  {
+    "rawColor": "bege/nude/off-white nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "nude",
+      "off-white"
+    ],
+    "familyIds": [
+      "bege",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 11
+  },
+  {
+    "rawColor": "branco/off-white white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "off-white"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 11
+  },
+  {
+    "rawColor": "marrom khaki",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "caqui"
+    ],
+    "familyIds": [
+      "marrom",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 11
+  },
+  {
+    "rawColor": "roxo lavanda",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "roxo",
+      "lavanda"
+    ],
+    "familyIds": [
+      "roxo"
+    ],
+    "residualTerms": [],
+    "quantity": 11
+  },
+  {
+    "rawColor": "terracota",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "terracota"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 11
+  },
+  {
+    "rawColor": "vermelho red",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "vermelho"
+    ],
+    "familyIds": [
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 11
+  },
+  {
+    "rawColor": "azul royal",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "azul-royal"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "azul/branco/dourado",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "branco",
+      "dourado"
+    ],
+    "familyIds": [
+      "azul",
+      "branco",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "azul/verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "verde"
+    ],
+    "familyIds": [
+      "azul",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "bege sand",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "areia"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "bege/bronze/cinza/cobre/prata/prata velho",
+    "classification": "REVIEW",
+    "canonicalColorIds": [
+      "bege",
+      "bronze",
+      "cinza",
+      "cobre",
+      "prata",
+      "prata-velho"
+    ],
+    "familyIds": [],
+    "residualTerms": [
+      "bege/bronze/cinza/cobre/prata/prata velho"
+    ],
+    "quantity": 10
+  },
+  {
+    "rawColor": "bege/rosê rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "rose",
+      "rosa"
+    ],
+    "familyIds": [
+      "bege",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "bordô/rosê/vermelho/vinho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bordo",
+      "rose",
+      "vermelho",
+      "vinho"
+    ],
+    "familyIds": [
+      "vermelho",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "branco offwhite",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "off-white"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "branco/café",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "cafe"
+    ],
+    "familyIds": [
+      "branco",
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "branco/caramelo",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "caramelo"
+    ],
+    "familyIds": [
+      "branco",
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "branco/dourado/rosê white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "dourado",
+      "rose"
+    ],
+    "familyIds": [
+      "branco",
+      "metalico",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "branco/preto/verde oliva",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "preto",
+      "oliva"
+    ],
+    "familyIds": [
+      "branco",
+      "preto",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "café/caramelo",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cafe",
+      "caramelo"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "café/caramelo/castanho/cobre/cáqui/marrom",
+    "classification": "REVIEW",
+    "canonicalColorIds": [
+      "cafe",
+      "caramelo",
+      "castanho",
+      "cobre",
+      "caqui",
+      "marrom"
+    ],
+    "familyIds": [],
+    "residualTerms": [
+      "café/caramelo/castanho/cobre/cáqui/marrom"
+    ],
+    "quantity": 10
+  },
+  {
+    "rawColor": "café/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cafe",
+      "preto"
+    ],
+    "familyIds": [
+      "marrom",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "caramelo blue",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "caramelo",
+      "azul"
+    ],
+    "familyIds": [
+      "marrom",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "cinza/prata",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "prata"
+    ],
+    "familyIds": [
+      "cinza",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "grafite/verde verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "grafite",
+      "verde"
+    ],
+    "familyIds": [
+      "cinza",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "marrom red",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "vermelho"
+    ],
+    "familyIds": [
+      "marrom",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "ouro velho/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "ouro-velho",
+      "preto"
+    ],
+    "familyIds": [
+      "metalico",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "prata/rosa rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "prata",
+      "rosa"
+    ],
+    "familyIds": [
+      "metalico",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "preto blu",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "azul"
+    ],
+    "familyIds": [
+      "preto",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "preto coral",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "coral"
+    ],
+    "familyIds": [
+      "preto",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "preto/verde oliva",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "oliva"
+    ],
+    "familyIds": [
+      "preto",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "rosê rose",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "rose"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [
+      "rose"
+    ],
+    "quantity": 10
+  },
+  {
+    "rawColor": "verde grau",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "verde",
+      "cinza"
+    ],
+    "familyIds": [
+      "verde",
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "verde neon",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "verde"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 10
+  },
+  {
+    "rawColor": "amarelo/bege",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "bege"
+    ],
+    "familyIds": [
+      "amarelo",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "azul marinho blue",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "azul"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "azul marinho/branco/cinza",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "branco",
+      "cinza"
+    ],
+    "familyIds": [
+      "azul",
+      "branco",
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "azul marinho/branco/preto/verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "branco",
+      "preto",
+      "verde"
+    ],
+    "familyIds": [
+      "azul",
+      "branco",
+      "preto",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "azul marinho/branco/verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "branco",
+      "verde"
+    ],
+    "familyIds": [
+      "azul",
+      "branco",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "azul marinho/caramelo",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "caramelo"
+    ],
+    "familyIds": [
+      "azul",
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "azul marinho/laranja/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "laranja",
+      "preto"
+    ],
+    "familyIds": [
+      "azul",
+      "laranja",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "azul marinho/laranja/preto/verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "laranja",
+      "preto",
+      "verde"
+    ],
+    "familyIds": [
+      "azul",
+      "laranja",
+      "preto",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "black",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "preto"
+    ],
+    "familyIds": [
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "branco coral",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "coral"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "branco/cinza rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "cinza",
+      "rosa"
+    ],
+    "familyIds": [
+      "branco",
+      "cinza",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "branco/dourado/rosê",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "dourado",
+      "rose"
+    ],
+    "familyIds": [
+      "branco",
+      "metalico",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "pink/verde pink",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "pink",
+      "verde"
+    ],
+    "familyIds": [
+      "rosa",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "Salmão",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "salmao"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "vermelho verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "vermelho",
+      "verde"
+    ],
+    "familyIds": [
+      "vermelho",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 9
+  },
+  {
+    "rawColor": "amarelo/off-white white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "off-white"
+    ],
+    "familyIds": [
+      "amarelo",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "azul marinho gold",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "dourado"
+    ],
+    "familyIds": [
+      "azul",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "azul marinho natural",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [
+      "natural"
+    ],
+    "quantity": 8
+  },
+  {
+    "rawColor": "azul marinho/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "preto"
+    ],
+    "familyIds": [
+      "azul",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "azul/azul marinho/branco",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "azul-marinho",
+      "branco"
+    ],
+    "familyIds": [
+      "azul",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "azul/bege white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "bege",
+      "branco"
+    ],
+    "familyIds": [
+      "azul",
+      "bege",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "azul/nude nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "nude"
+    ],
+    "familyIds": [
+      "azul",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "bege/bordô",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "bordo"
+    ],
+    "familyIds": [
+      "bege",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "bege/branco nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "branco",
+      "nude"
+    ],
+    "familyIds": [
+      "bege",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "bege/branco/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "branco",
+      "preto"
+    ],
+    "familyIds": [
+      "bege",
+      "branco",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "branco neon",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "branco"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "branco/dourado",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "dourado"
+    ],
+    "familyIds": [
+      "branco",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "branco/pink rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "pink",
+      "rosa"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "branco/verde verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "verde"
+    ],
+    "familyIds": [
+      "branco",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "café/caramelo/castanho/marrom",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cafe",
+      "caramelo",
+      "castanho",
+      "marrom"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "caramelo/castanho/marrom",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "caramelo",
+      "castanho",
+      "marrom"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "cinza/rosê",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "rose"
+    ],
+    "familyIds": [
+      "cinza",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "cobre/rosa/rosê rose",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "cobre",
+      "rosa",
+      "rose"
+    ],
+    "familyIds": [
+      "metalico",
+      "rosa"
+    ],
+    "residualTerms": [
+      "rose"
+    ],
+    "quantity": 8
+  },
+  {
+    "rawColor": "dourado/off-white/rosa nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "dourado",
+      "off-white",
+      "rosa",
+      "nude"
+    ],
+    "familyIds": [
+      "metalico",
+      "branco",
+      "rosa",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "grafite denim",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "grafite"
+    ],
+    "familyIds": [
+      "cinza"
+    ],
+    "residualTerms": [
+      "denim"
+    ],
+    "quantity": 8
+  },
+  {
+    "rawColor": "grafite/laranja/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "grafite",
+      "laranja",
+      "preto"
+    ],
+    "familyIds": [
+      "cinza",
+      "laranja",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "lilás/rosa rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "lilas",
+      "rosa"
+    ],
+    "familyIds": [
+      "roxo",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "multicolorido/pink pink",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "multicolorido",
+      "pink"
+    ],
+    "familyIds": [
+      "multicolorido",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "nude/pink",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "nude",
+      "pink"
+    ],
+    "familyIds": [
+      "bege",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "nude/pink/rosa/rosê nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "nude",
+      "pink",
+      "rosa",
+      "rose"
+    ],
+    "familyIds": [
+      "bege",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "off-white/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "off-white",
+      "preto"
+    ],
+    "familyIds": [
+      "branco",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "off-white/rosa rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "off-white",
+      "rosa"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "onça/onça claro",
+    "classification": "UNKNOWN",
+    "canonicalColorIds": [],
+    "familyIds": [],
+    "residualTerms": [
+      "onça",
+      "onça claro"
+    ],
+    "quantity": 8
+  },
+  {
+    "rawColor": "ouro velho/prata velho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "ouro-velho",
+      "prata-velho"
+    ],
+    "familyIds": [
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "preto/rosê",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "rose"
+    ],
+    "familyIds": [
+      "preto",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "rosê nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "rose",
+      "nude"
+    ],
+    "familyIds": [
+      "rosa",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "rosê/verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "rose",
+      "verde"
+    ],
+    "familyIds": [
+      "rosa",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 8
+  },
+  {
+    "rawColor": "amarelo azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "azul"
+    ],
+    "familyIds": [
+      "amarelo",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "amarelo rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "rosa"
+    ],
+    "familyIds": [
+      "amarelo",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "amarelo verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "verde"
+    ],
+    "familyIds": [
+      "amarelo",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "amarelo/bordô/preto/verde verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "bordo",
+      "preto",
+      "verde"
+    ],
+    "familyIds": [
+      "amarelo",
+      "vermelho",
+      "preto",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "amarelo/laranja/lilás",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "laranja",
+      "lilas"
+    ],
+    "familyIds": [
+      "amarelo",
+      "laranja",
+      "roxo"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "azul indigo",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "indigo"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "azul marinho/cinza/grafite",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "cinza",
+      "grafite"
+    ],
+    "familyIds": [
+      "azul",
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "azul/branco/rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "branco",
+      "rosa"
+    ],
+    "familyIds": [
+      "azul",
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "bege gold",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "dourado"
+    ],
+    "familyIds": [
+      "bege",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "bege/dourado",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "dourado"
+    ],
+    "familyIds": [
+      "bege",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "bege/rosa/rosê",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "rosa",
+      "rose"
+    ],
+    "familyIds": [
+      "bege",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "bordô/vermelho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bordo",
+      "vermelho"
+    ],
+    "familyIds": [
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "branco multicolor",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "multicolorido"
+    ],
+    "familyIds": [
+      "branco",
+      "multicolorido"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "branco/onça",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "branco"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [
+      "onça"
+    ],
+    "quantity": 7
+  },
+  {
+    "rawColor": "bronze/dourado/off-white/rosê rose",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "bronze",
+      "dourado",
+      "off-white",
+      "rose"
+    ],
+    "familyIds": [
+      "metalico",
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [
+      "rose"
+    ],
+    "quantity": 7
+  },
+  {
+    "rawColor": "dourado/ouro velho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "dourado",
+      "ouro-velho"
+    ],
+    "familyIds": [
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "grafite grey",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "grafite",
+      "cinza"
+    ],
+    "familyIds": [
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "laranja azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "laranja",
+      "azul"
+    ],
+    "familyIds": [
+      "laranja",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "marrom marron",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "marrom"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "marrom/terracota",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "terracota"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "multicolorido/preto black",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "multicolorido",
+      "preto"
+    ],
+    "familyIds": [
+      "multicolorido",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "off-white/verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "off-white",
+      "verde"
+    ],
+    "familyIds": [
+      "branco",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "onça/preto",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "preto"
+    ],
+    "familyIds": [
+      "preto"
+    ],
+    "residualTerms": [
+      "onça"
+    ],
+    "quantity": 7
+  },
+  {
+    "rawColor": "preto/verde black",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "verde"
+    ],
+    "familyIds": [
+      "preto",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "preto/verde verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "verde"
+    ],
+    "familyIds": [
+      "preto",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "preto/verde/vermelho verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "verde",
+      "vermelho"
+    ],
+    "familyIds": [
+      "preto",
+      "verde",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "preto/vermelho black",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "vermelho"
+    ],
+    "familyIds": [
+      "preto",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "rosa nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "rosa",
+      "nude"
+    ],
+    "familyIds": [
+      "rosa",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "rosa/rosê rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "rosa",
+      "rose"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "rosê coral",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "rose",
+      "coral"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 7
+  },
+  {
+    "rawColor": "verde denim",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "verde"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [
+      "denim"
+    ],
+    "quantity": 7
+  },
+  {
+    "rawColor": "amarelo/bordô/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "bordo",
+      "preto"
+    ],
+    "familyIds": [
+      "amarelo",
+      "vermelho",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "amarelo/bordô/verde verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "bordo",
+      "verde"
+    ],
+    "familyIds": [
+      "amarelo",
+      "vermelho",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "azul black",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "preto"
+    ],
+    "familyIds": [
+      "azul",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "azul marinho/verde militar",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "verde-militar"
+    ],
+    "familyIds": [
+      "azul",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "azul/azul marinho blue",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "azul/azul marinho/caramelo azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "azul-marinho",
+      "caramelo"
+    ],
+    "familyIds": [
+      "azul",
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "azul/azul marinho/rosa rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "azul-marinho",
+      "rosa"
+    ],
+    "familyIds": [
+      "azul",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "azul/laranja azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "laranja"
+    ],
+    "familyIds": [
+      "azul",
+      "laranja"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "azul/pink azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "pink"
+    ],
+    "familyIds": [
+      "azul",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "azul/verde azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "verde"
+    ],
+    "familyIds": [
+      "azul",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "bege denim",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "bege"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [
+      "denim"
+    ],
+    "quantity": 6
+  },
+  {
+    "rawColor": "bege/bordô/cáqui/lilás/loiro/nude/rosê",
+    "classification": "REVIEW",
+    "canonicalColorIds": [
+      "bege",
+      "bordo",
+      "caqui",
+      "lilas",
+      "nude",
+      "rose"
+    ],
+    "familyIds": [],
+    "residualTerms": [
+      "loiro",
+      "bege/bordô/cáqui/lilás/loiro/nude/rosê"
+    ],
+    "quantity": 6
+  },
+  {
+    "rawColor": "bege/bordô/caramelo/cáqui/lilás/loiro",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "bege",
+      "bordo",
+      "caramelo",
+      "caqui",
+      "lilas"
+    ],
+    "familyIds": [
+      "bege",
+      "vermelho",
+      "marrom",
+      "roxo"
+    ],
+    "residualTerms": [
+      "loiro"
+    ],
+    "quantity": 6
+  },
+  {
+    "rawColor": "bege/branco/rosa rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "branco",
+      "rosa"
+    ],
+    "familyIds": [
+      "bege",
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "bege/café/caramelo/castanho/cobre/cáqui/dourado",
+    "classification": "REVIEW",
+    "canonicalColorIds": [
+      "bege",
+      "cafe",
+      "caramelo",
+      "castanho",
+      "cobre",
+      "caqui",
+      "dourado"
+    ],
+    "familyIds": [],
+    "residualTerms": [
+      "bege/café/caramelo/castanho/cobre/cáqui/dourado"
+    ],
+    "quantity": 6
+  },
+  {
+    "rawColor": "bege/caramelo/castanho/cáqui",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "caramelo",
+      "castanho",
+      "caqui"
+    ],
+    "familyIds": [
+      "bege",
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "bege/ouro velho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "ouro-velho"
+    ],
+    "familyIds": [
+      "bege",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "bege/verde oliva",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "oliva"
+    ],
+    "familyIds": [
+      "bege",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "branco aqua",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "branco"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [
+      "aqua"
+    ],
+    "quantity": 6
+  },
+  {
+    "rawColor": "branco gold",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "dourado"
+    ],
+    "familyIds": [
+      "branco",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "branco nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "nude"
+    ],
+    "familyIds": [
+      "branco",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "branco/café/caramelo/cinza",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "cafe",
+      "caramelo",
+      "cinza"
+    ],
+    "familyIds": [
+      "branco",
+      "marrom",
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "branco/caramelo/marrom",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "caramelo",
+      "marrom"
+    ],
+    "familyIds": [
+      "branco",
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "branco/nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "nude"
+    ],
+    "familyIds": [
+      "branco",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "branco/rosa/verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "rosa",
+      "verde"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "branco/rosê",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "rose"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "branco/rosê rose",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "branco",
+      "rose"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [
+      "rose"
+    ],
+    "quantity": 6
+  },
+  {
+    "rawColor": "cáqui khaki",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "caqui"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "cáqui red",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "caqui",
+      "vermelho"
+    ],
+    "familyIds": [
+      "bege",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "caramelo caqui",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "caramelo",
+      "caqui"
+    ],
+    "familyIds": [
+      "marrom",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "cinza pewter",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "pewter"
+    ],
+    "familyIds": [
+      "cinza",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "cinza teal",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "teal"
+    ],
+    "familyIds": [
+      "cinza",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "cinza/laranja",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "laranja"
+    ],
+    "familyIds": [
+      "cinza",
+      "laranja"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "grafite tan",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "grafite",
+      "tan"
+    ],
+    "familyIds": [
+      "cinza",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "grafite white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "grafite",
+      "branco"
+    ],
+    "familyIds": [
+      "cinza",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "grafite/verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "grafite",
+      "verde"
+    ],
+    "familyIds": [
+      "cinza",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "Incolor",
+    "classification": "REVIEW",
+    "canonicalColorIds": [
+      "incolor"
+    ],
+    "familyIds": [],
+    "residualTerms": [
+      "Incolor"
+    ],
+    "quantity": 6
+  },
+  {
+    "rawColor": "lilás/prata/rosa rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "lilas",
+      "prata",
+      "rosa"
+    ],
+    "familyIds": [
+      "roxo",
+      "metalico",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "marrom grey",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "cinza"
+    ],
+    "familyIds": [
+      "marrom",
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "marrom tan",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "tan"
+    ],
+    "familyIds": [
+      "marrom",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "nude/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "nude",
+      "preto"
+    ],
+    "familyIds": [
+      "bege",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "nude/rosa nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "nude",
+      "rosa"
+    ],
+    "familyIds": [
+      "bege",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "off-white rose",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "off-white"
+    ],
+    "familyIds": [
+      "branco"
+    ],
+    "residualTerms": [
+      "rose"
+    ],
+    "quantity": 6
+  },
+  {
+    "rawColor": "pink/preto/rosa pink",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "pink",
+      "preto",
+      "rosa"
+    ],
+    "familyIds": [
+      "rosa",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "prata neon",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "prata"
+    ],
+    "familyIds": [
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "preto purple",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "roxo"
+    ],
+    "familyIds": [
+      "preto",
+      "roxo"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "preto/verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "verde"
+    ],
+    "familyIds": [
+      "preto",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "rosa/rosê",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "rosa",
+      "rose"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "unico turquesa",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "turquesa"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [
+      "unico"
+    ],
+    "quantity": 6
+  },
+  {
+    "rawColor": "verde carbon",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "verde"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [
+      "carbon"
+    ],
+    "quantity": 6
+  },
+  {
+    "rawColor": "verde oliva olive",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "oliva"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "verde/verde oliva",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "verde",
+      "oliva"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "vermelho navy",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "vermelho",
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "vermelho",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "vermelho rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "vermelho",
+      "rosa"
+    ],
+    "familyIds": [
+      "vermelho",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 6
+  },
+  {
+    "rawColor": "zebra",
+    "classification": "UNKNOWN",
+    "canonicalColorIds": [],
+    "familyIds": [],
+    "residualTerms": [
+      "zebra"
+    ],
+    "quantity": 6
+  },
+  {
+    "rawColor": "amarelo yellow",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "amarelo"
+    ],
+    "familyIds": [
+      "amarelo"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "azul chrome",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "azul"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [
+      "chrome"
+    ],
+    "quantity": 5
+  },
+  {
+    "rawColor": "azul marinho/caramelo/preto",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "caramelo",
+      "preto"
+    ],
+    "familyIds": [
+      "azul",
+      "marrom",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "azul marinho/vermelho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "vermelho"
+    ],
+    "familyIds": [
+      "azul",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "bege/vermelho",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "vermelho"
+    ],
+    "familyIds": [
+      "bege",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "branco grey",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "cinza"
+    ],
+    "familyIds": [
+      "branco",
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "branco metallic",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "branco"
+    ],
+    "familyIds": [
+      "branco",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "branco olive",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "oliva"
+    ],
+    "familyIds": [
+      "branco",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "bronze",
+    "classification": "EXACT",
+    "canonicalColorIds": [
+      "bronze"
+    ],
+    "familyIds": [
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "cáqui blue",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "caqui",
+      "azul"
+    ],
+    "familyIds": [
+      "bege",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "caramelo red",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "caramelo",
+      "vermelho"
+    ],
+    "familyIds": [
+      "marrom",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "floral pink",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "pink"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [
+      "floral"
+    ],
+    "quantity": 5
+  },
+  {
+    "rawColor": "incolor pink",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "incolor",
+      "pink"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [
+      "incolor"
+    ],
+    "quantity": 5
+  },
+  {
+    "rawColor": "incolor tan",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "incolor",
+      "tan"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [
+      "incolor"
+    ],
+    "quantity": 5
+  },
+  {
+    "rawColor": "marrom cognac",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "conhaque"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "marrom gold",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "dourado"
+    ],
+    "familyIds": [
+      "marrom",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "marrom ocre",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "ocre"
+    ],
+    "familyIds": [
+      "marrom",
+      "amarelo"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "off-white red",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "off-white",
+      "vermelho"
+    ],
+    "familyIds": [
+      "branco",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "off-white sand",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "off-white",
+      "areia"
+    ],
+    "familyIds": [
+      "branco",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "pink rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "pink",
+      "rosa"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "prata metallic",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "prata"
+    ],
+    "familyIds": [
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "preto grey",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "cinza"
+    ],
+    "familyIds": [
+      "preto",
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "preto tan",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "tan"
+    ],
+    "familyIds": [
+      "preto",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "preto turquesa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "turquesa"
+    ],
+    "familyIds": [
+      "preto",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "vermelho black",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "vermelho",
+      "preto"
+    ],
+    "familyIds": [
+      "vermelho",
+      "preto"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "vermelho white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "vermelho",
+      "branco"
+    ],
+    "familyIds": [
+      "vermelho",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 5
+  },
+  {
+    "rawColor": "amarelo/cinza",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "amarelo",
+      "cinza"
+    ],
+    "familyIds": [
+      "amarelo",
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "azul marinho caqui",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul-marinho",
+      "caqui"
+    ],
+    "familyIds": [
+      "azul",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "azul rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "rosa"
+    ],
+    "familyIds": [
+      "azul",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "azul white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "branco"
+    ],
+    "familyIds": [
+      "azul",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "azul/rosa azul",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "azul",
+      "rosa"
+    ],
+    "familyIds": [
+      "azul",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "bege blue",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bege",
+      "azul"
+    ],
+    "familyIds": [
+      "bege",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "bordô/branco",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bordo",
+      "branco"
+    ],
+    "familyIds": [
+      "vermelho",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "bordô/nude nude",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "bordo",
+      "nude"
+    ],
+    "familyIds": [
+      "vermelho",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "branco sand",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "areia"
+    ],
+    "familyIds": [
+      "branco",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "branco/preto red",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "preto",
+      "vermelho"
+    ],
+    "familyIds": [
+      "branco",
+      "preto",
+      "vermelho"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "branco/rosê white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "rose"
+    ],
+    "familyIds": [
+      "branco",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "cinza tan",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "tan"
+    ],
+    "familyIds": [
+      "cinza",
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "grafite grigio",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "grafite",
+      "cinza"
+    ],
+    "familyIds": [
+      "cinza"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "incolor verde",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "incolor",
+      "verde"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [
+      "incolor"
+    ],
+    "quantity": 4
+  },
+  {
+    "rawColor": "marrom smoke",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "marrom"
+    ],
+    "familyIds": [
+      "marrom"
+    ],
+    "residualTerms": [
+      "smoke"
+    ],
+    "quantity": 4
+  },
+  {
+    "rawColor": "off-white blue",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "off-white",
+      "azul"
+    ],
+    "familyIds": [
+      "branco",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "off-white gold",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "off-white",
+      "dourado"
+    ],
+    "familyIds": [
+      "branco",
+      "metalico"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "preto rosé",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "rose"
+    ],
+    "familyIds": [
+      "preto",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "rosa white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "rosa",
+      "branco"
+    ],
+    "familyIds": [
+      "rosa",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "roxo verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "roxo",
+      "verde"
+    ],
+    "familyIds": [
+      "roxo",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "verde mint",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "verde",
+      "menta"
+    ],
+    "familyIds": [
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 4
+  },
+  {
+    "rawColor": "Azul-celeste",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "azul-celeste"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 3
+  },
+  {
+    "rawColor": "branco/preto/verde",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "preto",
+      "verde"
+    ],
+    "familyIds": [
+      "branco",
+      "preto",
+      "verde"
+    ],
+    "residualTerms": [],
+    "quantity": 3
+  },
+  {
+    "rawColor": "cáqui caqui",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "caqui"
+    ],
+    "familyIds": [
+      "bege"
+    ],
+    "residualTerms": [],
+    "quantity": 3
+  },
+  {
+    "rawColor": "cinza blue",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "azul"
+    ],
+    "familyIds": [
+      "cinza",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 3
+  },
+  {
+    "rawColor": "cinza navy",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "cinza",
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "cinza",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 3
+  },
+  {
+    "rawColor": "jeans/rosa rosa",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "rosa"
+    ],
+    "familyIds": [
+      "rosa"
+    ],
+    "residualTerms": [
+      "jeans"
+    ],
+    "quantity": 3
+  },
+  {
+    "rawColor": "nude blue",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "nude",
+      "azul"
+    ],
+    "familyIds": [
+      "bege",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 3
+  },
+  {
+    "rawColor": "nude white",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "nude",
+      "branco"
+    ],
+    "familyIds": [
+      "bege",
+      "branco"
+    ],
+    "residualTerms": [],
+    "quantity": 3
+  },
+  {
+    "rawColor": "preto navy",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "preto",
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "preto",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 3
+  },
+  {
+    "rawColor": "branco/multicolorido",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "branco",
+      "multicolorido"
+    ],
+    "familyIds": [
+      "branco",
+      "multicolorido"
+    ],
+    "residualTerms": [],
+    "quantity": 2
+  },
+  {
+    "rawColor": "laranja ocre",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "laranja",
+      "ocre"
+    ],
+    "familyIds": [
+      "laranja",
+      "amarelo"
+    ],
+    "residualTerms": [],
+    "quantity": 2
+  },
+  {
+    "rawColor": "marrom rosa",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "marrom",
+      "rosa"
+    ],
+    "familyIds": [
+      "marrom",
+      "rosa"
+    ],
+    "residualTerms": [],
+    "quantity": 2
+  },
+  {
+    "rawColor": "azul marinho carbon",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "azul-marinho"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [
+      "carbon"
+    ],
+    "quantity": 1
+  },
+  {
+    "rawColor": "onça blue",
+    "classification": "PARTIAL",
+    "canonicalColorIds": [
+      "azul"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [
+      "onça"
+    ],
+    "quantity": 1
+  },
+  {
+    "rawColor": "Petróleo",
+    "classification": "ALIAS",
+    "canonicalColorIds": [
+      "petroleo"
+    ],
+    "familyIds": [
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 1
+  },
+  {
+    "rawColor": "rosa blue",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "rosa",
+      "azul"
+    ],
+    "familyIds": [
+      "rosa",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 1
+  },
+  {
+    "rawColor": "verde oliva blue",
+    "classification": "COMPOUND",
+    "canonicalColorIds": [
+      "oliva",
+      "azul"
+    ],
+    "familyIds": [
+      "verde",
+      "azul"
+    ],
+    "residualTerms": [],
+    "quantity": 1
+  }
+]

@@ -211,3 +211,25 @@ test("T02 zero com busca/filtro é consulta filtrada; somente base vazia usa bas
   assert.equal(catalogEmptyState(0, filtersFromSearch("priceMin=200"), ""), "filtered");
   assert.equal(catalogEmptyState(1, filtersFromSearch(combination), ""), null);
 });
+
+test("V3 cor family roundtrip, aliases, second click, multiple colors and history",()=>{
+ const initial="marca=Nike&priceMin=200&busca=tenis";
+ const first=toggleFilterSearch(initial,"cor","azul-marinho");
+ const second=toggleFilterSearch(first,"cor","preto");
+ assert.deepEqual(filtersFromSearch(first).cor,["azul"]);
+ assert.deepEqual(filtersFromSearch(second).cor,["azul","preto"]);
+ assert.equal(new URLSearchParams(second).has("color"),false);
+ assert.equal(catalogRequestParams(filtersFromSearch(second),"tenis","relevantes",1,21).get("cor"),"azul,preto");
+ assert.deepEqual(filtersFromSearch(toggleFilterSearch(first,"cor","azul")).cor,[]);
+ assert.deepEqual(filtersFromSearch(toggleFilterSearch(second,"cor","preto")).cor,["azul"]);
+ for(const [url,expected] of [[first,["azul"]],[second,["azul","preto"]],[first,["azul"]],[initial,[]],[second,["azul","preto"]]] as const){
+  const restored=filtersFromSearch(url);assert.deepEqual(restored.cor,expected);assert.deepEqual(restored.price,[200,null]);assert.deepEqual(restored.marca,["Nike"]);
+ }
+ assert.equal(catalogScope(filtersFromSearch("cor=preto,azul"),"","relevantes"),catalogScope(filtersFromSearch("cor=azul,preto,azul"),"","relevantes"));
+});
+test("V3 invalid color constraint survives URL/API until explicitly removed",()=>{
+ const search="cor=pretolino&marca=Nike";
+ assert.deepEqual(filtersFromSearch(search).cor,["pretolino"]);
+ assert.equal(catalogRequestParams(filtersFromSearch(search),"","relevantes",1,21).get("cor"),"pretolino");
+ assert.deepEqual(filtersFromSearch(toggleFilterSearch(search,"cor","pretolino")).cor,[]);
+});

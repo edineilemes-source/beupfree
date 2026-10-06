@@ -7,13 +7,14 @@ interface Props {
   sidebar: ReactNode;
   isLoading: boolean;
   isError: boolean;
+  errorMessage?: string;
   emptyState: CatalogEmptyState;
   demonstrative: boolean;
   resultsRef?: Ref<HTMLDivElement>;
   children: ReactNode;
 }
 
-export default function CatalogResults({ sidebar, isLoading, isError, emptyState, demonstrative, resultsRef, children }: Props) {
+export default function CatalogResults({ sidebar, isLoading, isError, errorMessage, emptyState, demonstrative, resultsRef, children }: Props) {
   return (
     <div className="flex w-full flex-col gap-5 px-4 pb-8 md:flex-row">
       {sidebar}
@@ -26,7 +27,7 @@ export default function CatalogResults({ sidebar, isLoading, isError, emptyState
           <Card className="p-8 text-center">
             <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
             <h2 className="mb-2 text-lg font-medium">Não foi possível carregar o catálogo</h2>
-            <p className="text-muted-foreground">Tente novamente em instantes.</p>
+            <p className="text-muted-foreground">{errorMessage ?? "Tente novamente em instantes."}</p>
           </Card>
         ) : emptyState ? (
           <Card className="p-8 text-center">

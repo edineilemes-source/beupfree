@@ -3,7 +3,7 @@ import test from "node:test";
 import { buildProjectionWhere, PgCatalogSearchProjectionRepository, type FacetDimension } from "./repository";
 
 const filters = {brands:["Nike","Adidas"], colors:["preto","branco"], sizes:[40,41], audiences:["MASCULINO"], excludeAudiences:["INFANTIL"], styles:["PERFORMANCE"], activities:["RUNNING"], merchants:["Loja A","Loja B"], discountBuckets:["30% - 39%","40% - 49%"], priceMin:300, priceMax:500, available:true, search:"air max", externalMerchantId:"scope"};
-const clauses: Record<FacetDimension,string[]> = {brands:["brand_normalized = ANY"], colors:["normalized_colors &&"], sizes:["normalized_sizes &&"], audiences:["audience_normalized = ANY"], styles:["style = ANY"], activities:["activities &&"], merchants:["m.name = ANY"], discounts:["discount_percent>=30"], price:["current_price>=","current_price<="]};
+const clauses: Record<FacetDimension,string[]> = {brands:["brand_normalized = ANY"], colors:["color_family_ids &&"], sizes:["normalized_sizes &&"], audiences:["audience_normalized = ANY"], styles:["style = ANY"], activities:["activities &&"], merchants:["m.name = ANY"], discounts:["discount_percent>=30"], price:["current_price>=","current_price<="]};
 
 test("T01 base retains eligibility without user predicates",()=>{
  const q=buildProjectionWhere({}); assert.equal(q.sql,"c.catalog_state='CATALOG_ELIGIBLE'"); assert.deepEqual(q.params,[]);
