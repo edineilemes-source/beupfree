@@ -1,3 +1,4 @@
+import {canonicalColor, COLOR_TAXONOMY_VERSION} from "@shared/colorTaxonomy";
 import {
   ageOf,
   genderOf,
@@ -71,7 +72,10 @@ function colorAttributes(product: CatalogProduct): NormalizedAttribute<string>[]
   const colors = new Map<string, NormalizedAttribute<string>>();
 
   for (const color of product.colors ?? []) {
-    const normalized = normalizeColor(color.name || color.normalized);
+    const canonical = product.colorTaxonomyVersion===COLOR_TAXONOMY_VERSION ? canonicalColor(color.normalized) : undefined;
+    const normalized = product.colorTaxonomyVersion===COLOR_TAXONOMY_VERSION
+      ? canonical ? {value:canonical.id,label:canonical.label} : null
+      : normalizeColor(color.name || color.normalized);
     if (!normalized || colors.has(normalized.value)) continue;
 
     colors.set(normalized.value, {
@@ -82,7 +86,7 @@ function colorAttributes(product: CatalogProduct): NormalizedAttribute<string>[]
     });
   }
 
-  if (colors.size === 0) {
+  if (colors.size === 0 && product.colorTaxonomyVersion!==COLOR_TAXONOMY_VERSION) {
     const primaryColor = normalizeColor(product.primaryColor);
     if (primaryColor) {
       colors.set(primaryColor.value, {
@@ -105,10 +109,10 @@ function inferredAttribute(value: string | null): NormalizedAttribute<string> | 
 function productAttributes(product: CatalogProduct): ProductAttributes {
   const colors = colorAttributes(product);
   const gender = inferredAttribute(genderOf(product));
+  if(gender && product.gender !== undefined) gender.provenance="catalog";
   const size = inferredAttribute(sizeOf(product));
-  const ageGroup = ageOf(product) === "Infantil"
-    ? inferredAttribute("Infantil")
-    : undefined;
+  const ageGroup = inferredAttribute(ageOf(product));
+  if(ageGroup && product.ageGroup !== undefined) ageGroup.provenance="catalog";
   const modality = modalityOf(product);
   const sports = modality && modality !== "Casual"
     ? [inferredAttribute(modality)!]

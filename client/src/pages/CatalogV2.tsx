@@ -1,3 +1,5 @@
+import {DEMOGRAPHIC_FILTER_VERSION} from "@shared/demographicTaxonomy";
+import {COLOR_FILTER_CONTRACT_VERSION} from "@shared/colorTaxonomy";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
@@ -5,24 +7,28 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import CatalogFilterSidebar from "@/components/CatalogFilterSidebarV2";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Package, Search, Tag, X } from "lucide-react";
+import { Search, Tag, X } from "lucide-react";
 import { NEON, DARK, GREEN_GLOW, alpha } from "@/lib/brand";
 import heroBgUrl from "@assets/fundo_rascunho_be_up_1783981500992.png";
 import {
   CatalogProduct,
-  CatalogFilters,
+  CatalogFacets,
   MultiFilterKey,
-  EMPTY_FILTERS,
   applyFilters,
   computeCrossFacets,
   brandNameOf,
   categoryNameOf,
   discountOf,
   priceOf,
-  normalizeColor,
 } from "@/lib/catalogFilters";
+import CatalogResults from "@/components/CatalogResults";
+import {
+  type CatalogPrice, type CatalogSortMode,
+  filtersFromSearch, queryFromSearch, toggleFilterSearch, priceSearch,
+  clearFiltersSearch, querySearch, catalogLocation, localCatalogFilters,
+  catalogRequestParams, catalogScope, catalogPage, catalogEmptyState,
+} from "@/lib/catalogState";
 import FavoriteButton from "@/components/FavoriteButton";
 import { useFavorites } from "@/context/FavoritesContext";
 import type { FavoriteProduct } from "@/types/favorites";
@@ -40,59 +46,21 @@ import {
 
 interface ProductsResponse {
   total: number;
+  limit?: number;
+  offset?: number;
+  serverDriven?: boolean;
+  colorTaxonomyVersion?: string;
+  colorFilterContractVersion?: string;
+  catalogSource?: "demo" | "operational";
+  demonstrative?: boolean;
+  facets?: CatalogFacets;
   products: CatalogProduct[];
 }
 
-type SortMode = "maior-desconto" | "relevantes" | "menor-preco" | "recentes";
+type SortMode = CatalogSortMode;
 
 // 21 cards por página no desktop: 7 linhas × 3 colunas.
 const PAGE_SIZE = 21;
-const URL_FILTER_KEYS: MultiFilterKey[] = [
-  "marca",
-  "cor",
-  "desconto",
-  "frete",
-  "tamanho",
-  "genero",
-  "idade",
-  "modalidade",
-  "tipo",
-  "avaliacao",
-];
-
-function filtersFromSearch(search: string): CatalogFilters {
-  const params = new URLSearchParams(search);
-  const next: CatalogFilters = {
-    marca: [],
-    cor: [],
-    desconto: [],
-    frete: [],
-    tamanho: [],
-    genero: [],
-    idade: [],
-    modalidade: [],
-    tipo: [],
-    avaliacao: [],
-    price: null,
-  };
-
-  for (const key of URL_FILTER_KEYS) {
-    const raw = params.get(key);
-    if (raw) {
-      next[key] = raw
-        .split(",")
-        .map((value) => value.trim())
-        .filter(Boolean);
-      if (key === "cor") {
-        next.cor = next.cor
-          .map((value) => normalizeColor(value)?.value)
-          .filter((value): value is string => Boolean(value));
-      }
-    }
-  }
-
-  return next;
-}
 
 function normalizeText(value: string): string {
   return value
@@ -179,6 +147,7 @@ function selectHeroProducts(products: CatalogProduct[]): CatalogProduct[] {
 }
 
 function PromoTile({ product }: { product: CatalogProduct }) {
+  const demonstrative = product.demonstrative ?? product.bestOffer?.demonstrative ?? PUBLIC_DEMO_MODE;
   const price = priceOf(product);
   const oldPrice = product.bestOffer?.originalPrice
     ? parseFloat(product.bestOffer.originalPrice)
@@ -186,7 +155,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
   const discount = discountOf(product);
   const favoriteProduct = toFavoriteProduct(product);
   const badges = getProductBadges(favoriteProduct);
-  const offerSource = publicOfferSource(product.bestOffer?.marketplaceName, product.bestOffer?.sellerName);
+  const offerSource = publicOfferSource(product.bestOffer?.marketplaceName, product.bestOffer?.sellerName, demonstrative);
   const ratingText = product.averageRating != null && product.averageRating > 0
     ? `⭐ ${product.averageRating.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}${product.totalReviews ? ` (${product.totalReviews.toLocaleString("pt-BR")})` : ""}`
     : "";
@@ -214,7 +183,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
       </div>
 
       <div className="mt-4 flex flex-1 flex-col">
-        {PUBLIC_DEMO_MODE && (
+        {demonstrative && (
           <div className="mb-2">
             <Badge className="bg-slate-900 text-[10px] text-white">
               {DEMO_PRODUCT_LABEL}
@@ -254,11 +223,11 @@ function PromoTile({ product }: { product: CatalogProduct }) {
           size="sm"
           className="mt-3 w-full"
           onClick={() => {
-            if (PUBLIC_DEMO_MODE) requestDemoProductNotice(product.bestOffer?.referenceUrl ?? undefined);
+            if (demonstrative) requestDemoProductNotice(product.bestOffer?.referenceUrl ?? undefined);
             else if (product.bestOffer?.affiliateUrl) window.open(product.bestOffer.affiliateUrl, "_blank", "noopener,noreferrer");
           }}
         >
-          {PUBLIC_DEMO_MODE ? "Ver referência" : "Ver oferta"}
+          {demonstrative ? "Ver referência" : "Ver oferta"}
         </Button>
       </div>
     </div>
@@ -268,6 +237,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
 
 function Hero({ products }: { products: CatalogProduct[] }) {
   const featured = useMemo(() => selectHeroProducts(products), [products]);
+  const demonstrative = products[0]?.demonstrative ?? PUBLIC_DEMO_MODE;
 
   return (
     <section
@@ -293,11 +263,11 @@ function Hero({ products }: { products: CatalogProduct[] }) {
             className="relative text-[40px] font-extrabold italic leading-[0.95] tracking-normal text-white"
             data-testid="text-hero-title"
           >
-            {PUBLIC_DEMO_MODE ? "PRODUTOS" : "TÊNIS"}
+            {demonstrative ? "PRODUTOS" : "TÊNIS"}
             <br />
-            <span style={{ color: NEON }}>{PUBLIC_DEMO_MODE ? "PARA" : "ESPORTIVOS"}</span>
+            <span style={{ color: NEON }}>{demonstrative ? "PARA" : "ESPORTIVOS"}</span>
             <br />
-            {PUBLIC_DEMO_MODE ? "EXPLORAR" : "EM PROMOÇÃO"}
+            {demonstrative ? "EXPLORAR" : "EM PROMOÇÃO"}
           </h1>
         </div>
 
@@ -315,39 +285,23 @@ export default function CatalogV2() {
   const { registerProducts } = useFavorites();
   const search = useSearch();
   const [, setLocation] = useLocation();
-  const [filters, setFilters] = useState<CatalogFilters>(() =>
-    filtersFromSearch(search),
-  );
-  const [page, setPage] = useState(1);
+  const filters = useMemo(() => filtersFromSearch(search), [search]);
+  const query = useMemo(() => queryFromSearch(search), [search]);
   const [sortMode, setSortMode] = useState<SortMode>("maior-desconto");
+  const scope = catalogScope(filters, query, sortMode);
+  const [pagination, setPagination] = useState({ scope, page: 1 });
+  // Reset synchronously with the query inputs, including browser back/forward.
+  if (pagination.scope !== scope) setPagination({ scope, page: 1 });
+  const page = catalogPage(pagination, scope);
   const resultsStartRef = useRef<HTMLDivElement>(null);
   const scrollAfterPageChangeRef = useRef(false);
 
-  useEffect(() => {
-    setFilters(filtersFromSearch(search));
-  }, [search]);
-
-  const query = useMemo(() => {
-    const params = new URLSearchParams(search);
-    const officialQuery = params.get("busca");
-    return (officialQuery?.trim() ? officialQuery : params.get("q") ?? "").trim();
-  }, [search]);
   const queryTokens = useMemo(
     () => normalizeText(query).split(/\s+/).filter(Boolean),
     [query],
   );
 
-  const clearQuery = () => {
-    const params = new URLSearchParams(search);
-    params.delete("busca");
-    params.delete("q");
-    const qs = params.toString();
-    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
-  };
-
-  useEffect(() => {
-    setPage(1);
-  }, [filters, sortMode, query]);
+  const clearQuery = () => setLocation(catalogLocation(querySearch(search, "")));
 
   useEffect(() => {
     if (!scrollAfterPageChangeRef.current) return;
@@ -374,19 +328,33 @@ export default function CatalogV2() {
     const boundedPage = Math.max(1, Math.min(totalPages, nextPage));
     if (boundedPage === page) return;
     scrollAfterPageChangeRef.current = true;
-    setPage(boundedPage);
+    setPagination({ scope, page: boundedPage });
   };
 
-  const { data, isLoading } = useQuery<ProductsResponse>({
-    queryKey: ["/api/products", "catalog-v2"],
+  const { data, isLoading, isError, error } = useQuery<ProductsResponse>({
+    queryKey: ["/api/products", COLOR_FILTER_CONTRACT_VERSION, DEMOGRAPHIC_FILTER_VERSION, page, sortMode, query, filters],
     queryFn: async () => {
-      const res = await fetch("/api/products?limit=5000");
-      if (!res.ok) throw new Error("Falha ao carregar produtos");
-      return (await res.json()) as ProductsResponse;
+      const params = catalogRequestParams(filters, query, sortMode, page, PAGE_SIZE);
+      const res = await fetch(`/api/products?${params}`);
+      if (!res.ok) {
+        if (res.status === 400) {
+          const body = await res.json().catch(() => null);
+          if (body?.code === "INVALID_COLOR_FAMILY" || body?.code === "INVALID_COLOR_PARAMETERS") {
+            throw new Error("Remova a seleção de cor inválida nos filtros e escolha uma família de cor.");
+          }
+        }
+        throw new Error("Falha ao carregar produtos");
+      }
+      const response=(await res.json()) as ProductsResponse;
+      if(response.serverDriven)return response;
+      const fallback=await fetch("/api/products?limit=5000");
+      if(!fallback.ok)throw new Error("Falha ao carregar catálogo demonstrativo");
+      return (await fallback.json()) as ProductsResponse;
     },
   });
 
   const products = useMemo(() => data?.products ?? [], [data]);
+  const catalogDemonstrative = data?.demonstrative ?? products[0]?.demonstrative ?? PUBLIC_DEMO_MODE;
   const favoriteProducts = useMemo<FavoriteProduct[]>(
     () => products.map(toFavoriteProduct),
     [products],
@@ -404,10 +372,13 @@ export default function CatalogV2() {
         : products.filter((product) => matchesQuery(product, queryTokens)),
     [products, queryTokens],
   );
-  const facets = useMemo(() => computeCrossFacets(searched, filters), [searched, filters]);
-  const filtered = useMemo(() => applyFilters(searched, filters), [searched, filters]);
+  const serverDriven=data?.serverDriven===true;
+  const localFilters = useMemo(() => localCatalogFilters(filters), [filters]);
+  const facets = useMemo(() => serverDriven&&data?.facets?data.facets:computeCrossFacets(searched, localFilters), [serverDriven,data?.facets,searched, localFilters]);
+  const filtered = useMemo(() => serverDriven?products:applyFilters(searched, localFilters), [serverDriven,products,searched, localFilters]);
   const sorted = useMemo(() => {
     const next = [...filtered];
+    if(serverDriven)return next;
 
     if (sortMode === "maior-desconto") {
       return next.sort((a, b) => discountOf(b) - discountOf(a));
@@ -426,41 +397,22 @@ export default function CatalogV2() {
     }
 
     return next;
-  }, [filtered, sortMode]);
+  }, [filtered, sortMode,serverDriven]);
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const resultTotal=serverDriven?(data?.total??0):sorted.length;
+  const totalPages = Math.max(1, Math.ceil(resultTotal / PAGE_SIZE));
   const visible = useMemo(
-    () => sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [page, sorted],
+    () => serverDriven?sorted:sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [page, sorted,serverDriven],
   );
 
-  const toggle = (key: MultiFilterKey, value: string) => {
-    const list = filters[key];
-    const next = {
-      ...filters,
-      [key]: list.includes(value)
-        ? list.filter((item) => item !== value)
-        : [...list, value],
-    };
-    setFilters(next);
-    const params = new URLSearchParams(search);
-    const values = next[key];
-    if (values.length > 0) params.set(key, values.join(","));
-    else params.delete(key);
-    const qs = params.toString();
-    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
-  };
+  const toggle = (key: MultiFilterKey, value: string) =>
+    setLocation(catalogLocation(toggleFilterSearch(search, key, value)));
 
-  const setPrice = (price: [number, number] | null) =>
-    setFilters((prev) => ({ ...prev, price }));
+  const setPrice = (price: CatalogPrice | null) =>
+    setLocation(catalogLocation(priceSearch(search, price)));
 
-  const clearAll = () => {
-    const params = new URLSearchParams(search);
-    URL_FILTER_KEYS.forEach((key) => params.delete(key));
-    const qs = params.toString();
-    setFilters(EMPTY_FILTERS);
-    setLocation(qs ? `/catalogo?${qs}` : "/catalogo");
-  };
+  const clearAll = () => setLocation(catalogLocation(clearFiltersSearch(search)));
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/35">
@@ -469,7 +421,7 @@ export default function CatalogV2() {
       <Hero products={products} />
 
       <main className="flex-1">
-        {PUBLIC_DEMO_MODE && (
+        {catalogDemonstrative && (
           <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-950" role="note" data-testid="demo-price-notice">
             <strong>Catálogo demonstrativo.</strong> {DEMO_PRICE_NOTICE}
           </div>
@@ -481,7 +433,7 @@ export default function CatalogV2() {
                 <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
                   <Tag className="h-3.5 w-3.5" />
                 </span>
-                {query ? `Resultados para "${query}"` : PUBLIC_DEMO_MODE ? "Produtos demonstrativos" : "Produtos com desconto"}
+                {query ? `Resultados para "${query}"` : catalogDemonstrative ? "Produtos demonstrativos" : "Produtos com desconto"}
               </h2>
               {query && (
                 <button
@@ -499,7 +451,7 @@ export default function CatalogV2() {
 
             <div className="flex flex-wrap items-center gap-4">
               <p className="text-xs text-muted-foreground" data-testid="text-catalog-count">
-                {filtered.length} {filtered.length === 1 ? "produto" : "produtos"}
+                {resultTotal} {resultTotal === 1 ? "produto" : "produtos"}
               </p>
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
                 Ordenar por:
@@ -512,15 +464,15 @@ export default function CatalogV2() {
                   <option value="maior-desconto">Maior desconto</option>
                   <option value="relevantes">Mais relevantes</option>
                   <option value="menor-preco">Menor preço</option>
-                  {!PUBLIC_DEMO_MODE && <option value="recentes">Mais recentes</option>}
+                  {!catalogDemonstrative && <option value="recentes">Mais recentes</option>}
                 </select>
               </label>
             </div>
           </div>
         </div>
 
-        <div className="flex w-full flex-col gap-5 px-4 pb-8 md:flex-row">
-          {!isLoading && products.length > 0 && (
+        <CatalogResults
+          sidebar={
             <CatalogFilterSidebar
               facets={facets}
               filters={filters}
@@ -528,105 +480,80 @@ export default function CatalogV2() {
               onPriceChange={setPrice}
               onClearAll={clearAll}
             />
-          )}
-
-          <div ref={resultsStartRef} className="min-w-0 flex-1">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : products.length === 0 ? (
-              <Card className="p-8 text-center">
-                <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                <h2 className="mb-2 text-lg font-medium" data-testid="text-empty-catalog">
-                  Nenhum produto disponível ainda
-                </h2>
-                <p className="text-muted-foreground">
-                  {PUBLIC_DEMO_MODE
-                    ? "O snapshot demonstrativo ainda não possui produtos publicados."
-                    : "Nosso catálogo está sendo atualizado. Volte em breve para conferir as melhores ofertas!"}
-                </p>
-              </Card>
-            ) : filtered.length === 0 ? (
-              <Card className="p-8 text-center">
-                <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                <h2 className="mb-2 text-lg font-medium" data-testid="text-no-results">
-                  Nenhum produto para os filtros selecionados
-                </h2>
-                <p className="text-muted-foreground">
-                  Tente remover alguns filtros para ver mais resultados.
-                </p>
-              </Card>
-            ) : (
-              <>
-                <div
-                  className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                  data-testid="grid-catalog-products"
-                >
-                  {visible.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      id={product.id}
-                      name={product.mainName}
-                      brand={brandNameOf(product)}
-                      price={priceOf(product)}
-                      oldPrice={
-                        product.bestOffer?.originalPrice
-                          ? parseFloat(product.bestOffer.originalPrice)
-                          : undefined
-                      }
-                      discount={discountOf(product) || undefined}
-                      image={product.mainImageUrl || ""}
-                      category={categoryNameOf(product)}
-                      affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
-                      referenceUrl={product.bestOffer?.referenceUrl ?? undefined}
-                      marketplaceName={product.bestOffer?.marketplaceName ?? undefined}
-                      sellerName={product.bestOffer?.sellerName ?? undefined}
-                      freeShipping={product.bestOffer?.freeShipping || false}
-                      averageRating={product.averageRating}
-                      totalReviews={product.totalReviews}
-                      lastSeenAt={product.bestOffer?.lastSeenAt}
-                    />
-                  ))}
-                </div>
-
-                {totalPages > 1 && (
-                  <div className="mt-8 flex items-center justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page === 1}
-                      onClick={() => goToPage(page - 1)}
-                      data-testid="button-page-prev"
-                    >
-                      Anterior
-                    </Button>
-                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((pageNumber) => (
-                      <Button
-                        key={pageNumber}
-                        variant={page === pageNumber ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => goToPage(pageNumber)}
-                        data-testid={`button-page-${pageNumber}`}
-                      >
-                        {pageNumber}
-                      </Button>
-                    ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page >= totalPages}
-                      onClick={() => goToPage(page + 1)}
-                      data-testid="button-page-next"
-                    >
-                      Próxima
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
+          }
+          isLoading={isLoading}
+          isError={isError}
+          errorMessage={error?.message}
+          emptyState={catalogEmptyState(resultTotal, filters, query)}
+          demonstrative={catalogDemonstrative}
+          resultsRef={resultsStartRef}
+        >
+          <div
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            data-testid="grid-catalog-products"
+          >
+            {visible.map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                name={product.mainName}
+                brand={brandNameOf(product)}
+                price={priceOf(product)}
+                oldPrice={
+                  product.bestOffer?.originalPrice
+                    ? parseFloat(product.bestOffer.originalPrice)
+                    : undefined
+                }
+                discount={discountOf(product) || undefined}
+                image={product.mainImageUrl || ""}
+                category={categoryNameOf(product)}
+                affiliateUrl={product.bestOffer?.affiliateUrl || "#"}
+                referenceUrl={product.bestOffer?.referenceUrl ?? undefined}
+                marketplaceName={product.bestOffer?.marketplaceName ?? undefined}
+                sellerName={product.bestOffer?.sellerName ?? undefined}
+                freeShipping={product.bestOffer?.freeShipping || false}
+                averageRating={product.averageRating}
+                totalReviews={product.totalReviews}
+                lastSeenAt={product.bestOffer?.lastSeenAt}
+                demonstrative={product.demonstrative ?? product.bestOffer?.demonstrative ?? catalogDemonstrative}
+              />
+            ))}
           </div>
-        </div>
+
+          {totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === 1}
+                onClick={() => goToPage(page - 1)}
+                data-testid="button-page-prev"
+              >
+                Anterior
+              </Button>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((pageNumber) => (
+                <Button
+                  key={pageNumber}
+                  variant={page === pageNumber ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => goToPage(pageNumber)}
+                  data-testid={`button-page-${pageNumber}`}
+                >
+                  {pageNumber}
+                </Button>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => goToPage(page + 1)}
+                data-testid="button-page-next"
+              >
+                Próxima
+              </Button>
+            </div>
+          )}
+        </CatalogResults>
       </main>
 
       <Footer />

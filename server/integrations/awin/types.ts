@@ -1,3 +1,4 @@
+import type {DemographicEvidence} from "@shared/demographicTaxonomy";
 export const AWIN_PROVIDER = "awin" as const;
 
 export type AwinFeedItem = {
@@ -38,6 +39,7 @@ export type NormalizedAwinItem = {
   offerKey: string;
   product: {
     name: string;
+    demographicEvidence?: DemographicEvidence[];
     description: string | null;
     shortDescription: string | null;
     brand: string | null;
