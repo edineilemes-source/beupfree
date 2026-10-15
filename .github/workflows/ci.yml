@@ -32,3 +32,9 @@ jobs:
         run: node --import tsx --test client/src/components/CatalogOrganizer.test.ts
       - name: Build
         run: npm run build
+      - name: Install Chromium for browser test
+        run: npx playwright install --with-deps chromium
+      - name: Organizer browser test
+        run: npx playwright test tests/e2e/catalog-organizer.spec.ts --project=chromium
+        env:
+          SESSION_SECRET: ci-organizer-test-only-secret
