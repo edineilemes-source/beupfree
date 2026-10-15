@@ -22,19 +22,25 @@ test("without grouping the existing product order is preserved", () => {
   assert.equal(rows.length, 1);
   assert.deepEqual(rows[0].products.map(p => p.id), ["1", "2", "3"]);
 });
-test("last dimension combines brands alphabetically and preserves card order", () => {
+test("all three dimensions create separate groups and retain product order", () => {
   const rows = groupCatalogPage(products, ["genero", "tamanho", "marca"]);
-  assert.equal(rows.length, 2);
-  const male = rows.find(row => row.title.includes("Masculino"));
-  assert.ok(male);
-  assert.match(male.title, /40 › Adidas, Nike/);
-  assert.deepEqual(male.products.map(p => p.id), ["1", "2"]);
+  assert.equal(rows.length, 3);
+  assert.deepEqual(rows.map(row => row.title), [
+    "Feminino › 38 › Nike",
+    "Masculino › 40 › Adidas",
+    "Masculino › 40 › Nike",
+  ]);
+  assert.deepEqual(rows.find(row => row.title === "Masculino › 40 › Nike")?.products.map(p => p.id), ["1"]);
 });
-test("single dimension combines all its values in one row", () => {
+test("single brand dimension separates cards by brand", () => {
   const rows = groupCatalogPage(products, ["marca"]);
-  assert.equal(rows.length, 1);
-  assert.equal(rows[0].title, "Adidas, Nike");
-  assert.equal(rows[0].products.length, 3);
+  assert.deepEqual(rows.map(row => row.title), ["Adidas", "Nike"]);
+  assert.deepEqual(rows.find(row => row.title === "Nike")?.products.map(p => p.id), ["1", "3"]);
+  assert.deepEqual(rows.find(row => row.title === "Adidas")?.products.map(p => p.id), ["2"]);
+});
+test("two dimensions separate each combination", () => {
+  const rows = groupCatalogPage(products, ["marca", "genero"]);
+  assert.deepEqual(rows.map(row => row.title), ["Adidas › Masculino", "Nike › Feminino", "Nike › Masculino"]);
 });
 
 test("products with unknown grouping attributes are not discarded", () => {
