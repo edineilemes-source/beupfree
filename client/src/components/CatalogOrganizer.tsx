@@ -56,7 +56,7 @@ interface Props {
   products: CatalogProduct[];
   sortMode: CatalogSortMode;
   onSortChange: (sort: CatalogSortMode) => void;
-  children: (products: CatalogProduct[]) => React.ReactNode;
+  children: (products: CatalogProduct[], columnMode?: boolean) => React.ReactNode;
   serverDriven: boolean;
   total: number;
 }
@@ -127,14 +127,28 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
         </div>
       </div>}
       {selected.length > 0 && serverDriven && <p role="note" className="mb-3 text-xs text-muted-foreground">Agrupamento dos {products.length} produtos desta página, de {total} resultados. Os grupos podem continuar em outras páginas.</p>}
-      {selected.length === 0 ? children(products) : rows.map((row, index) =>
-        <section key={index} className="mb-6 border-t border-border pt-4" data-testid="organizer-group">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-bold">{row.title || "Não identificado"}</h3>
-            <span className="text-xs text-muted-foreground">{row.products.length} nesta página</span>
-          </div>
-          {children(row.products)}
-        </section>)}
+      {selected.length === 0 ? children(products) : (
+        <div className="flex items-start gap-4 overflow-x-auto pb-5" data-testid="organizer-columns" aria-label={`Comparação por ${LABELS[selected[0]]}`}>
+          {[...new Set(rows.map(row => row.title.split(" › ")[0]))].map(firstValue => {
+            const columnRows = rows.filter(row => row.title.split(" › ")[0] === firstValue);
+            const columnCount = columnRows.reduce((sum, row) => sum + row.products.length, 0);
+            return (
+              <section key={firstValue} className="w-[280px] min-w-[280px] shrink-0 rounded-lg border border-border bg-background/60 p-3 sm:w-[320px] sm:min-w-[320px]" data-testid="organizer-column">
+                <div className="sticky top-0 z-10 mb-3 flex items-center justify-between gap-2 rounded-md bg-background p-2 shadow-sm">
+                  <h3 className="text-sm font-bold">{firstValue}</h3>
+                  <span className="text-xs text-muted-foreground">{columnCount} nesta página</span>
+                </div>
+                {columnRows.map((row, index) => (
+                  <div key={index} className="mb-5" data-testid="organizer-group">
+                    {selected.length > 1 && <h4 className="mb-2 border-b border-border pb-1 text-xs font-semibold">{row.title.split(" › ").slice(1).join(" › ")}</h4>}
+                    {children(row.products, true)}
+                  </div>
+                ))}
+              </section>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
