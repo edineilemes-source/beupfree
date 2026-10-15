@@ -36,3 +36,10 @@ test("single dimension combines all its values in one row", () => {
   assert.equal(rows[0].title, "Adidas, Nike");
   assert.equal(rows[0].products.length, 3);
 });
+
+test("products with unknown grouping attributes are not discarded", () => {
+  const unknown = { ...product("4", "Puma", "MASCULINO", "41"), gender: null, mainName: "Tênis Puma" };
+  const rows = groupCatalogPage([...products, unknown], ["genero", "marca"]);
+  assert.equal(rows.reduce((total, row) => total + row.products.length, 0), 4);
+  assert.ok(rows.some(row => row.title.includes("Não identificado")));
+});
