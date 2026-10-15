@@ -23,6 +23,7 @@ import {
   priceOf,
 } from "@/lib/catalogFilters";
 import CatalogResults from "@/components/CatalogResults";
+import CatalogOrganizer from "@/components/CatalogOrganizer";
 import {
   type CatalogPrice, type CatalogSortMode,
   filtersFromSearch, queryFromSearch, toggleFilterSearch, priceSearch,
@@ -453,20 +454,7 @@ export default function CatalogV2() {
               <p className="text-xs text-muted-foreground" data-testid="text-catalog-count">
                 {resultTotal} {resultTotal === 1 ? "produto" : "produtos"}
               </p>
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                Ordenar por:
-                <select
-                  value={sortMode}
-                  onChange={(event) => setSortMode(event.target.value as SortMode)}
-                  className="h-9 rounded-md border border-border bg-background px-3 text-xs font-semibold text-foreground outline-none"
-                  data-testid="select-sort"
-                >
-                  <option value="maior-desconto">Maior desconto</option>
-                  <option value="relevantes">Mais relevantes</option>
-                  <option value="menor-preco">Menor preço</option>
-                  {!catalogDemonstrative && <option value="recentes">Mais recentes</option>}
-                </select>
-              </label>
+
             </div>
           </div>
         </div>
@@ -488,11 +476,14 @@ export default function CatalogV2() {
           demonstrative={catalogDemonstrative}
           resultsRef={resultsStartRef}
         >
+          <CatalogOrganizer filters={filters} products={visible} sortMode={sortMode}
+            onSortChange={setSortMode} serverDriven={serverDriven} total={resultTotal}>
+            {(groupProducts) => (
           <div
             className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
             data-testid="grid-catalog-products"
           >
-            {visible.map((product) => (
+            {groupProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 id={product.id}
@@ -519,6 +510,8 @@ export default function CatalogV2() {
               />
             ))}
           </div>
+            )}
+          </CatalogOrganizer>
 
           {totalPages > 1 && (
             <div className="mt-8 flex items-center justify-center gap-2">
