@@ -14,7 +14,7 @@ const products: CatalogProduct[] = Array.from({ length: 45 }, (_, i) => {
     id: `preview-${i + 1}`,
     mainName: `Tênis ${brand} ${models[i % models.length]} ${size} Br`,
     gender,
-    mainImageUrl: null,
+    mainImageUrl: `/organizer-preview-shoe.svg`,
     primaryColor: i % 2 ? "Preto" : "Branco",
     brand: { name: brand },
     category: { name: "Tênis" },
