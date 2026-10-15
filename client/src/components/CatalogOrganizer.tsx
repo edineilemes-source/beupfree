@@ -28,17 +28,16 @@ function valuesOf(product: CatalogProduct, field: MultiFilterKey): string[] {
 }
 export function groupCatalogPage(products: CatalogProduct[], dimensions: MultiFilterKey[]) {
   if (!dimensions.length) return [{ title: "", products }];
-  // The last dimension is displayed as a sorted, combined list of values.
-  // Earlier dimensions define rows; product ordering is retained from the API.
-  const parents = dimensions.slice(0, -1);
-  const last = dimensions[dimensions.length - 1];
+  // Each selected dimension creates distinct buckets, including the final one.
+  // Preserve the API's product order within every bucket (e.g. highest discount).
   let rows: Array<{ path: string[]; products: CatalogProduct[] }> = [{ path: [], products }];
-  for (const field of parents) {
+  for (const field of dimensions) {
     const next: typeof rows = [];
     for (const row of rows) {
       const buckets = new Map<string, CatalogProduct[]>();
       for (const product of row.products) {
-        for (const value of valuesOf(product, field).length ? valuesOf(product, field) : ["Não identificado"]) {
+        const values = valuesOf(product, field);
+        for (const value of new Set(values.length ? values : ["Não identificado"])) {
           if (!buckets.has(value)) buckets.set(value, []);
           buckets.get(value)!.push(product);
         }
@@ -49,10 +48,7 @@ export function groupCatalogPage(products: CatalogProduct[], dimensions: MultiFi
     }
     rows = next;
   }
-  return rows.map(row => ({
-    title: [...row.path, [...new Set(row.products.flatMap(p => valuesOf(p, last).length ? valuesOf(p, last) : ["Não identificado"]))].sort(collator.compare).join(", ")].join(" › "),
-    products: row.products,
-  }));
+  return rows.map(row => ({ title: row.path.join(" › "), products: row.products }));
 }
 
 interface Props {
@@ -116,7 +112,7 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
         </div>
         <div className="mt-4 flex items-center justify-between gap-2"><p className="text-sm font-semibold">Agrupar por · máximo 3</p>
           <button type="button" className="text-xs underline" onClick={() => setDimensions([])}>Limpar grupos</button></div>
-        <div className="mt-2 grid gap-2">
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
           {[0, 1, 2].map(index => {
             const key = selected[index];
             return <div key={index} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); if (dragging) addAt(dragging, index); setDragging(null); }}
