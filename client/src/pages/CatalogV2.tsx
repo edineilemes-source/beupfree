@@ -45,6 +45,8 @@ import {
   publicOfferSource,
 } from "@/lib/publicDemo";
 
+import { demoCatalogResponse } from "@/lib/organizerPreview";
+
 interface ProductsResponse {
   total: number;
   limit?: number;
@@ -335,6 +337,7 @@ export default function CatalogV2() {
   const { data, isLoading, isError, error } = useQuery<ProductsResponse>({
     queryKey: ["/api/products", COLOR_FILTER_CONTRACT_VERSION, DEMOGRAPHIC_FILTER_VERSION, page, sortMode, query, filters],
     queryFn: async () => {
+      if (import.meta.env.VITE_ORGANIZER_PREVIEW === "true") return demoCatalogResponse();
       const params = catalogRequestParams(filters, query, sortMode, page, PAGE_SIZE);
       const res = await fetch(`/api/products?${params}`);
       if (!res.ok) {
