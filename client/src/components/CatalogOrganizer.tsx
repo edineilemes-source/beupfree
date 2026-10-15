@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArrowDown, ArrowUp, GripVertical, Settings2, X } from "lucide-react";
 import type { CatalogProduct, MultiFilterKey } from "@/lib/catalogFilters";
-import { brandNameOf, colorsOf, discountOf, genderOf, sizeOf, ageOf, modalityOf, typeOf, priceOf } from "@/lib/catalogFilters";
+import { brandNameOf, colorsOf, discountOf, genderOf, sizeOf, ageOf, modalityOf, typeOf } from "@/lib/catalogFilters";
 import type { CatalogUrlFilters, CatalogSortMode } from "@/lib/catalogState";
 
 const LABELS: Partial<Record<MultiFilterKey, string>> = {
@@ -38,7 +38,7 @@ export function groupCatalogPage(products: CatalogProduct[], dimensions: MultiFi
     for (const row of rows) {
       const buckets = new Map<string, CatalogProduct[]>();
       for (const product of row.products) {
-        for (const value of valuesOf(product, field)) {
+        for (const value of valuesOf(product, field).length ? valuesOf(product, field) : ["Não identificado"]) {
           if (!buckets.has(value)) buckets.set(value, []);
           buckets.get(value)!.push(product);
         }
@@ -50,7 +50,7 @@ export function groupCatalogPage(products: CatalogProduct[], dimensions: MultiFi
     rows = next;
   }
   return rows.map(row => ({
-    title: [...row.path, [...new Set(row.products.flatMap(p => valuesOf(p, last)))].sort(collator.compare).join(", ")].join(" › "),
+    title: [...row.path, [...new Set(row.products.flatMap(p => valuesOf(p, last).length ? valuesOf(p, last) : ["Não identificado"]))].sort(collator.compare).join(", ")].join(" › "),
     products: row.products,
   }));
 }
