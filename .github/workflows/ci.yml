@@ -28,5 +28,7 @@ jobs:
         run: npm run check
       - name: Unit tests
         run: npm run test:unit
+      - name: Organizer tests
+        run: node --import tsx --test client/src/components/CatalogOrganizer.test.ts
       - name: Build
         run: npm run build
