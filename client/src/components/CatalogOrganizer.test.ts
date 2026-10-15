@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { groupCatalogPage } from "./CatalogOrganizer";
 import type { CatalogProduct } from "@/lib/catalogFilters";
 
-function product(id: string, brand: string, gender: "masculino" | "feminino", size: string): CatalogProduct {
+function product(id: string, brand: string, gender: "MASCULINO" | "FEMININO", size: string): CatalogProduct {
   return {
     id, mainName: `Tênis ${brand} ${size} Br`, mainImageUrl: null,
     primaryColor: null, brand: { name: brand }, category: { name: "Tênis" },
@@ -12,9 +12,9 @@ function product(id: string, brand: string, gender: "masculino" | "feminino", si
   };
 }
 const products = [
-  product("1", "Nike", "masculino", "40"),
-  product("2", "Adidas", "masculino", "40"),
-  product("3", "Nike", "feminino", "38"),
+  product("1", "Nike", "MASCULINO", "40"),
+  product("2", "Adidas", "MASCULINO", "40"),
+  product("3", "Nike", "FEMININO", "38"),
 ];
 
 test("without grouping the existing product order is preserved", () => {
