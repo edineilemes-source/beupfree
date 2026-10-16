@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, GripVertical, Settings2, X } from "lucide-react";
 import type { CatalogProduct, MultiFilterKey } from "@/lib/catalogFilters";
 import { brandNameOf, colorsOf, discountOf, genderOf, sizeOf, ageOf, modalityOf, typeOf } from "@/lib/catalogFilters";
@@ -66,6 +66,27 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
   const available = GROUPABLE.filter(key => filters[key].length > 0);
   const selected = dimensions.filter(key => available.includes(key)).slice(0, 3);
   const [dragging, setDragging] = useState<MultiFilterKey | null>(null);
+  const columnsRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const [metrics, setMetrics] = useState({ width: 0, content: 0, left: 0, visible: false });
+  useEffect(() => {
+    const columns = columnsRef.current;
+    if (!columns || !selected.length) return;
+    const update = () => {
+      const rect = columns.getBoundingClientRect();
+      setMetrics(previous => {
+        const next = { width: columns.clientWidth, content: columns.scrollWidth, left: rect.left, visible: rect.top < window.innerHeight && rect.bottom > 0 };
+        return Object.keys(next).every(key => previous[key as keyof typeof next] === next[key as keyof typeof next]) ? previous : next;
+      });
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(columns);
+    for (const child of columns.children) observer.observe(child);
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    update();
+    return () => { observer.disconnect(); window.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
+  }, [selected.join("|"), products.length]);
   const rows = groupCatalogPage(products, selected);
   const addAt = (key: MultiFilterKey, index?: number) => {
     if (!available.includes(key)) return;
@@ -126,9 +147,9 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
           })}
         </div>
       </div>}
-      {selected.length > 0 && serverDriven && <p role="note" className="mb-3 text-xs text-muted-foreground">Agrupamento dos {products.length} produtos desta página, de {total} resultados. Os grupos podem continuar em outras páginas.</p>}
+      {selected.length > 0 && serverDriven && <p role="note" className="mb-3 text-xs text-muted-foreground">Exibindo {products.length} de {total} produtos; mais produtos são carregados ao rolar.</p>}
       {selected.length === 0 ? children(products) : (
-        <div className="flex items-start gap-4 overflow-x-auto pb-5" data-testid="organizer-columns" aria-label={`Comparação por ${LABELS[selected[0]]}`}>
+        <div ref={columnsRef} onScroll={event => { if (barRef.current) barRef.current.scrollLeft = event.currentTarget.scrollLeft; }} className="flex items-start gap-4 overflow-x-auto pb-5" data-testid="organizer-columns" aria-label={`Comparação por ${LABELS[selected[0]]}`}>
           {[...new Set(rows.map(row => row.title.split(" › ")[0]))].map(firstValue => {
             const columnRows = rows.filter(row => row.title.split(" › ")[0] === firstValue);
             const columnCount = columnRows.reduce((sum, row) => sum + row.products.length, 0);
@@ -147,6 +168,16 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
               </section>
             );
           })}
+        </div>
+      )}
+      {selected.length > 0 && metrics.content > metrics.width + 2 && (
+        <div className="fixed bottom-0 z-40 border-t border-border bg-background/95 px-2 py-2 shadow-lg backdrop-blur"
+          style={{ left: metrics.left, width: metrics.width, display: metrics.visible ? "block" : "none" }}
+          data-testid="organizer-fixed-scrollbar">
+          <div ref={barRef} onScroll={event => { if (columnsRef.current) columnsRef.current.scrollLeft = event.currentTarget.scrollLeft; }}
+            className="overflow-x-scroll overflow-y-hidden" style={{ height: 18 }} aria-label="Deslocar colunas horizontalmente">
+            <div style={{ width: metrics.content, height: 1 }} />
+          </div>
         </div>
       )}
     </div>
