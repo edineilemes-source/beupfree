@@ -348,7 +348,6 @@ export default function CatalogV2() {
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage, products.length]);
 
-  const products = useMemo(() => data?.products ?? [], [data]);
   const catalogDemonstrative = data?.demonstrative ?? products[0]?.demonstrative ?? PUBLIC_DEMO_MODE;
   const favoriteProducts = useMemo<FavoriteProduct[]>(
     () => products.map(toFavoriteProduct),
