@@ -1,7 +1,7 @@
 import {DEMOGRAPHIC_FILTER_VERSION} from "@shared/demographicTaxonomy";
 import {COLOR_FILTER_CONTRACT_VERSION} from "@shared/colorTaxonomy";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -28,7 +28,7 @@ import {
   type CatalogPrice, type CatalogSortMode,
   filtersFromSearch, queryFromSearch, toggleFilterSearch, priceSearch,
   clearFiltersSearch, querySearch, catalogLocation, localCatalogFilters,
-  catalogRequestParams, catalogScope, catalogPage, catalogEmptyState,
+  catalogRequestParams, catalogEmptyState,
 } from "@/lib/catalogState";
 import FavoriteButton from "@/components/FavoriteButton";
 import { useFavorites } from "@/context/FavoritesContext";
@@ -291,13 +291,8 @@ export default function CatalogV2() {
   const filters = useMemo(() => filtersFromSearch(search), [search]);
   const query = useMemo(() => queryFromSearch(search), [search]);
   const [sortMode, setSortMode] = useState<SortMode>("maior-desconto");
-  const scope = catalogScope(filters, query, sortMode);
-  const [pagination, setPagination] = useState({ scope, page: 1 });
-  // Reset synchronously with the query inputs, including browser back/forward.
-  if (pagination.scope !== scope) setPagination({ scope, page: 1 });
-  const page = catalogPage(pagination, scope);
   const resultsStartRef = useRef<HTMLDivElement>(null);
-  const scrollAfterPageChangeRef = useRef(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const queryTokens = useMemo(
     () => normalizeText(query).split(/\s+/).filter(Boolean),
@@ -306,39 +301,12 @@ export default function CatalogV2() {
 
   const clearQuery = () => setLocation(catalogLocation(querySearch(search, "")));
 
-  useEffect(() => {
-    if (!scrollAfterPageChangeRef.current) return;
-    scrollAfterPageChangeRef.current = false;
-    const animationFrame = window.requestAnimationFrame(() => {
-      const resultsStart = resultsStartRef.current;
-      if (!resultsStart) return;
-
-      const stickyHeader = document.querySelector<HTMLElement>("header.sticky");
-      const headerHeight = stickyHeader?.getBoundingClientRect().height ?? 0;
-      const resultsPosition = resultsStart.getBoundingClientRect().top + window.scrollY;
-      const visualGap = 16;
-
-      window.scrollTo({
-        top: Math.max(0, resultsPosition - headerHeight - visualGap),
-        behavior: "smooth",
-      });
-    });
-
-    return () => window.cancelAnimationFrame(animationFrame);
-  }, [page]);
-
-  const goToPage = (nextPage: number) => {
-    const boundedPage = Math.max(1, Math.min(totalPages, nextPage));
-    if (boundedPage === page) return;
-    scrollAfterPageChangeRef.current = true;
-    setPagination({ scope, page: boundedPage });
-  };
-
-  const { data, isLoading, isError, error } = useQuery<ProductsResponse>({
-    queryKey: ["/api/products", COLOR_FILTER_CONTRACT_VERSION, DEMOGRAPHIC_FILTER_VERSION, page, sortMode, query, filters],
-    queryFn: async () => {
+  const { data: pagesData, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery<ProductsResponse>({
+    queryKey: ["/api/products", COLOR_FILTER_CONTRACT_VERSION, DEMOGRAPHIC_FILTER_VERSION, sortMode, query, filters],
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
       if (import.meta.env.VITE_ORGANIZER_PREVIEW === "true") return demoCatalogResponse();
-      const params = catalogRequestParams(filters, query, sortMode, page, PAGE_SIZE);
+      const params = catalogRequestParams(filters, query, sortMode, Number(pageParam), PAGE_SIZE);
       const res = await fetch(`/api/products?${params}`);
       if (!res.ok) {
         if (res.status === 400) {
@@ -349,13 +317,36 @@ export default function CatalogV2() {
         }
         throw new Error("Falha ao carregar produtos");
       }
-      const response=(await res.json()) as ProductsResponse;
-      if(response.serverDriven)return response;
-      const fallback=await fetch("/api/products?limit=5000");
-      if(!fallback.ok)throw new Error("Falha ao carregar catálogo demonstrativo");
+      const response = (await res.json()) as ProductsResponse;
+      if (response.serverDriven) return response;
+      const fallback = await fetch("/api/products?limit=5000");
+      if (!fallback.ok) throw new Error("Falha ao carregar catálogo demonstrativo");
       return (await fallback.json()) as ProductsResponse;
     },
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.serverDriven) return undefined;
+      const loaded = allPages.reduce((count, page) => count + page.products.length, 0);
+      return lastPage.products.length > 0 && loaded < lastPage.total ? allPages.length + 1 : undefined;
+    },
   });
+  const data = pagesData?.pages[0];
+  const products = useMemo(() => {
+    const seen = new Set<string>();
+    return (pagesData?.pages ?? []).flatMap(page => page.products).filter(product => {
+      if (seen.has(product.id)) return false;
+      seen.add(product.id);
+      return true;
+    });
+  }, [pagesData]);
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node || !hasNextPage) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0]?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
+    }, { rootMargin: "600px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, products.length]);
 
   const products = useMemo(() => data?.products ?? [], [data]);
   const catalogDemonstrative = data?.demonstrative ?? products[0]?.demonstrative ?? PUBLIC_DEMO_MODE;
@@ -403,12 +394,8 @@ export default function CatalogV2() {
     return next;
   }, [filtered, sortMode,serverDriven]);
 
-  const resultTotal=serverDriven?(data?.total??0):sorted.length;
-  const totalPages = Math.max(1, Math.ceil(resultTotal / PAGE_SIZE));
-  const visible = useMemo(
-    () => serverDriven?sorted:sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [page, sorted,serverDriven],
-  );
+  const resultTotal = serverDriven ? (data?.total ?? 0) : sorted.length;
+  const visible = sorted;
 
   const toggle = (key: MultiFilterKey, value: string) =>
     setLocation(catalogLocation(toggleFilterSearch(search, key, value)));
@@ -516,39 +503,9 @@ export default function CatalogV2() {
             )}
           </CatalogOrganizer>
 
-          {totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => goToPage(page - 1)}
-                data-testid="button-page-prev"
-              >
-                Anterior
-              </Button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((pageNumber) => (
-                <Button
-                  key={pageNumber}
-                  variant={page === pageNumber ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => goToPage(pageNumber)}
-                  data-testid={`button-page-${pageNumber}`}
-                >
-                  {pageNumber}
-                </Button>
-              ))}
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => goToPage(page + 1)}
-                data-testid="button-page-next"
-              >
-                Próxima
-              </Button>
-            </div>
-          )}
+          <div ref={loadMoreRef} className="mt-6 py-4 text-center text-sm text-muted-foreground" data-testid="catalog-infinite-scroll" aria-live="polite">
+            {isFetchingNextPage ? "Carregando mais produtos..." : hasNextPage ? "Role para carregar mais produtos" : `Exibindo ${visible.length} de ${resultTotal} produtos`}
+          </div>
         </CatalogResults>
       </main>
 
