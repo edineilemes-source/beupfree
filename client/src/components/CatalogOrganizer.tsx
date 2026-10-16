@@ -112,7 +112,7 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
         </div>
         <div className="mt-4 flex items-center justify-between gap-2"><p className="text-sm font-semibold">Agrupar por · máximo 3</p>
           <button type="button" className="text-xs underline" onClick={() => setDimensions([])}>Limpar grupos</button></div>
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="mt-2 grid gap-2">
           {[0, 1, 2].map(index => {
             const key = selected[index];
             return <div key={index} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); if (dragging) addAt(dragging, index); setDragging(null); }}
