@@ -112,8 +112,8 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
     <div data-testid="catalog-organizer">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <button type="button" onClick={() => setExpanded(!expanded)} aria-expanded={expanded}
-          className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-semibold"
-          data-testid="button-organize"><Settings2 className="h-4 w-4" /> Organizar resultados</button>
+          className="flex items-center gap-2 rounded-lg border-2 border-emerald-600/50 bg-emerald-50 px-4 py-3 text-base font-bold text-emerald-900 shadow-sm transition-colors hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-900/50"
+          data-testid="button-organize"><Settings2 className="h-5 w-5" /> Organizar resultados</button>
         <span className="text-xs text-muted-foreground">{selected.length ? selected.map(k => LABELS[k]).join(" → ") : "Sem agrupamento"} · {sortMode === "maior-desconto" ? "Maior desconto" : sortMode === "menor-preco" ? "Menor preço" : sortMode === "recentes" ? "Mais recentes" : "Mais relevantes"}</span>
       </div>
       {expanded && <div className="mb-5 rounded-lg border border-border bg-background p-4" data-testid="panel-organize">
@@ -152,18 +152,18 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
       {selected.length > 0 && serverDriven && <p role="note" className="mb-3 text-xs text-muted-foreground">Exibindo {products.length} de {total} produtos; mais produtos são carregados ao rolar.</p>}
       {selected.length === 0 ? children(products) : (
         <div ref={columnsRef} onScroll={event => { if (barRef.current) barRef.current.scrollLeft = event.currentTarget.scrollLeft; }} className="flex items-start gap-4 overflow-x-auto pb-5" data-testid="organizer-columns" aria-label={`Comparação por ${LABELS[selected[0]]}`}>
-          {[...new Set(rows.map(row => row.title.split(" › ")[0]))].map(firstValue => {
+          {[...new Set(rows.map(row => row.title.split(" › ")[0]))].map((firstValue, columnIndex) => {
             const columnRows = rows.filter(row => row.title.split(" › ")[0] === firstValue);
             const columnCount = columnRows.reduce((sum, row) => sum + row.products.length, 0);
             return (
-              <section key={firstValue} className="w-[280px] min-w-[280px] shrink-0 rounded-lg border border-border bg-background/60 p-3 sm:w-[320px] sm:min-w-[320px]" data-testid="organizer-column">
+              <section key={firstValue} className={`w-[280px] min-w-[280px] shrink-0 rounded-lg border border-border p-3 sm:w-[320px] sm:min-w-[320px] ${columnIndex % 2 === 0 ? "bg-background" : "bg-emerald-50/80 dark:bg-emerald-950/25"}`} data-testid="organizer-column">
                 <div className="sticky top-0 z-10 mb-3 flex items-center justify-between gap-2 rounded-md bg-background p-2 shadow-sm">
                   <h3 className="text-sm font-bold">{firstValue}</h3>
                   <span className="text-xs text-muted-foreground">{columnCount} nesta página</span>
                 </div>
                 {columnRows.map((row, index) => (
                   <div key={index} className="mb-5" data-testid="organizer-group">
-                    {selected.length > 1 && <h4 className="mb-2 border-b border-border pb-1 text-xs font-semibold">{row.title.split(" › ").slice(1).join(" › ")}</h4>}
+                    {selected.length > 1 && <h4 className="mb-3 rounded-md border-l-4 border-emerald-600 bg-emerald-100/90 px-3 py-2 text-sm font-bold leading-snug text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100">{row.title.split(" › ").slice(1).join(" › ")}</h4>}
                     {children(row.products, true)}
                   </div>
                 ))}
