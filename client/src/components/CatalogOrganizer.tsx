@@ -42,7 +42,9 @@ export function groupCatalogPage(products: CatalogProduct[], dimensions: MultiFi
           buckets.get(value)!.push(product);
         }
       }
-      for (const value of [...buckets.keys()].sort(collator.compare)) {
+      for (const value of [...buckets.keys()].sort(field === "desconto"
+        ? (a, b) => (parseInt(b, 10) || 0) - (parseInt(a, 10) || 0)
+        : collator.compare)) {
         next.push({ path: [...row.path, value], products: buckets.get(value)! });
       }
     }
