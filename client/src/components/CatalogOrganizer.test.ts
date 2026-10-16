@@ -49,3 +49,20 @@ test("products with unknown grouping attributes are not discarded", () => {
   assert.equal(rows.reduce((total, row) => total + row.products.length, 0), 4);
   assert.ok(rows.some(row => row.title.includes("Não identificado")));
 });
+
+test("discount buckets sort descending when nested under brand", () => {
+  const discounted = [
+    { ...product("a", "Nike", "MASCULINO", "40"), bestOffer: { ...product("a", "Nike", "MASCULINO", "40").bestOffer!, discountPercent: 50 } },
+    { ...product("b", "Nike", "MASCULINO", "41"), bestOffer: { ...product("b", "Nike", "MASCULINO", "41").bestOffer!, discountPercent: 70 } },
+    { ...product("c", "Nike", "MASCULINO", "42"), bestOffer: { ...product("c", "Nike", "MASCULINO", "42").bestOffer!, discountPercent: 60 } },
+  ];
+  const rows = groupCatalogPage(discounted, ["marca", "desconto"]);
+  assert.deepEqual(rows.map(row => row.title), ["Nike › 70%+", "Nike › 60%+", "Nike › 50%+"]);
+});
+test("discount buckets sort descending as first grouping criterion", () => {
+  const rows = groupCatalogPage([
+    { ...products[0], bestOffer: { ...products[0].bestOffer!, discountPercent: 30 } },
+    { ...products[1], bestOffer: { ...products[1].bestOffer!, discountPercent: 80 } },
+  ], ["desconto", "marca"]);
+  assert.deepEqual(rows.map(row => row.title), ["80%+ › Adidas", "30%+ › Nike"]);
+});
