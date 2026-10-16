@@ -6,7 +6,7 @@ const models = ["Corrida", "Casual", "Treino", "Caminhada", "Basquete"];
 const products: CatalogProduct[] = Array.from({ length: 45 }, (_, i) => {
   const brand = brands[i % brands.length];
   const size = 38 + (i % 5);
-  const gender = i % 3 === 0 ? "feminino" : "masculino";
+  const gender = i % 3 === 0 ? "FEMININO" : "MASCULINO";
   const original = 300 + (i % 6) * 80;
   const discount = 15 + (i % 7) * 10;
   const current = Math.round(original * (1 - discount / 100) * 100) / 100;
