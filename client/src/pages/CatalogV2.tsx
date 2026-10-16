@@ -1,7 +1,7 @@
 import {DEMOGRAPHIC_FILTER_VERSION} from "@shared/demographicTaxonomy";
 import {COLOR_FILTER_CONTRACT_VERSION} from "@shared/colorTaxonomy";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -23,11 +23,12 @@ import {
   priceOf,
 } from "@/lib/catalogFilters";
 import CatalogResults from "@/components/CatalogResults";
+import CatalogOrganizer from "@/components/CatalogOrganizer";
 import {
   type CatalogPrice, type CatalogSortMode,
   filtersFromSearch, queryFromSearch, toggleFilterSearch, priceSearch,
   clearFiltersSearch, querySearch, catalogLocation, localCatalogFilters,
-  catalogRequestParams, catalogScope, catalogPage, catalogEmptyState,
+  catalogRequestParams, catalogEmptyState,
 } from "@/lib/catalogState";
 import FavoriteButton from "@/components/FavoriteButton";
 import { useFavorites } from "@/context/FavoritesContext";
@@ -43,6 +44,8 @@ import {
   PUBLIC_DEMO_MODE,
   publicOfferSource,
 } from "@/lib/publicDemo";
+
+import { demoCatalogResponse } from "@/lib/organizerPreview";
 
 interface ProductsResponse {
   total: number;
@@ -288,13 +291,8 @@ export default function CatalogV2() {
   const filters = useMemo(() => filtersFromSearch(search), [search]);
   const query = useMemo(() => queryFromSearch(search), [search]);
   const [sortMode, setSortMode] = useState<SortMode>("maior-desconto");
-  const scope = catalogScope(filters, query, sortMode);
-  const [pagination, setPagination] = useState({ scope, page: 1 });
-  // Reset synchronously with the query inputs, including browser back/forward.
-  if (pagination.scope !== scope) setPagination({ scope, page: 1 });
-  const page = catalogPage(pagination, scope);
   const resultsStartRef = useRef<HTMLDivElement>(null);
-  const scrollAfterPageChangeRef = useRef(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const queryTokens = useMemo(
     () => normalizeText(query).split(/\s+/).filter(Boolean),
@@ -303,38 +301,12 @@ export default function CatalogV2() {
 
   const clearQuery = () => setLocation(catalogLocation(querySearch(search, "")));
 
-  useEffect(() => {
-    if (!scrollAfterPageChangeRef.current) return;
-    scrollAfterPageChangeRef.current = false;
-    const animationFrame = window.requestAnimationFrame(() => {
-      const resultsStart = resultsStartRef.current;
-      if (!resultsStart) return;
-
-      const stickyHeader = document.querySelector<HTMLElement>("header.sticky");
-      const headerHeight = stickyHeader?.getBoundingClientRect().height ?? 0;
-      const resultsPosition = resultsStart.getBoundingClientRect().top + window.scrollY;
-      const visualGap = 16;
-
-      window.scrollTo({
-        top: Math.max(0, resultsPosition - headerHeight - visualGap),
-        behavior: "smooth",
-      });
-    });
-
-    return () => window.cancelAnimationFrame(animationFrame);
-  }, [page]);
-
-  const goToPage = (nextPage: number) => {
-    const boundedPage = Math.max(1, Math.min(totalPages, nextPage));
-    if (boundedPage === page) return;
-    scrollAfterPageChangeRef.current = true;
-    setPagination({ scope, page: boundedPage });
-  };
-
-  const { data, isLoading, isError, error } = useQuery<ProductsResponse>({
-    queryKey: ["/api/products", COLOR_FILTER_CONTRACT_VERSION, DEMOGRAPHIC_FILTER_VERSION, page, sortMode, query, filters],
-    queryFn: async () => {
-      const params = catalogRequestParams(filters, query, sortMode, page, PAGE_SIZE);
+  const { data: pagesData, isLoading, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery<ProductsResponse>({
+    queryKey: ["/api/products", COLOR_FILTER_CONTRACT_VERSION, DEMOGRAPHIC_FILTER_VERSION, sortMode, query, filters],
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      if (import.meta.env.VITE_ORGANIZER_PREVIEW === "true") return demoCatalogResponse();
+      const params = catalogRequestParams(filters, query, sortMode, Number(pageParam), PAGE_SIZE);
       const res = await fetch(`/api/products?${params}`);
       if (!res.ok) {
         if (res.status === 400) {
@@ -345,15 +317,37 @@ export default function CatalogV2() {
         }
         throw new Error("Falha ao carregar produtos");
       }
-      const response=(await res.json()) as ProductsResponse;
-      if(response.serverDriven)return response;
-      const fallback=await fetch("/api/products?limit=5000");
-      if(!fallback.ok)throw new Error("Falha ao carregar catálogo demonstrativo");
+      const response = (await res.json()) as ProductsResponse;
+      if (response.serverDriven) return response;
+      const fallback = await fetch("/api/products?limit=5000");
+      if (!fallback.ok) throw new Error("Falha ao carregar catálogo demonstrativo");
       return (await fallback.json()) as ProductsResponse;
     },
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.serverDriven) return undefined;
+      const loaded = allPages.reduce((count, page) => count + page.products.length, 0);
+      return lastPage.products.length > 0 && loaded < lastPage.total ? allPages.length + 1 : undefined;
+    },
   });
+  const data = pagesData?.pages[0];
+  const products = useMemo(() => {
+    const seen = new Set<string>();
+    return (pagesData?.pages ?? []).flatMap(page => page.products).filter(product => {
+      if (seen.has(product.id)) return false;
+      seen.add(product.id);
+      return true;
+    });
+  }, [pagesData]);
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node || !hasNextPage) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0]?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
+    }, { rootMargin: "600px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, products.length]);
 
-  const products = useMemo(() => data?.products ?? [], [data]);
   const catalogDemonstrative = data?.demonstrative ?? products[0]?.demonstrative ?? PUBLIC_DEMO_MODE;
   const favoriteProducts = useMemo<FavoriteProduct[]>(
     () => products.map(toFavoriteProduct),
@@ -399,12 +393,8 @@ export default function CatalogV2() {
     return next;
   }, [filtered, sortMode,serverDriven]);
 
-  const resultTotal=serverDriven?(data?.total??0):sorted.length;
-  const totalPages = Math.max(1, Math.ceil(resultTotal / PAGE_SIZE));
-  const visible = useMemo(
-    () => serverDriven?sorted:sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [page, sorted,serverDriven],
-  );
+  const resultTotal = serverDriven ? (data?.total ?? 0) : sorted.length;
+  const visible = sorted;
 
   const toggle = (key: MultiFilterKey, value: string) =>
     setLocation(catalogLocation(toggleFilterSearch(search, key, value)));
@@ -453,20 +443,7 @@ export default function CatalogV2() {
               <p className="text-xs text-muted-foreground" data-testid="text-catalog-count">
                 {resultTotal} {resultTotal === 1 ? "produto" : "produtos"}
               </p>
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                Ordenar por:
-                <select
-                  value={sortMode}
-                  onChange={(event) => setSortMode(event.target.value as SortMode)}
-                  className="h-9 rounded-md border border-border bg-background px-3 text-xs font-semibold text-foreground outline-none"
-                  data-testid="select-sort"
-                >
-                  <option value="maior-desconto">Maior desconto</option>
-                  <option value="relevantes">Mais relevantes</option>
-                  <option value="menor-preco">Menor preço</option>
-                  {!catalogDemonstrative && <option value="recentes">Mais recentes</option>}
-                </select>
-              </label>
+
             </div>
           </div>
         </div>
@@ -488,11 +465,14 @@ export default function CatalogV2() {
           demonstrative={catalogDemonstrative}
           resultsRef={resultsStartRef}
         >
+          <CatalogOrganizer filters={filters} products={visible} sortMode={sortMode}
+            onSortChange={setSortMode} serverDriven={serverDriven} total={resultTotal}>
+            {(groupProducts, columnMode) => (
           <div
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className={columnMode ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"}
             data-testid="grid-catalog-products"
           >
-            {visible.map((product) => (
+            {groupProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 id={product.id}
@@ -519,40 +499,12 @@ export default function CatalogV2() {
               />
             ))}
           </div>
+            )}
+          </CatalogOrganizer>
 
-          {totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => goToPage(page - 1)}
-                data-testid="button-page-prev"
-              >
-                Anterior
-              </Button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((pageNumber) => (
-                <Button
-                  key={pageNumber}
-                  variant={page === pageNumber ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => goToPage(pageNumber)}
-                  data-testid={`button-page-${pageNumber}`}
-                >
-                  {pageNumber}
-                </Button>
-              ))}
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => goToPage(page + 1)}
-                data-testid="button-page-next"
-              >
-                Próxima
-              </Button>
-            </div>
-          )}
+          <div ref={loadMoreRef} className="mt-6 py-4 text-center text-sm text-muted-foreground" data-testid="catalog-infinite-scroll" aria-live="polite">
+            {isFetchingNextPage ? "Carregando mais produtos..." : hasNextPage ? "Role para carregar mais produtos" : `Exibindo ${visible.length} de ${resultTotal} produtos`}
+          </div>
         </CatalogResults>
       </main>
 
