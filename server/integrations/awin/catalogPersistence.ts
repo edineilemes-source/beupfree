@@ -2,7 +2,6 @@ import type pg from "pg";
 import type { CatalogOperationalState, NormalizationStatus } from "./operationalCatalog";
 import type { ProductActivity, ProductStyle, ProductUniverse, TaxonomyConfidence } from "./productTaxonomy";
 
-export const DAFITI_CATALOG_MERCHANT = "17697";
 export type PersistenceConfig={connectionString:string;expectedHost:string;database:string;merchant:string;classifierVersion:string;normalizerVersion:string};
 
 function argumentValue(args:string[],name:string):string|undefined{return args.find(value=>value.startsWith(`${name}=`))?.slice(name.length+1);}
@@ -10,11 +9,12 @@ export function validatePersistenceInvocation(args:string[],env:NodeJS.ProcessEn
  const connectionString=env.AWIN_CATALOG_ADMIN_DATABASE_URL;
  if(!connectionString)throw new Error("AWIN_CATALOG_ADMIN_DATABASE_URL_REQUIRED");
  if(argumentValue(args,"--mode")!=="staging"||!args.includes("--confirm-staging"))throw new Error("EXPLICIT_STAGING_CONFIRMATION_REQUIRED");
- const merchant=argumentValue(args,"--merchant");if(merchant!==DAFITI_CATALOG_MERCHANT)throw new Error("DAFITI_MERCHANT_REQUIRED");
+ const merchant=argumentValue(args,"--merchant");if(!merchant||!/^\d+$/.test(merchant))throw new Error("MERCHANT_REQUIRED");
  const classifierVersion=argumentValue(args,"--classifier-version"),normalizerVersion=argumentValue(args,"--normalizer-version");
  if(!classifierVersion||!normalizerVersion)throw new Error("EXPLICIT_VERSIONS_REQUIRED");
  const expectedHost=env.AWIN_CATALOG_EXPECTED_HOST;if(!expectedHost)throw new Error("AWIN_CATALOG_EXPECTED_HOST_REQUIRED");
- const url=new URL(connectionString),database=url.pathname.slice(1);if(url.hostname!==expectedHost)throw new Error("DATABASE_HOST_MISMATCH");if(database!=="postgres")throw new Error("DATABASE_NAME_MISMATCH");
+ let url:URL;try{url=new URL(connectionString);}catch{throw new Error("ADMIN_DATABASE_URL_INVALID");}
+ const database=url.pathname.slice(1);if(url.hostname!==expectedHost)throw new Error("DATABASE_HOST_MISMATCH");if(database!=="postgres")throw new Error("DATABASE_NAME_MISMATCH");
  return {connectionString,expectedHost,database,merchant,classifierVersion,normalizerVersion};
 }
 export function assertAdministrativeIdentity(input:{currentUser:string;currentDatabase:string},config:PersistenceConfig):void{

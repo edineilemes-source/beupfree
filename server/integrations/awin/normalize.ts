@@ -15,9 +15,25 @@ const hash = (input: string) => createHash("sha256").update(input).digest("hex")
 
 export function parseAwinNumber(input: string | null): number | null {
   if (input == null) return null;
-  const text = input.trim().replace(/\s/g, "");
-  if (!/^[+-]?(?:\d+(?:\.\d+)?|\d+(?:,\d+)?)$/.test(text)) return null;
-  const result = Number(text.replace(",", "."));
+  let text = input.trim().replace(/[\s\u00a0]+/g, " ");
+  const prefix = text.match(/^R\$\s*/i);
+  const suffix = text.match(/\s*BRL$/i);
+  if (prefix && suffix) return null;
+  if (prefix) text = text.slice(prefix[0].length);
+  if (suffix) text = text.slice(0, -suffix[0].length);
+  text = text.trim();
+
+  let canonical: string;
+  if (/^[+-]?\d{1,3}(?:\.\d{3})+(?:,\d+)?$/.test(text)) {
+    canonical = text.replace(/\./g, "").replace(",", ".");
+  } else if (/^[+-]?\d+,\d+$/.test(text)) {
+    canonical = text.replace(",", ".");
+  } else if (/^[+-]?\d+(?:\.\d+)?$/.test(text)) {
+    canonical = text;
+  } else {
+    return null;
+  }
+  const result = Number(canonical);
   return Number.isFinite(result) ? result : null;
 }
 

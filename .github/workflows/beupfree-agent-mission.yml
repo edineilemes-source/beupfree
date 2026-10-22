@@ -1,0 +1,50 @@
+name: BeUpFree authorized mission
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Operational Issue containing the authorized mission
+        required: true
+        default: "5"
+      ref:
+        description: Branch containing the mission-compatible executor
+        required: true
+        default: codespace-working
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: beupfree-agent-issue-${{ inputs.issue }}
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out the explicitly selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: true
+
+      - name: Install the validated Codex CLI version
+        run: npm install --global @openai/codex@0.152.1
+
+      - name: Validate local protocol
+        run: ./beupfree-agent check
+
+      - name: Configure scoped Git commit identity
+        run: |
+          git config user.name "BeUpFree Agent"
+          git config user.email "beupfree-agent@users.noreply.github.com"
+
+      - name: Execute the single authorized mission and publish its lifecycle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MISSION_ISSUE: ${{ inputs.issue }}
+        run: ./beupfree-agent cycle --issue "$MISSION_ISSUE"

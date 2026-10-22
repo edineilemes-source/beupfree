@@ -9,8 +9,10 @@ export interface CatalogBestOffer {
   referenceUrl?: string | null;
   marketplaceName?: string | null;
   sellerName?: string | null;
+  storeLabel?: string | null;
   freeShipping: boolean;
   lastSeenAt?: string;
+  demonstrative?: boolean;
 }
 
 export interface CatalogProduct {
@@ -28,6 +30,8 @@ export interface CatalogProduct {
   category: { name: string; slug?: string } | null;
   averageRating: number | null;
   totalReviews: number;
+  catalogSource?: "demo" | "operational";
+  demonstrative?: boolean;
   bestOffer: CatalogBestOffer | null;
 }
 

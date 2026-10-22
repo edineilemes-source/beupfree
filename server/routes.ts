@@ -456,6 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           averageRating: row.average_rating != null ? parseFloat(row.average_rating) : null,
           totalReviews: parseInt(String(row.total_reviews ?? 0)),
           offersCount: parseInt(String(row.offers_count ?? 0)),
+          demonstrative: isPublicDemoMode(),
           bestOffer: hasOffer ? (isPublicDemoMode() ? sanitizeDemoOffer({
             id: row.offer_id,
             currentPrice: row.current_price,
@@ -483,7 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }) : null,
         };
       });
-      res.json({ total: totalCount, products: result });
+      res.json({ total: totalCount, catalogSource: "demo", demonstrative: isPublicDemoMode(), products: result });
     } catch (error: any) {
       console.error("Erro ao listar produtos:", error);
       res.status(500).json({ error: error.message });
@@ -503,6 +504,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         ...product,
+        catalogSource: "demo",
+        demonstrative: isPublicDemoMode(),
         images,
         brand: brandData,
         category: categoryData,

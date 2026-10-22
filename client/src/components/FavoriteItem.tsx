@@ -55,14 +55,15 @@ export default function FavoriteItem({
   }
 
   const badges = getProductBadges(product);
-  const offerSource = publicOfferSource(product.marketplaceName, product.sellerName);
+  const demonstrative = product.demonstrative ?? PUBLIC_DEMO_MODE;
+  const offerSource = publicOfferSource(product.marketplaceName, product.sellerName, demonstrative);
   const ratingText = product.averageRating != null && product.averageRating > 0
     ? `⭐ ${product.averageRating.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}${product.totalReviews ? ` (${product.totalReviews.toLocaleString("pt-BR")})` : ""}`
     : "";
 
   return (
     <article className="relative rounded-lg border border-border p-3" data-testid={`favorite-item-${product.id}`}>
-      {PUBLIC_DEMO_MODE && (
+      {demonstrative && (
         <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-primary">
           {DEMO_PRODUCT_LABEL}
         </p>
@@ -115,15 +116,15 @@ export default function FavoriteItem({
           type="button"
           size="sm"
           className="flex-1 gap-2"
-          disabled={!PUBLIC_DEMO_MODE && (product.soldOut || !product.affiliateUrl || product.affiliateUrl === "#")}
+          disabled={!demonstrative && (product.soldOut || !product.affiliateUrl || product.affiliateUrl === "#")}
           onClick={() => {
-            if (PUBLIC_DEMO_MODE) requestDemoProductNotice(product.referenceUrl);
+            if (demonstrative) requestDemoProductNotice(product.referenceUrl);
             else window.open(product.affiliateUrl, "_blank", "noopener,noreferrer");
           }}
           data-testid={`button-favorite-offer-${product.id}`}
         >
           <ExternalLink className="h-4 w-4" />
-          {PUBLIC_DEMO_MODE ? "Ver referência" : "Ver oferta"}
+          {demonstrative ? "Ver referência" : "Ver oferta"}
         </Button>
         <Button
           type="button"
