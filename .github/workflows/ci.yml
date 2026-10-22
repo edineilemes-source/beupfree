@@ -1,0 +1,40 @@
+name: UpPulse CI
+
+on:
+  pull_request:
+    branches: [codespace-working]
+  push:
+    branches: [codespace-working]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript
+        run: npm run check
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Organizer tests
+        run: node --import tsx --test client/src/components/CatalogOrganizer.test.ts
+      - name: Build
+        run: npm run build
+      - name: Install Chromium for browser test
+        run: npx playwright install --with-deps chromium
+      - name: Organizer browser test
+        run: npx playwright test tests/e2e/catalog-organizer.spec.ts --project=chromium
+        env:
+          SESSION_SECRET: ci-organizer-test-only-secret
