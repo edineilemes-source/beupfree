@@ -56,3 +56,47 @@ test("regressão: modalidades existentes continuam representáveis",()=>{
   for(const [text,activity] of [["Running","RUNNING"],["Futebol","FOOTBALL"],["Futsal","FUTSAL"],["Basquete","BASKETBALL"],["Caminhada","WALKING"],["Training","TRAINING"],["Skate","SKATE"]] as const)
     assert.ok(classify(`Tênis ${text}`,"Tênis").activities.includes(activity));
 });
+
+test("v3 confirma tipo de calçado sem exigir tênis na categoria",()=>{
+ for(const name of ["Tênis Adidas Lite Racer 4.0","Tênis Olympikus Circuito","Tênis Asics Gel Excite 11","Tênis Adidas Runfalcon 5","Chuteira Adidas","Sapatênis","Sapatenis","Sneaker"]){
+  for(const category of ["Calçados","Calçados > Casual","Calçados de treino","Calçados de corrida","Calçados de basquete","Fitness e Musculação","Artes Marciais","Calçados de automobilismo",""])
+   assert.equal(classify(category,name).universe,"SNEAKER_CONFIRMED",`${category}: ${name}`);
+ }
+});
+test("v3 bloqueia acessórios de tênis mesmo com categoria esportiva",()=>{
+ for(const name of ["Bola de Tênis Wilson","Pack Bolas de Tênis","Faixa de Cabeça para Tênis","Raquete de Tênis","Bolsa para Tênis","Mochila para Tênis","Grip para Tênis","Overgrip para Tênis","Munhequeira para Tênis","Rede para Tênis","Corda para Tênis","Sapato social Democrata"])
+  for(const category of ["Tênis","Tennis","Esportes > Tênis"])
+   assert.equal(classify(category,name).universe,"NON_SNEAKER",`${category}: ${name}`);
+});
+test("v3 não confunde nomes de modelos com acessórios",()=>{
+ for(const name of ["Tênis Fila Corda","Tênis Fila Grip 3"])
+  assert.equal(classify("Calçados > Casual",name).universe,"SNEAKER_CONFIRMED");
+});
+test("v3 categoria de esporte não confirma sozinha um calçado",()=>{
+ for(const category of ["Tênis","Tennis","Esportes > Tênis"])
+  assert.notEqual(classify(category,"Produto Wilson").universe,"SNEAKER_CONFIRMED");
+});
+test("v3 preserva exclusões de outros calçados",()=>{
+ for(const name of ["Chinelo","Sandália","Bota","Sapato social Democrata"])
+  assert.equal(classify("Calçados",name).universe,"NON_SNEAKER");
+});
+test("v3 separa tênis confirmado dos requisitos comerciais obrigatórios",()=>{
+ const taxonomy=classify("Fitness e Musculação","Tênis Adidas Lite Racer 4.0");
+ assert.equal(taxonomy.universe,"SNEAKER_CONFIRMED");
+ for(const requirement of ["promotionConfirmed","validCurrentPrice","validOldPrice","discountConsistent"] as const)
+  assert.equal(classifyCatalogEligibility(taxonomy,{...commercial,[requirement]:false}).status,"REVIEW_REQUIRED",requirement);
+});
+
+test("v3 tipo explícito no nome prevalece sobre categoria de calçado incorreta",()=>{
+ for(const name of ["Tênis New Balance 480 Low Marinho Com Branco","Tênis Mormaii Urban Pulse II Preto e Azul"]){
+  const result=classify("Calçados > Chinelos e Sandálias",name);
+  assert.equal(result.universe,"SNEAKER_CONFIRMED");
+  assert.ok(result.reasons.includes("NEGATIVE_FOOTWEAR_SIGNAL"));
+  assert.ok(!result.reasons.includes("CONFLICTING_SIGNALS"));
+ }
+});
+test("v3 menção a chuteira em acessório não identifica calçado",()=>{
+ for(const name of ["Porta Chuteira Adidas Tiro","Chaveiro Palmeiras Chuteira","Kit Caneta e Chaveiro Corinthians Chuteira"])
+  assert.equal(classify("Artigos e acessórios",name).universe,"UNRESOLVED");
+ assert.equal(classify("Esportes > Tênis","Kit 10 Packs de Bolas Tênis Wilson Championship").universe,"NON_SNEAKER");
+});

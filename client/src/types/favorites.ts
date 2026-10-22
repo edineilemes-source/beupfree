@@ -21,4 +21,5 @@ export interface FavoriteProduct {
   totalReviews?: number;
   promotionType?: string;
   soldOut?: boolean;
+  demonstrative?: boolean;
 }

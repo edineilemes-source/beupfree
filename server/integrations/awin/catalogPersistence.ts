@@ -1,8 +1,8 @@
+import {interpretColor, COLOR_NORMALIZER_VERSION, type ColorInterpretation, type ColorClassification} from "@shared/colorTaxonomy";
 import type pg from "pg";
 import type { CatalogOperationalState, NormalizationStatus } from "./operationalCatalog";
 import type { ProductActivity, ProductStyle, ProductUniverse, TaxonomyConfidence } from "./productTaxonomy";
 
-export const DAFITI_CATALOG_MERCHANT = "17697";
 export type PersistenceConfig={connectionString:string;expectedHost:string;database:string;merchant:string;classifierVersion:string;normalizerVersion:string};
 
 function argumentValue(args:string[],name:string):string|undefined{return args.find(value=>value.startsWith(`${name}=`))?.slice(name.length+1);}
@@ -10,11 +10,12 @@ export function validatePersistenceInvocation(args:string[],env:NodeJS.ProcessEn
  const connectionString=env.AWIN_CATALOG_ADMIN_DATABASE_URL;
  if(!connectionString)throw new Error("AWIN_CATALOG_ADMIN_DATABASE_URL_REQUIRED");
  if(argumentValue(args,"--mode")!=="staging"||!args.includes("--confirm-staging"))throw new Error("EXPLICIT_STAGING_CONFIRMATION_REQUIRED");
- const merchant=argumentValue(args,"--merchant");if(merchant!==DAFITI_CATALOG_MERCHANT)throw new Error("DAFITI_MERCHANT_REQUIRED");
+ const merchant=argumentValue(args,"--merchant");if(!merchant||!/^\d+$/.test(merchant))throw new Error("MERCHANT_REQUIRED");
  const classifierVersion=argumentValue(args,"--classifier-version"),normalizerVersion=argumentValue(args,"--normalizer-version");
  if(!classifierVersion||!normalizerVersion)throw new Error("EXPLICIT_VERSIONS_REQUIRED");
  const expectedHost=env.AWIN_CATALOG_EXPECTED_HOST;if(!expectedHost)throw new Error("AWIN_CATALOG_EXPECTED_HOST_REQUIRED");
- const url=new URL(connectionString),database=url.pathname.slice(1);if(url.hostname!==expectedHost)throw new Error("DATABASE_HOST_MISMATCH");if(database!=="postgres")throw new Error("DATABASE_NAME_MISMATCH");
+ let url:URL;try{url=new URL(connectionString);}catch{throw new Error("ADMIN_DATABASE_URL_INVALID");}
+ const database=url.pathname.slice(1);if(url.hostname!==expectedHost)throw new Error("DATABASE_HOST_MISMATCH");if(database!=="postgres")throw new Error("DATABASE_NAME_MISMATCH");
  return {connectionString,expectedHost,database,merchant,classifierVersion,normalizerVersion};
 }
 export function assertAdministrativeIdentity(input:{currentUser:string;currentDatabase:string},config:PersistenceConfig):void{
@@ -23,7 +24,7 @@ export function assertAdministrativeIdentity(input:{currentUser:string;currentDa
 }
 
 export type ClassificationWrite={productId:string;providerId:string;merchantId:string;universe:ProductUniverse;style:ProductStyle;activities:ProductActivity[];confidence:TaxonomyConfidence;reasonCodes:string[];operationalState:CatalogOperationalState;classifierVersion:string;classifiedAt:string;sourceEvidence:Record<string,unknown>};
-export type NormalizationWrite={variantId:string;sizeRaw:string|null;sizeNormalized:number|null;sizeStatus:NormalizationStatus;colourRaw:string|null;colourNormalized:string[]|null;colourStatus:NormalizationStatus;normalizerVersion:string;normalizedAt:string;reasonCodes:string[]};
+export type NormalizationWrite={variantId:string;sizeRaw:string|null;sizeNormalized:number|null;sizeStatus:NormalizationStatus;colourRaw:string|null;colourNormalized:string[]|null;colourStatus:NormalizationStatus|ColorClassification;colourTaxonomy?:ColorInterpretation|null;normalizerVersion:string;normalizedAt:string;reasonCodes:string[]};
 export type PersistenceCounters={seen:number;created:number;unchanged:number;invalid:number};
 const batches=<T>(rows:T[],size=1000)=>Array.from({length:Math.ceil(rows.length/size)},(_,i)=>rows.slice(i*size,(i+1)*size));
 function assertUnique(rows:Array<{productId?:string;variantId?:string}>,key:"productId"|"variantId"):void{const values=rows.map(row=>row[key]);if(new Set(values).size!==values.length)throw new Error(`DUPLICATE_INPUT_${key.toUpperCase()}`);}
@@ -42,10 +43,19 @@ export async function persistClassifications(client:pg.PoolClient,rows:Classific
 export async function persistNormalizations(client:pg.PoolClient,rows:NormalizationWrite[]):Promise<PersistenceCounters>{
  assertUnique(rows,"variantId");let created=0,invalid=0;
  for(const batch of batches(rows)){
-  const payload=JSON.stringify(batch);
-  const mismatch=await client.query(`WITH incoming AS (SELECT * FROM jsonb_to_recordset($1::jsonb) AS x("variantId" text,"sizeRaw" text,"sizeNormalized" numeric,"sizeStatus" text,"colourRaw" text,"colourNormalized" text[],"colourStatus" text,"normalizerVersion" text,"normalizedAt" text,"reasonCodes" text[])) SELECT count(*)::int count FROM incoming i JOIN product_variant_normalizations e ON e.variant_id=i."variantId" AND e.normalizer_version=i."normalizerVersion" WHERE (e.size_raw,e.size_normalized,e.size_status,e.colour_raw,e.colour_normalized,e.colour_status,e.reason_codes) IS DISTINCT FROM (i."sizeRaw",i."sizeNormalized",i."sizeStatus",i."colourRaw",i."colourNormalized",i."colourStatus",i."reasonCodes")`,[payload]);
+  const enriched=batch.map(row=>{
+   if(row.normalizerVersion===COLOR_NORMALIZER_VERSION){
+    const taxonomy=interpretColor(row.colourRaw);
+    if(row.colourTaxonomy&&JSON.stringify(row.colourTaxonomy)!==JSON.stringify(taxonomy))throw new Error("COLOR_TAXONOMY_EVIDENCE_MISMATCH");
+    return {...row,colourTaxonomy:taxonomy,colourStatus:taxonomy.classification,colourNormalized:taxonomy.projectionEligible?taxonomy.canonicalColors:null};
+   }
+   if(row.colourTaxonomy || !["NORMALIZED_SAFE","RAW_ONLY","SUSPICIOUS"].includes(row.colourStatus))throw new Error("COLOR_NORMALIZER_VERSION_REQUIRED");
+   return {...row,colourTaxonomy:null};
+  });
+  const payload=JSON.stringify(enriched);
+  const mismatch=await client.query(`WITH incoming AS (SELECT * FROM jsonb_to_recordset($1::jsonb) AS x("variantId" text,"sizeRaw" text,"sizeNormalized" numeric,"sizeStatus" text,"colourRaw" text,"colourNormalized" text[],"colourStatus" text,"colourTaxonomy" jsonb,"normalizerVersion" text,"normalizedAt" text,"reasonCodes" text[])) SELECT count(*)::int count FROM incoming i JOIN product_variant_normalizations e ON e.variant_id=i."variantId" AND e.normalizer_version=i."normalizerVersion" WHERE (e.size_raw,e.size_normalized,e.size_status,e.colour_raw,e.colour_normalized,e.colour_status,e.reason_codes,e.colour_taxonomy) IS DISTINCT FROM (i."sizeRaw",i."sizeNormalized",i."sizeStatus",i."colourRaw",i."colourNormalized",i."colourStatus",i."reasonCodes",i."colourTaxonomy")`,[payload]);
   invalid+=mismatch.rows[0].count;if(invalid)throw new Error(`NORMALIZATION_VERSION_CONFLICT:${invalid}`);
-  const inserted=await client.query(`INSERT INTO product_variant_normalizations(variant_id,size_raw,size_normalized,size_status,colour_raw,colour_normalized,colour_status,normalizer_version,normalized_at,reason_codes) SELECT x."variantId",x."sizeRaw",x."sizeNormalized",x."sizeStatus",x."colourRaw",x."colourNormalized",x."colourStatus",x."normalizerVersion",x."normalizedAt"::timestamp,x."reasonCodes" FROM jsonb_to_recordset($1::jsonb) AS x("variantId" text,"sizeRaw" text,"sizeNormalized" numeric,"sizeStatus" text,"colourRaw" text,"colourNormalized" text[],"colourStatus" text,"normalizerVersion" text,"normalizedAt" text,"reasonCodes" text[]) ON CONFLICT (variant_id,normalizer_version) DO NOTHING RETURNING id`,[payload]);created+=inserted.rowCount??0;
+  const inserted=await client.query(`INSERT INTO product_variant_normalizations(variant_id,size_raw,size_normalized,size_status,colour_raw,colour_normalized,colour_status,normalizer_version,normalized_at,reason_codes,colour_taxonomy) SELECT x."variantId",x."sizeRaw",x."sizeNormalized",x."sizeStatus",x."colourRaw",x."colourNormalized",x."colourStatus",x."normalizerVersion",x."normalizedAt"::timestamp,x."reasonCodes",x."colourTaxonomy" FROM jsonb_to_recordset($1::jsonb) AS x("variantId" text,"sizeRaw" text,"sizeNormalized" numeric,"sizeStatus" text,"colourRaw" text,"colourNormalized" text[],"colourStatus" text,"colourTaxonomy" jsonb,"normalizerVersion" text,"normalizedAt" text,"reasonCodes" text[]) ON CONFLICT (variant_id,normalizer_version) DO NOTHING RETURNING id`,[payload]);created+=inserted.rowCount??0;
  }
  return {seen:rows.length,created,unchanged:rows.length-created,invalid};
 }

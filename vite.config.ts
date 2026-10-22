@@ -19,6 +19,8 @@ function partnerVerificationMeta() {
 }
 
 export default defineConfig({
+  // Offline validation can explicitly use an empty directory instead of loading .env.
+  envDir: process.env.UPPULSE_VITE_ENV_DIR,
   define: {
     "import.meta.env.PUBLIC_DEMO_MODE": JSON.stringify(
       process.env.PUBLIC_DEMO_MODE === "true" ? "true" : "false",

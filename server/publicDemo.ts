@@ -1,3 +1,6 @@
+import type { RequestHandler } from "express";
+import { resolvePublicCatalogSource } from "./publicCatalog/policy";
+
 export function isPublicDemoMode(env: NodeJS.ProcessEnv = process.env): boolean {
   return env.PUBLIC_DEMO_MODE?.trim().toLowerCase() === "true";
 }
@@ -25,7 +28,9 @@ export function createPublicDemoGuard(
   env: NodeJS.ProcessEnv = process.env,
 ): RequestHandler {
   return (req, res, next) => {
-    if (isPublicDemoMode(env) && isBlockedDemoApiPath(req.path)) {
+    const operationalClick =
+      req.path.startsWith("/api/click/") && resolvePublicCatalogSource(env) === "operational";
+    if (isPublicDemoMode(env) && isBlockedDemoApiPath(req.path) && !operationalClick) {
       return res.status(404).json({ error: "Recurso não disponível" });
     }
     next();
@@ -55,4 +60,3 @@ export function sanitizeDemoOffer<T extends Record<string, unknown>>(offer: T): 
     demonstrative: true,
   } as T;
 }
-import type { RequestHandler } from "express";

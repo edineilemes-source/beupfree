@@ -32,6 +32,7 @@ interface ProductCardProps {
   promotionType?: string;
   lastSeenAt?: Date | string;
   soldOut?: boolean;
+  demonstrative?: boolean;
 }
 
 export default function ProductCard({
@@ -53,6 +54,7 @@ export default function ProductCard({
   promotionType,
   lastSeenAt,
   soldOut = false,
+  demonstrative = PUBLIC_DEMO_MODE,
 }: ProductCardProps) {
   const favoriteProduct = toFavoriteProduct({
     id,
@@ -72,6 +74,7 @@ export default function ProductCard({
     totalReviews,
     promotionType,
     soldOut,
+    demonstrative,
   });
   const safePrice = favoriteProduct.price;
   const safeOldPrice = favoriteProduct.oldPrice;
@@ -97,7 +100,7 @@ export default function ProductCard({
   };
 
   const timeAgo = getTimeAgoText(lastSeenAt);
-  const offerSource = publicOfferSource(marketplaceName, sellerName);
+  const offerSource = publicOfferSource(marketplaceName, sellerName, demonstrative);
   const ratingText = averageRating != null && averageRating > 0
     ? `⭐ ${averageRating.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}${totalReviews ? ` (${totalReviews.toLocaleString("pt-BR")})` : ""}`
     : "";
@@ -146,7 +149,7 @@ export default function ProductCard({
 
       {/* Body */}
       <div className="flex flex-1 flex-col px-5 pb-5 pt-1">
-        {PUBLIC_DEMO_MODE && (
+        {demonstrative && (
           <div className="mb-2" data-testid={`demo-label-area-${id}`}>
             <Badge className="bg-slate-900 text-[10px] text-white" data-testid={`badge-demo-${id}`}>
               {DEMO_PRODUCT_LABEL}
@@ -202,7 +205,7 @@ export default function ProductCard({
           variant={soldOut ? "outline" : "default"}
           disabled={soldOut}
           onClick={soldOut ? undefined : () => {
-            if (PUBLIC_DEMO_MODE) requestDemoProductNotice(referenceUrl);
+            if (demonstrative) requestDemoProductNotice(referenceUrl);
             else window.open(affiliateUrl, "_blank", "noopener,noreferrer");
           }}
           data-testid={`button-buy-${id}`}
@@ -215,13 +218,13 @@ export default function ProductCard({
           ) : (
             <>
               <ExternalLink className="h-4 w-4" />
-              {PUBLIC_DEMO_MODE ? "Ver referência" : "Ver oferta"}
+              {demonstrative ? "Ver referência" : "Ver oferta"}
             </>
           )}
         </Button>
 
         <p className="mt-2 text-center text-[10px] text-muted-foreground" data-testid={`text-updated-${id}`}>
-          {!PUBLIC_DEMO_MODE && timeAgo ? `Atualizado ${timeAgo}` : ""}
+          {!demonstrative && timeAgo ? `Atualizado ${timeAgo}` : ""}
         </p>
       </div>
     </Card>

@@ -1,0 +1,46 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { createOperationalPublicCatalogHandlers } from "./operational";
+
+const row={product_id:"p1",product_name:"Tênis",primary_image_url:"https://img.test/x",normalized_colors:["preto"],brand_raw:"Marca",brand_normalized:"marca",universe:"CALCADOS",representative_offer_id:"o1",current_price:"80",previous_price:"100",discount_percent:20,affiliate_url:"https://affiliate.test/x",merchant_name:"Loja",source_updated_at:new Date("2026-09-02T00:00:00Z")};
+const repo:any={async listProducts(filters:any){repo.filters=filters;return[row]},async countProducts(){return 1},async getProduct(id:string){return id==="p1"?[row]:[]},async getOffer(id:string){return id==="o1"?row:null},async getFacets(){return{}}};
+function response(){const state:any={headers:{}};return Object.assign(state,{setHeader(k:string,v:string){state.headers[k]=v},status(code:number){state.statusCode=code;return state},json(body:any){state.body=body;return state},redirect(url:string){state.redirectUrl=url;return state}})}
+function request(query:any={},params:any={}){return{query,params} as any}
+function enable(){process.env.UPPULSE_PUBLIC_CATALOG_SOURCE="operational";process.env.UPPULSE_PUBLIC_CATALOG_APPROVED="true";process.env.AWIN_CURATOR_DATABASE_URL="configured"}
+function disable(){delete process.env.UPPULSE_PUBLIC_CATALOG_SOURCE;delete process.env.UPPULSE_PUBLIC_CATALOG_APPROVED;delete process.env.AWIN_CURATOR_DATABASE_URL}
+
+test("lista operacional pagina e encaminha filtros server-side",async()=>{enable();try{const res=response();await createOperationalPublicCatalogHandlers(()=>repo).list(request({limit:"5000",offset:"100",sort:"price-asc",marca:"Marca,Outra",desconto:"20% - 29%",q:"tênis azul"}),res,()=>assert.fail("não deveria cair no demo"));assert.equal(res.headers["X-UpPulse-Catalog-Source"],"operational");assert.equal(res.body.total,1);assert.equal(res.body.limit,100);assert.equal(res.body.offset,100);assert.equal(res.body.serverDriven,true);assert.equal(res.body.catalogSource,"operational");assert.equal(res.body.demonstrative,false);assert.equal(res.body.products[0].demonstrative,false);assert.equal(res.body.products[0].bestOffer.demonstrative,false);assert.equal(res.body.products[0].bestOffer.storeLabel,"Loja");assert.equal(repo.filters.sort,"price-asc");assert.deepEqual(repo.filters.brands,["Marca","Outra"]);assert.deepEqual(repo.filters.discountBuckets,["20% - 29%"]);assert.equal(repo.filters.search,"tênis azul")}finally{disable()}});
+test("detalhe agrega ofertas operacionais e clique redireciona sem abrir destino",async()=>{enable();try{const handlers=createOperationalPublicCatalogHandlers(()=>repo),detail=response(),click=response();await handlers.detail(request({}, {id:"p1"}),detail,()=>assert.fail());await handlers.click(request({}, {offerId:"o1"}),click,()=>assert.fail());assert.equal(detail.body.id,"p1");assert.equal(detail.body.demonstrative,false);assert.equal(detail.body.offers[0].id,"o1");assert.equal(detail.body.offers[0].demonstrative,false);assert.equal(click.redirectUrl,"https://affiliate.test/x")}finally{disable()}});
+test("gate retirado devolve controle ao catálogo demo",async()=>{disable();let next=false;await createOperationalPublicCatalogHandlers(()=>repo).list(request(),response(),()=>{next=true});assert.equal(next,true)});
+
+test("merchant e style multi-select chegam ao repository com outros filtros e busca",async()=>{
+ enable();try{
+  const res=response();
+  await createOperationalPublicCatalogHandlers(()=>repo).list(request({merchant:"Loja A,Loja B",style:"PERFORMANCE,LIFESTYLE",marca:"Nike,Adidas",q:"air max",priceMin:"300",priceMax:"500"}),res,()=>assert.fail());
+  assert.deepEqual(repo.filters.merchants,["Loja A","Loja B"]);
+  assert.deepEqual(repo.filters.styles,["PERFORMANCE","LIFESTYLE"]);
+  assert.deepEqual(repo.filters.brands,["Nike","Adidas"]);
+  assert.equal(repo.filters.search,"air max");assert.equal(repo.filters.priceMin,300);assert.equal(repo.filters.priceMax,500);
+ }finally{disable()}
+});
+
+test("V3 cor parsed into stable families, versions, display preserved and family facet labels",async()=>{
+ const {COLOR_TAXONOMY_VERSION,COLOR_FILTER_CONTRACT_VERSION}=await import("@shared/colorTaxonomy");
+ enable();try{
+  const v3row={...row,normalized_colors:["azul-marinho"],color_family_ids:["azul"],color_taxonomy_version:COLOR_TAXONOMY_VERSION};
+  const mocked:any={...repo,listProducts:async(f:any)=>{mocked.filters=f;return[v3row];},getFacets:async()=>({colors:[{value:"azul",count:1},{value:"metalico",count:0}]})};
+  const res=response();await createOperationalPublicCatalogHandlers(()=>mocked).list(request({cor:"navy,preto",marca:"Marca",tamanho:"40"}),res,()=>assert.fail());
+  assert.deepEqual(mocked.filters.colors,["azul","preto"]);assert.deepEqual(mocked.filters.brands,["Marca"]);assert.deepEqual(mocked.filters.sizes,[40]);
+  assert.equal(res.body.colorTaxonomyVersion,COLOR_TAXONOMY_VERSION);assert.equal(res.body.colorFilterContractVersion,COLOR_FILTER_CONTRACT_VERSION);
+  assert.deepEqual(res.body.products[0].colorFamilyIds,["azul"]);assert.equal(res.body.products[0].primaryColor,"azul-marinho");assert.deepEqual(res.body.products[0].canonicalColorIds,["azul-marinho"]);
+  assert.deepEqual(res.body.facets.colors[0],{value:"azul",label:"Azul",count:1});
+ }finally{disable();}
+});
+test("V3 invalid or repeated cor rejects before any repository/database access",async()=>{
+ enable();try{
+  for(const cor of ["pretolino","incolor","preto/branco","azul mystery",["azul","preto"],{bad:"azul"}]){
+   let accesses=0;const res=response();await createOperationalPublicCatalogHandlers(()=>{accesses++;throw new Error("must not access");}).list(request({cor}),res,()=>assert.fail());
+   assert.equal(res.statusCode,400);assert.match(res.body.code,/INVALID_COLOR_(FAMILY|PARAMETERS)/);assert.equal(accesses,0);
+  }
+ }finally{disable();}
+});

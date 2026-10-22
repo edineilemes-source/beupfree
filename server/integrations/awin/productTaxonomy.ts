@@ -6,7 +6,7 @@ export type TaxonomyReason =
   | "CATEGORY_EXPLICIT_SNEAKER" | "CATEGORY_GENERIC_FOOTWEAR" | "NAME_SNEAKER_SIGNAL"
   | "STRUCTURED_ATTRIBUTE_SIGNAL" | "CATEGORY_ACTIVITY_SIGNAL" | "NAME_ACTIVITY_SIGNAL"
   | "DESCRIPTION_ACTIVITY_SIGNAL" | "NEGATIVE_FOOTWEAR_SIGNAL" | "CONFLICTING_SIGNALS"
-  | "NEGATIVE_NON_SNEAKER_SIGNAL"
+  | "NEGATIVE_NON_SNEAKER_SIGNAL" | "NEGATIVE_ACCESSORY_SIGNAL"
   | "INSUFFICIENT_EVIDENCE" | "STYLE_PERFORMANCE_SIGNAL" | "STYLE_SPORTSWEAR_SIGNAL"
   | "STYLE_LIFESTYLE_SIGNAL" | "MULTIPLE_ACTIVITY_SIGNALS";
 
@@ -22,14 +22,18 @@ export type ProductTaxonomyResult = {
 
 const fold = (value: unknown) => String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
 const has = (text: string, expression: RegExp) => expression.test(` ${text} `);
-const sneaker = /\b(tenis|sneakers?|sapatenis)\b/;
+const sneaker = /\b(tenis|sneakers?|sapatenis|chuteiras?)\b/;
+// Product-type prefixes avoid treating accessory/model words anywhere in the name as types.
+const accessory = /^(?:(?:kit|packs?)\s+(?:\d+\s+)?(?:packs?\s+)?(?:de\s+)?)?(bolas?|raquetes?|overgrips?|grips?|munhequeiras?|redes?|cordas?|faixas? de cabeca)\b/;
+const footwearCategory = /\b(chuteiras?|sneakers?|sapatenis|calcados? de (tenis|treino|corrida|basquete)|tenis (casual|running|corrida|training|treino|performance|sportswear|caminhada|trail|futsal|basquete|de quadra|volei|skate))\b/;
+const leadingFootwear = /^(?:(?:kit|pack)\s+(?:\d+\s+)?(?:de\s+)?)?(tenis|sneakers?|sapatenis|chuteiras?)\b/;
 const genericFootwear = /\b(calcados?|footwear)\b/;
-const negative = /\b(sandalias?|chinelos?|rasteiras?|sapatilhas?|scarpins?|botas?|mocassins?|oxfords?|sapatos? social|papetes?)\b/;
+const negative = /\b(sandalias?|chinelos?|rasteiras?|sapatilhas?|scarpins?|botas?|mocassins?|oxfords?|sapatos?|papetes?)\b/;
 const negativeProduct = /\b(mochilas?|camisetas?|camisas?|calcoes?|shorts?|bolsas?|meias?|bones?|acessorios?|conjuntos?)\b/;
 
 const activityRules: Array<[Exclude<ProductActivity,"GENERAL"|"UNKNOWN">, RegExp]> = [
   ["FUTSAL", /\bfutsal\b/], ["FOOTBALL", /\b(futebol|football|chuteira|society|campo)\b/],
-  ["BASKETBALL", /\b(basquete|basketball)\b/], ["TENNIS_COURT", /\b(tennis court|tenis de quadra|court tennis)\b/],
+  ["BASKETBALL", /\b(basquete|basketball)\b/], ["TENNIS_COURT", /\b(tennis court|tenis de quadra|court tennis|esportes?\s*>\s*tenis)\b/],
   ["VOLLEYBALL", /\b(volei|voleibol|volleyball)\b/], ["TRAIL", /\b(trail|trilha)\b/],
   ["RUNNING", /\b(corrida|running|runner|jogging)\b/], ["WALKING", /\b(caminhada|walking)\b/],
   ["TRAINING", /\b(treino|training|academia|crossfit|fitness)\b/], ["SKATE", /\b(skate|sk8)\b/],
@@ -43,7 +47,9 @@ export function classifyProductTaxonomy(input: ProductTaxonomyInput): ProductTax
   const category = fold([input.merchantCategory,input.categoryPath,input.secondCategory,input.thirdCategory,input.productType,input.fashionCategory].join(" "));
   const attributes = fold(typeof input.attributes === "string" ? input.attributes : JSON.stringify(input.attributes ?? {}));
   const name = fold(input.name), description = fold(input.description);
-  const categorySneaker = has(category, sneaker), attributeSneaker = has(attributes, sneaker), nameSneaker = has(name, sneaker);
+  const nameAccessory = accessory.test(name.trim());
+  const categorySneaker = has(category, footwearCategory);
+  const attributeSneaker = has(attributes, sneaker), nameSneaker = leadingFootwear.test(name.trim());
   const categoryNegative = has(category, negative), nameNegative = has(name, negative), nameNonSneaker = has(name, negativeProduct);
   const reasons: TaxonomyReason[] = [], evidence: string[] = [];
   if (categorySneaker) { reasons.push("CATEGORY_EXPLICIT_SNEAKER"); evidence.push("category:sneaker"); }
@@ -52,19 +58,20 @@ export function classifyProductTaxonomy(input: ProductTaxonomyInput): ProductTax
   if (has(category, genericFootwear)) { reasons.push("CATEGORY_GENERIC_FOOTWEAR"); evidence.push("category:footwear"); }
   if (categoryNegative || nameNegative) { reasons.push("NEGATIVE_FOOTWEAR_SIGNAL"); evidence.push(categoryNegative ? "category:negative_footwear" : "name:negative_footwear"); }
   if (nameNonSneaker) { reasons.push("NEGATIVE_NON_SNEAKER_SIGNAL"); evidence.push("name:negative_non_sneaker"); }
+  if (nameAccessory) { reasons.push("NEGATIVE_ACCESSORY_SIGNAL"); evidence.push("name:accessory"); }
 
   let universe: ProductUniverse, confidence: TaxonomyConfidence;
   const positive = categorySneaker || attributeSneaker || nameSneaker;
-  if ((nameNegative || nameNonSneaker) && !nameSneaker) {
+  if (nameAccessory || ((nameNegative || nameNonSneaker) && !nameSneaker)) {
     universe = "NON_SNEAKER"; confidence = "HIGH";
-  } else if ((categoryNegative || nameNegative || nameNonSneaker) && positive) {
+  } else if (((categoryNegative && !nameSneaker) || nameNegative || nameNonSneaker) && positive) {
     universe = "SNEAKER_PROBABLE"; confidence = "LOW"; reasons.push("CONFLICTING_SIGNALS");
   } else if (categorySneaker && (nameSneaker || attributeSneaker)) {
     universe = "SNEAKER_CONFIRMED"; confidence = "HIGH";
   } else if (categorySneaker || attributeSneaker) {
     universe = "SNEAKER_CONFIRMED"; confidence = "HIGH";
   } else if (nameSneaker) {
-    universe = "SNEAKER_PROBABLE"; confidence = "MEDIUM";
+    universe = "SNEAKER_CONFIRMED"; confidence = "HIGH";
   } else if (has(category, genericFootwear) && signals(`${category} ${name}`).length) {
     universe = "SNEAKER_PROBABLE"; confidence = "LOW";
   } else {
