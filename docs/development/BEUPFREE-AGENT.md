@@ -79,22 +79,31 @@ O executor limita a entrada a 128 KiB e valida marcadores, campos obrigatórios,
 
 `publish` exige o contrato terminal local válido. Antes de comentar, procura o marcador `BEUPFREE_AGENT:REPORT:v1 mission_id=...` em todos os comentários; se já existir, termina sem duplicar. O comentário contém somente `CURRENT_MISSION`, `CODEX_REPORT` e `NEXT_ACTION` após a mesma sanitização usada no contexto, sem logs brutos ou `.env`. Falha ao consultar ou publicar no GitHub retorna erro e não altera o resultado local.
 
-`cycle` encadeia `sync` → `run` → validação terminal → `publish`. Cada etapa interrompe o ciclo em erro. O comando não faz polling, commit, push, merge, alteração da `main`, deploy, publicação de catálogo ou outra ação irreversível.
+`cycle` encadeia `sync` → `run` → validação terminal → consolidação autorizada opcional → `publish`. Cada etapa interrompe o ciclo em erro. O comando nunca faz merge, force push, alteração da `main`, deploy ou publicação de catálogo.
+
+Na Issue, o ciclo publica os estados idempotentes `READY`, `RUNNING`, `COMPLETED`, `BLOCKED`, `FAILED` e `STALE`. Enquanto existe uma execução real, checkpoints incluem `mission_id`, fase, progresso, última atividade, resumo de testes, bloqueios e timestamp. O intervalo padrão de heartbeat é cinco minutos (`BEUPFREE_AGENT_HEARTBEAT_SECONDS`) e a ausência de atividade por trinta minutos (`BEUPFREE_AGENT_STALE_SECONDS`) classifica a execução como `STALE`, mesmo que o lease máximo ainda não tenha expirado. `STALE` é terminal para aquela autorização: o wrapper não reinicia a missão implicitamente. Repetições do mesmo evento são verificadas antes da publicação, e somente campos operacionais fixos e sanitizados são enviados.
+
+## Reconciliação Git segura
+
+`consolidate` continua disponível apenas quando a missão autoriza explicitamente a operação e sua lista de paths coincide exatamente com `.ai/GIT_CONSOLIDATION.md`. Se o remoto é ancestral do HEAD local, o fluxo fast-forward existente é usado. Se o HEAD local é ancestral do remoto, o wrapper cria um worktree temporário isolado no tip remoto, copia e stageia somente os arquivos autorizados, valida o conjunto e o diff e então cria o commit e faz push não forçado. Assim, commits remotos e mudanças não autorizadas do worktree compartilhado são preservados. Histórias realmente divergentes são recusadas; não há rebase, reset, merge automático nem force push. Em falha de push reconciliado, o SHA e o worktree isolado são preservados para diagnóstico.
 
 ## Fluxo real via GitHub
 
 ```text
 ChatGPT
   → grava missão estruturada na Issue operacional
-  → beupfree-agent cycle --issue NUMBER
+  → runner executa beupfree-agent cycle --issue NUMBER
+  → Issue recebe READY/RUNNING e checkpoints com heartbeat
   → Codex CLI
   → código/testes
+  → consolidação seletiva autorizada e não forçada, quando declarada
   → CODEX_REPORT/NEXT_ACTION sanitizados na Issue
-  → pessoa revisa o diff e mantém os gates Git/produção
+  → Issue recebe estado terminal e relatório executivo
+  → ChatGPT/pessoa avalia qualidade, riscos e próximo ciclo
 ```
 
 Depois de `sync`, `./beupfree-agent status` mostra a missão recebida e `./beupfree-agent check` confirma protocolo e branch. `run` entrega o contexto persistente ao Codex por stdin; não é necessário copiar a missão para um chat interativo do Codex.
 
-O executor não executa `git pull`, commit ou push e não abre pull request. Ele publica o retorno somente na Issue indicada; não injeta esse retorno em uma conversa do ChatGPT e não possui acesso automático à memória privada dela.
+O executor não abre pull request e só executa commit/push pelo gate de consolidação explicitamente autorizado pela missão e manifesto. Ele publica o retorno somente na Issue indicada; não injeta esse retorno em uma conversa do ChatGPT e não possui acesso automático à memória privada dela.
 
 A validação automática confirma somente a coerência estrutural do encerramento. A revisão humana ainda deve avaliar o diff, a veracidade do relatório, a adequação dos testes e qualquer decisão de commit, push ou pull request.
