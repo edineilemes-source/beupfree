@@ -540,7 +540,7 @@ export function preserveSelectedFacets(facets: CatalogFacets, filters: Pick<Cata
   const result = { ...facets };
   const dimensions = { brands: "marca", merchants: "loja", sizes: "tamanho", modalidades: "modalidade", tipos: "tipo" } as const;
   for (const [facet, filter] of Object.entries(dimensions) as [keyof typeof dimensions, MultiFilterKey][]) {
-    result[facet] = withSelected(facets[facet].filter(item => item.count > 0 || filters[filter].includes(item.label)), filters[filter]);
+    result[facet] = withSelected((facets[facet] ?? []).filter(item => item.count > 0 || filters[filter].includes(item.label)), filters[filter]);
   }
   for (const [facet, dimension] of [["generos","genero"],["idades","idade"]] as const) {
     const selected=demographicSelection(dimension,filters[dimension]);
