@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, GripVertical, Settings2, X } from "lucide-react";
 import type { CatalogProduct, MultiFilterKey } from "@/lib/catalogFilters";
-import { brandNameOf, colorsOf, discountOf, genderOf, sizeOf, ageOf, modalityOf, typeOf } from "@/lib/catalogFilters";
+import { brandNameOf, colorsOf, discountOf, genderOf, sizesOf, ageOf, modalitiesOf, typeOf } from "@/lib/catalogFilters";
 import { catalogRequestParams, type CatalogUrlFilters, type CatalogSortMode } from "@/lib/catalogState";
 
 const LABELS: Partial<Record<MultiFilterKey, string>> = {
@@ -16,10 +16,10 @@ function valuesOf(product: CatalogProduct, field: MultiFilterKey): string[] {
   switch (field) {
     case "marca": return [brandNameOf(product)];
     case "genero": return [genderOf(product)].filter((v): v is string => Boolean(v));
-    case "tamanho": return [sizeOf(product)].filter((v): v is string => Boolean(v));
+    case "tamanho": return sizesOf(product);
     case "cor": return colorsOf(product).map(c => c.label);
     case "idade": return [ageOf(product)].filter((v): v is string => Boolean(v));
-    case "modalidade": return [modalityOf(product)].filter((v): v is string => Boolean(v));
+    case "modalidade": return modalitiesOf(product);
     case "tipo": return [typeOf(product)];
     case "frete": return [product.bestOffer?.freeShipping ? "Sim" : "Não"];
     case "desconto": return [String(Math.floor(discountOf(product) / 10) * 10) + "%+"];
