@@ -1,9 +1,9 @@
 # Próxima ação
 
 ```yaml
-originating_mission: UPCAT002
-recommended_next_mission: "Validar em homologação o gate operacional com credencial autorizada, cobrindo lista, detalhe, clique afiliado, expiração e rollback para demo; não ativar produção sem aprovação humana posterior."
-reason: "O caminho reversível está implementado e fechado por default, mas a publicação real exige comprovação ponta a ponta e autorização explícita."
+originating_mission: UPCAT003
+recommended_next_mission: "Reexecutar a homologação real do catálogo operacional em Codespaces com DNS/rede disponíveis, cobrindo lista sanitizada, detalhe, redirect afiliado sem seguir até compra e rollback HTTP para demo; não ativar produção."
+reason: "Os defeitos de detalhe, clique e encaminhamento de filtros foram corrigidos e validados com fixtures, mas EAI_AGAIN impediu qualquer evidência contra catalog_search_products real."
 requires_user_decision: true
 requires_chatgpt_review: true
 ```

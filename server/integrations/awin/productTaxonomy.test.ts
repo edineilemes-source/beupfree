@@ -100,3 +100,79 @@ test("v3 menção a chuteira em acessório não identifica calçado",()=>{
   assert.equal(classify("Artigos e acessórios",name).universe,"UNRESOLVED");
  assert.equal(classify("Esportes > Tênis","Kit 10 Packs de Bolas Tênis Wilson Championship").universe,"NON_SNEAKER");
 });
+
+test("v4 versão contextual é explícita e posterior à v3",async()=>{
+ const {CATALOG_CLASSIFIER_VERSION}=await import("./operationalCatalog");
+ assert.equal(CATALOG_CLASSIFIER_VERSION,"uppulse-taxonomy-v4-contextual");
+});
+const contextual = (name:string,description:string,brand="Marca Independente") => classifyProductTaxonomy({name,description,brand,merchantCategory:"tênis",attributes:{category:"tênis"}});
+test("v4 prefixos demográficos preservam tipo e acessórios continuam excluídos",()=>{
+ for(const prefix of ["Infantil - ","Juvenil: ","Bebê — ","Feminino – "]){
+  const r=contextual(prefix+"Tênis calce fácil, sapato escolar","Tênis infantil com solado emborrachado.");
+  assert.equal(r.universe,"SNEAKER_CONFIRMED");assert.ok(!r.reasons.includes("CONFLICTING_SIGNALS"));
+  assert.equal(contextual(prefix+"Mocassim infantil","Mocassim clássico").universe,"NON_SNEAKER");
+  assert.equal(contextual(prefix+"Raquete de tênis","Raquete esportiva").universe,"NON_SNEAKER");
+ }
+});
+test("v4 marca declarada com sapato não vira tipo e marca não prova tênis",()=>{
+ for(const brand of ["Clube do Sapato de Franca","Casa dos Sapatos","Oficina do Sapato"]){
+  const r=contextual("Tênis casual "+brand,"Tênis casual com cadarço.",brand);
+  assert.equal(r.universe,"SNEAKER_CONFIRMED");assert.ok(r.reasons.includes("BRAND_PHRASE_REMOVED"));
+  assert.equal(contextual("Mocassim "+brand,"Mocassim em couro.",brand).universe,"NON_SNEAKER");
+  assert.notEqual(classifyProductTaxonomy({name:"Modelo X",brand}).universe,"SNEAKER_CONFIRMED");
+ }
+});
+test("v4 sapato genérico exige evidência contextual convergente",()=>{
+ for(const name of ["Sapato casual Sapatênis Knit","Sapato masculino casual","Kit Sapato Casual com Carteira","Slip On Masculino Tênis Casual"]){
+  const r=contextual(name,"O sapatênis casual possui solado de borracha, forro têxtil e fechamento elástico.");
+  assert.equal(r.universe,"SNEAKER_CONFIRMED",name);
+  assert.ok(r.reasons.includes("CONTEXTUAL_SNEAKER_SIGNAL"));
+ }
+ assert.notEqual(contextual("Sapato casual","Sapato com bico arredondado e cadarço.").universe,"SNEAKER_CONFIRMED");
+ assert.notEqual(classifyProductTaxonomy({name:"Sapato casual",description:"Tênis para o dia a dia"}).universe,"SNEAKER_CONFIRMED");
+ assert.equal(contextual("Sapato Mocassim com sapatênis no anúncio","Mocassim em couro").universe,"NON_SNEAKER");
+ assert.notEqual(contextual("Sapato casual","Sapato em couro. TAGS: tênis, sapatênis").universe,"SNEAKER_CONFIRMED");
+});
+test("v4 não apaga negativos específicos nem publica ambiguidade",()=>{
+ for(const name of ["Kit Tênis e Sandália","Tênis com Bota","Tênis e Mocassim"]){
+  const r=contextual(name,"Tênis e outro calçado.");
+  assert.ok(r.reasons.includes("CONFLICTING_SIGNALS"));
+  assert.equal(classifyCatalogEligibility(r,commercial).status,"REVIEW_REQUIRED");
+ }
+ const ambiguous=contextual("Sapato Molekinha Coração","Sapato casual infantil com sola e cadarço.");
+ assert.equal(classifyCatalogEligibility(ambiguous,commercial).status,"REVIEW_REQUIRED");
+});
+
+
+test("v4 menção indireta ou negada na descrição não confirma sapato",()=>{
+ for(const description of ["Não é um tênis. Sapato casual.","Sapato indicado para quem costuma usar tênis.","Sapato elegante. TAGS: sapatênis"])
+  assert.notEqual(contextual("Sapato casual",description).universe,"SNEAKER_CONFIRMED");
+});
+
+
+test("v4 formato botinha e subtipo de sneaker não apagam evidências convergentes",()=>{
+ for(const name of ["Tênis Botinha Cano Alto","Tênis Mocassim Infantil","Tênis Handball Loafer"]){
+  const r=contextual(name,"O tênis casual oferece conforto e solado de borracha.");
+  assert.equal(r.universe,"SNEAKER_CONFIRMED",name);
+ }
+ assert.equal(contextual("Mocassim Casual","O mocassim possui solado de borracha.").universe,"NON_SNEAKER");
+ assert.equal(classifyCatalogEligibility(contextual("Tênis e Mocassim","O tênis e o mocassim fazem parte deste kit."),commercial).status,"REVIEW_REQUIRED");
+});
+
+// Real feed evidence reviewed in Mission 4C. IDs identify fixtures, never algorithm exceptions.
+import contextualFixtures from "./productTaxonomy.contextual.fixtures.json";
+for(const fixture of contextualFixtures){
+ test(`v4 regressão contextual por evidência comercial: ${fixture.id}`,()=>{
+  const taxonomy=classifyProductTaxonomy(fixture.input);
+  assert.equal(taxonomy.universe,fixture.expectedUniverse);
+  const status=classifyCatalogEligibility(taxonomy,commercial).status;
+  assert.equal(status,fixture.expectedState==="CATALOG_ELIGIBLE"?"IN_SCOPE_CONFIRMED":fixture.expectedState==="OUT_OF_SCOPE"?"OUT_OF_SCOPE_CONFIRMED":"REVIEW_REQUIRED");
+ });
+}
+
+
+test("v4 cabeçalho de feed concatenado preserva autodescrição do tipo",()=>{
+ const r=contextual("Tênis Casual Loafer","• Composição: CouroDESCRIÇÃO DO PRODUTOO tênis slip on traz solado em borracha.");
+ assert.equal(r.universe,"SNEAKER_CONFIRMED");
+ assert.equal(classifyCatalogEligibility(r,commercial).status,"IN_SCOPE_CONFIRMED");
+});

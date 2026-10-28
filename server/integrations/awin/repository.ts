@@ -1,3 +1,4 @@
+import { notifyIdentityAfterReconciliation } from "../../productIdentity/jobs";
 import type { Pool, PoolClient, QueryResult } from "pg";
 import type { NormalizedAwinItem } from "./types";
 
@@ -154,6 +155,10 @@ export class PostgresAwinRepository {
       const missing = (await query(`SELECT count(*)::int count FROM commerce_raw_feed_items r JOIN commerce_feeds f ON f.id=r.feed_id JOIN commerce_merchants m ON m.id=r.merchant_id LEFT JOIN awin_import_stage s ON s.external_feed_id=f.external_feed_id AND s.merchant_external_id=m.external_merchant_id AND s.identity_hash=r.identity_hash WHERE f.provider_id=$1 AND f.external_feed_id=$2 AND s.identity_hash IS NULL`, [provider.id, options.feedId])).rows[0];
       await query("UPDATE commerce_feeds SET last_seen_at=$2,last_import_completed_at=$2,updated_at=$2 WHERE provider_id=$1 AND external_feed_id=$3", [provider.id, now, options.feedId]);
       progress("finalizing"); await query("transaction_commit", "COMMIT");
+      // Independent lateral queue, strictly after successful reconciliation. Never changes commercial status.
+      const identityNotification = await notifyIdentityAfterReconciliation(client,
+        {providerId:provider.id,feedId:options.feedId,reconciledAt:now.toISOString()},process.env.MASTER_IDENTITY_ENABLED === "true");
+      if(identityNotification === "ENQUEUE_FAILED") console.warn("Identity queue unavailable; commercial import preserved; reprocess required");
       return { seen, staged: seen, changed, created: counts.created, updated: counts.updated, unchanged: counts.unchanged, invalid: 0, ignored: 0, missingCandidates: missing.count, batches, roundTrips, maxBatchItems, merges_skipped: changed === 0 ? 5 : 0, fast_path: changed === 0, raw_last_seen_refreshed: rawRefresh.rowCount ?? 0, raw_last_seen_refresh_ms: rawLastSeenRefreshMs, sql_steps: [...sqlSteps.values()] };
     } catch (error) { try { await query("transaction_rollback", "ROLLBACK"); } catch {} throw error; }
     finally { (client as PoolClient).release(); }

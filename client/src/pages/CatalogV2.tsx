@@ -1,3 +1,4 @@
+import MasterOffers from "@/components/MasterOffers";
 import {DEMOGRAPHIC_FILTER_VERSION} from "@shared/demographicTaxonomy";
 import {COLOR_FILTER_CONTRACT_VERSION} from "@shared/colorTaxonomy";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -193,6 +194,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
             </Badge>
           </div>
         )}
+        {!demonstrative && <MasterOffers productId={product.id} />}
         <ProductBadges badges={badges} productId={product.id} className="mb-2" />
         <p className="text-sm font-extrabold uppercase text-foreground">
           {brandNameOf(product)}

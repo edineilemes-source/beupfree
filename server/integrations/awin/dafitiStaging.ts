@@ -1,3 +1,4 @@
+import { notifyIdentityAfterReconciliation } from "../../productIdentity/jobs";
 import type { Pool, PoolClient, QueryResult } from "pg";
 import type { AwinFeedItem, NormalizedAwinItem } from "./types";
 import { classifyDafitiPromotion, parseDafitiMoney } from "./dafitiAudit";
@@ -65,6 +66,14 @@ export class DafitiStagingRepository {
     } catch (error) { await client.query("ROLLBACK"); throw error; } finally { (client as PoolClient).release(); }
   }
 
+  private async notifyIdentity(db: Queryable, items: DafitiEligibleItem[], now: Date) {
+    for (const feedId of new Set(items.map(item => item.dafiti.dataFeedId))) {
+      const notified = await notifyIdentityAfterReconciliation(db,
+        {providerId:this.providerId,feedId,reconciledAt:now.toISOString()},process.env.MASTER_IDENTITY_ENABLED === "true");
+      if(notified === "ENQUEUE_FAILED") console.warn("Identity queue unavailable; commercial import preserved; reprocess required");
+    }
+  }
+
   private async ensureFeeds(db: Queryable, items: DafitiEligibleItem[], now: Date) {
     const feedIds = Array.from(new Set(items.map((item) => item.dafiti.dataFeedId))).filter((id) => !this.feedDbIds.has(id));
     if (!feedIds.length) return;
@@ -86,7 +95,7 @@ export class DafitiStagingRepository {
       const changed = items.filter((item) => hashes.get(`${this.feedDbIds.get(item.dafiti.dataFeedId)}:${item.raw.identityHash}`) !== item.raw.contentHash);
       result.unchanged = items.length - changed.length;
       if (result.unchanged) await this.query(client, "UPDATE commerce_raw_feed_items r SET last_seen_at=$2,updated_at=$2 FROM jsonb_to_recordset($1::jsonb) x(feed_id varchar,identity_hash varchar) WHERE r.feed_id=x.feed_id AND r.identity_hash=x.identity_hash", [JSON.stringify(rawKeys.filter((key) => hashes.has(`${key.feed_id}:${key.identity_hash}`))), now]);
-      if (!changed.length) { await client.query("COMMIT"); return result; }
+      if (!changed.length) { await client.query("COMMIT"); await this.notifyIdentity(client, items, now); return result; }
       result.created = changed.filter((item) => !hashes.has(`${this.feedDbIds.get(item.dafiti.dataFeedId)}:${item.raw.identityHash}`)).length;
       result.updated = changed.length - result.created;
 
@@ -115,6 +124,7 @@ export class DafitiStagingRepository {
       const rawRows = changed.map((item) => ({ provider_id: this.providerId, merchant_id: merchantId, feed_id: this.feedDbIds.get(item.dafiti.dataFeedId), external_product_id: item.product.identifiers.awProductId, merchant_product_id: item.product.identifiers.merchantProductId, identity_hash: item.raw.identityHash, content_hash: item.raw.contentHash, raw_payload: sanitizeRawPayload(item.raw.payload) }));
       await this.query(client, "INSERT INTO commerce_raw_feed_items (provider_id,merchant_id,feed_id,external_product_id,merchant_product_id,identity_hash,content_hash,raw_payload,first_seen_at,last_seen_at,updated_at) SELECT x.provider_id,x.merchant_id,x.feed_id,x.external_product_id,x.merchant_product_id,x.identity_hash,x.content_hash,x.raw_payload,$2,$2,$2 FROM jsonb_to_recordset($1::jsonb) x(provider_id varchar,merchant_id varchar,feed_id varchar,external_product_id text,merchant_product_id text,identity_hash varchar,content_hash varchar,raw_payload jsonb) ON CONFLICT (provider_id,merchant_id,feed_id,identity_hash) DO UPDATE SET content_hash=EXCLUDED.content_hash,raw_payload=EXCLUDED.raw_payload,last_seen_at=$2,updated_at=$2", [JSON.stringify(rawRows), now]);
       await client.query("COMMIT");
+      await this.notifyIdentity(client, items, now);
       return result;
     } catch (error) { await client.query("ROLLBACK"); throw error; } finally { (client as PoolClient).release(); }
   }

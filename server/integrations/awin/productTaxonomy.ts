@@ -7,6 +7,7 @@ export type TaxonomyReason =
   | "STRUCTURED_ATTRIBUTE_SIGNAL" | "CATEGORY_ACTIVITY_SIGNAL" | "NAME_ACTIVITY_SIGNAL"
   | "DESCRIPTION_ACTIVITY_SIGNAL" | "NEGATIVE_FOOTWEAR_SIGNAL" | "CONFLICTING_SIGNALS"
   | "NEGATIVE_NON_SNEAKER_SIGNAL" | "NEGATIVE_ACCESSORY_SIGNAL"
+  | "DEMOGRAPHIC_PREFIX_REMOVED" | "BRAND_PHRASE_REMOVED" | "CONTEXTUAL_SNEAKER_SIGNAL" | "GENERIC_SHOE_CONTEXT"
   | "INSUFFICIENT_EVIDENCE" | "STYLE_PERFORMANCE_SIGNAL" | "STYLE_SPORTSWEAR_SIGNAL"
   | "STYLE_LIFESTYLE_SIGNAL" | "MULTIPLE_ACTIVITY_SIGNALS";
 
@@ -28,7 +29,7 @@ const accessory = /^(?:(?:kit|packs?)\s+(?:\d+\s+)?(?:packs?\s+)?(?:de\s+)?)?(bo
 const footwearCategory = /\b(chuteiras?|sneakers?|sapatenis|calcados? de (tenis|treino|corrida|basquete)|tenis (casual|running|corrida|training|treino|performance|sportswear|caminhada|trail|futsal|basquete|de quadra|volei|skate))\b/;
 const leadingFootwear = /^(?:(?:kit|pack)\s+(?:\d+\s+)?(?:de\s+)?)?(tenis|sneakers?|sapatenis|chuteiras?)\b/;
 const genericFootwear = /\b(calcados?|footwear)\b/;
-const negative = /\b(sandalias?|chinelos?|rasteiras?|sapatilhas?|scarpins?|botas?|mocassins?|oxfords?|sapatos?|papetes?)\b/;
+const negative = /\b(sandalias?|chinelos?|rasteiras?|sapatilhas?|scarpins?|botas?|mocassim|mocassins|oxfords?|sapatos?|papetes?)\b/;
 const negativeProduct = /\b(mochilas?|camisetas?|camisas?|calcoes?|shorts?|bolsas?|meias?|bones?|acessorios?|conjuntos?)\b/;
 
 const activityRules: Array<[Exclude<ProductActivity,"GENERAL"|"UNKNOWN">, RegExp]> = [
@@ -43,15 +44,64 @@ const activityRules: Array<[Exclude<ProductActivity,"GENERAL"|"UNKNOWN">, RegExp
 function signals(text: string) { return activityRules.filter(([, rule]) => has(text, rule)).map(([activity]) => activity); }
 function unique<T>(items: T[]): T[] { return Array.from(new Set(items)); }
 
+// Normalize presentation prefixes without accepting arbitrary words before a product type.
+function productName(value: string): string {
+  return value.trim().replace(/^(?:(?:infantil|juvenil|adulto|bebe|kids?|masculino|feminino|unissex)\s*[-–—:]\s*)+/, "");
+}
+const specificNegative = /\b(sandalias?|chinelos?|rasteiras?|sapatilhas?|scarpins?|botas?|mocassim|mocassins|oxfords?|papetes?|loafers?|dockside|derby|derbies|sapato social|sapatos sociais)\b/;
+const shoe = /\bsapatos?\b/;
+const shoeType = /^(?:(?:kit|pack)\s+(?:\d+\s+)?(?:de\s+)?)?sapatos?\b/;
+const slipOnType = /^slip[ -]on\b/;
+
+function describesSneaker(text: string): boolean {
+  const body = text.slice(0, 650);
+  if (/\bnao\s+(?:e|sao|se trata de)\s+(?:um\s+)?(?:tenis|sapatenis|sneakers?)\b/.test(body)) return false;
+  return /^(?:tenis|sapatenis|sneakers?)\b/.test(body.trim()) ||
+    /\b(?:o|os|este|estes|esse|esses|nosso|nossos|um|1)\s+(?:novo\s+)?(?:tenis|sapatenis|sneakers?)\b/.test(body) ||
+    /\blinha de sapatenis\b/.test(body);
+}
+
 export function classifyProductTaxonomy(input: ProductTaxonomyInput): ProductTaxonomyResult {
   const category = fold([input.merchantCategory,input.categoryPath,input.secondCategory,input.thirdCategory,input.productType,input.fashionCategory].join(" "));
   const attributes = fold(typeof input.attributes === "string" ? input.attributes : JSON.stringify(input.attributes ?? {}));
-  const name = fold(input.name), description = fold(input.description);
+  const originalName = fold(input.name), description = fold(input.description);
+  let name = productName(originalName);
+  const prefixRemoved = name !== originalName.trim();
+  // A declared multiword brand embedded after the type is provenance, not a shoe type.
+  const brand = fold(input.brand).trim();
+  const brandIndex = brand.split(/\s+/).length >= 3 && !has(brand.split(/\s+/)[0], negative) && !has(brand.split(/\s+/)[0], sneaker) ? name.indexOf(brand) : -1;
+  const brandRemoved = brandIndex > 0;
+  if (brandRemoved) name = name.slice(0, brandIndex) + " " + name.slice(brandIndex + brand.length);
+  // Feed headings can be glued to the following article ("PRODUTOO tênis").
+  const descriptionBody = description.split(/\btags\s*:/)[0].replace(/descricao\s+do\s+produto/g, " ");
   const nameAccessory = accessory.test(name.trim());
   const categorySneaker = has(category, footwearCategory);
-  const attributeSneaker = has(attributes, sneaker), nameSneaker = leadingFootwear.test(name.trim());
-  const categoryNegative = has(category, negative), nameNegative = has(name, negative), nameNonSneaker = has(name, negativeProduct);
+  const attributeSneaker = has(attributes, sneaker);
+  const structuredSneaker = categorySneaker || attributeSneaker;
+  const contextualType = (shoeType.test(name) || slipOnType.test(name)) &&
+    has(name, sneaker) && structuredSneaker && describesSneaker(descriptionBody) &&
+    !has(name, specificNegative) && !has(descriptionBody.slice(0, 300), specificNegative);
+  // Generic "sapato" is compatible with an explicitly described sneaker; specific types are not.
+  const describedShoe = shoeType.test(name) && structuredSneaker &&
+    describesSneaker(descriptionBody) && !has(name, specificNegative) &&
+    !has(descriptionBody.slice(0, 300), specificNegative);
+  const nameSneaker = leadingFootwear.test(name.trim()) || contextualType || describedShoe;
+  const genericShoeContext = nameSneaker && has(name, shoe) && structuredSneaker && describesSneaker(descriptionBody);
+  const categoryNegative = has(category, negative);
+  // Mocassim/loafer can name a sneaker subtype, but a second bundled shoe remains conflicting.
+  const sneakerSubtype = leadingFootwear.test(name.trim()) && structuredSneaker && describesSneaker(descriptionBody) &&
+    has(name, /\b(mocassim|mocassins|loafers?)\b/) &&
+    !has(name, /(?:\be\b|\bcom\b|[+/])\s*(?:um\s+)?(?:mocassim|mocassins|loafers?)\b/) &&
+    !has(name, /\b(sandalias?|chinelos?|rasteiras?|sapatilhas?|scarpins?|botas?|oxfords?|papetes?|derby|derbies)\b/);
+  const specificNameNegative = (has(name, specificNegative) && !sneakerSubtype) || (shoeType.test(name) && has(descriptionBody.slice(0, 300), specificNegative));
+  const descriptionSneaker = structuredSneaker && describesSneaker(descriptionBody);
+  const nameNegative = specificNameNegative || (has(name, shoe) && !genericShoeContext);
+  const nameNonSneaker = has(name, negativeProduct);
   const reasons: TaxonomyReason[] = [], evidence: string[] = [];
+  if (prefixRemoved) { reasons.push("DEMOGRAPHIC_PREFIX_REMOVED"); evidence.push("name:demographic_prefix"); }
+  if (brandRemoved) { reasons.push("BRAND_PHRASE_REMOVED"); evidence.push("brand:declared_phrase"); }
+  if (contextualType || describedShoe || sneakerSubtype) { reasons.push("CONTEXTUAL_SNEAKER_SIGNAL"); evidence.push("description:explicit_sneaker_with_structured_support"); }
+  if (genericShoeContext) { reasons.push("GENERIC_SHOE_CONTEXT"); evidence.push("name:generic_shoe_with_sneaker_context"); }
   if (categorySneaker) { reasons.push("CATEGORY_EXPLICIT_SNEAKER"); evidence.push("category:sneaker"); }
   if (attributeSneaker) { reasons.push("STRUCTURED_ATTRIBUTE_SIGNAL"); evidence.push("attribute:sneaker"); }
   if (nameSneaker) { reasons.push("NAME_SNEAKER_SIGNAL"); evidence.push("name:sneaker"); }
@@ -62,8 +112,12 @@ export function classifyProductTaxonomy(input: ProductTaxonomyInput): ProductTax
 
   let universe: ProductUniverse, confidence: TaxonomyConfidence;
   const positive = categorySneaker || attributeSneaker || nameSneaker;
-  if (nameAccessory || ((nameNegative || nameNonSneaker) && !nameSneaker)) {
+  if (!nameAccessory && specificNameNegative && descriptionSneaker) {
+    universe = "SNEAKER_PROBABLE"; confidence = "LOW"; reasons.push("CONFLICTING_SIGNALS");
+  } else if (nameAccessory || ((specificNameNegative || nameNonSneaker) && !nameSneaker)) {
     universe = "NON_SNEAKER"; confidence = "HIGH";
+  } else if (nameNegative && !positive) {
+    universe = "UNRESOLVED"; confidence = "LOW"; reasons.push("INSUFFICIENT_EVIDENCE");
   } else if (((categoryNegative && !nameSneaker) || nameNegative || nameNonSneaker) && positive) {
     universe = "SNEAKER_PROBABLE"; confidence = "LOW"; reasons.push("CONFLICTING_SIGNALS");
   } else if (categorySneaker && (nameSneaker || attributeSneaker)) {

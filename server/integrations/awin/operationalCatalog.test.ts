@@ -32,7 +32,7 @@ test("classification-only grava apenas classificações; dry-run não grava nada
  const {persistCatalogWrites}=await import("../../../scripts/awin-dafiti-catalog-persist");
  const queries:string[]=[];
  const client={query:async(sql:string)=>{queries.push(sql);return {rows:[{count:0}],rowCount:1};}} as any;
- const classification={productId:"p",providerId:"cp",merchantId:"m",universe:"SNEAKER_CONFIRMED" as const,style:"LIFESTYLE" as const,activities:["GENERAL" as const],confidence:"HIGH" as const,reasonCodes:[],operationalState:"CATALOG_ELIGIBLE" as const,classifierVersion:"uppulse-taxonomy-v3",classifiedAt:"2026-09-14T00:00:00Z",sourceEvidence:{}};
+ const classification={productId:"p",providerId:"cp",merchantId:"m",universe:"SNEAKER_CONFIRMED" as const,style:"LIFESTYLE" as const,activities:["GENERAL" as const],confidence:"HIGH" as const,reasonCodes:[],operationalState:"CATALOG_ELIGIBLE" as const,classifierVersion:"uppulse-taxonomy-v4-contextual",classifiedAt:"2026-09-14T00:00:00Z",sourceEvidence:{}};
  const normalization={variantId:"v",sizeRaw:"40",sizeNormalized:40,sizeStatus:"NORMALIZED_SAFE" as const,colourRaw:"Preto",colourNormalized:["preto"],colourStatus:"NORMALIZED_SAFE" as const,normalizerVersion:"n1",normalizedAt:"2026-09-14T00:00:00Z",reasonCodes:[]};
  const result=await persistCatalogWrites(client,[classification],[normalization],true,false);
  assert.equal(result.classifications.created,1);assert.equal(result.normalizations,null);

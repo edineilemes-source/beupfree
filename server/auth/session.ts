@@ -18,7 +18,7 @@ export function sessionOptions(): SessionOptions {
   return {
     name: SESSION_COOKIE_NAME,
     secret: secret ?? "development-only-session-secret",
-    store: new PgSession({ pool, createTableIfMissing: true }),
+    store: new PgSession({ pool, createTableIfMissing: false, pruneSessionInterval: false }),
     resave: false,
     saveUninitialized: false,
     cookie: {

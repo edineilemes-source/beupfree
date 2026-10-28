@@ -19,6 +19,7 @@ function partnerVerificationMeta() {
 }
 
 export default defineConfig({
+  cacheDir: path.resolve(import.meta.dirname, ".cache/vite"),
   // Offline validation can explicitly use an empty directory instead of loading .env.
   envDir: process.env.UPPULSE_VITE_ENV_DIR,
   define: {

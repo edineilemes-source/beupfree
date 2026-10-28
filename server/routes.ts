@@ -1,3 +1,4 @@
+import { createMasterIdentityRouter } from "./productIdentity/routes";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
@@ -48,6 +49,7 @@ const REPLIT_DEV_DOMAIN = process.env.REPLIT_DEV_DOMAIN;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.set("trust proxy", 1);
+  app.use("/api/master-identities", createMasterIdentityRouter());
   app.use(authSession());
   app.use(createPublicDemoGuard());
   app.use("/api/auth", createAuthRouter(userRepository));
@@ -697,7 +699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
-  if (!shouldStartExternalScheduler()) {
+  if (process.env.UPPULSE_DISABLE_EXTERNAL_JOBS === "true" || !shouldStartExternalScheduler()) {
     console.log("[PublicDemo] Scheduler e coletas automáticas externas desativados.");
   } else {
     setTimeout(async () => {

@@ -1,3 +1,4 @@
+import MasterOffers from "./MasterOffers";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -197,6 +198,8 @@ export default function ProductCard({
             {ratingText}
           </p>
         )}
+
+        {!demonstrative && <MasterOffers productId={id} />}
 
         <ProductBadges badges={badges} productId={id} className="mt-2" />
 

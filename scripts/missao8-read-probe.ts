@@ -1,0 +1,2 @@
+import 'dotenv/config';import pg from 'pg';import {SQL} from '../server/productIdentity/reconciledReader';
+const db=new pg.Client({connectionString:process.env.MASTER_DATABASE_URL,options:'-c default_transaction_read_only=on -c enable_mergejoin=off -c work_mem=128MB'});await db.connect();const start=Date.now();const result=await db.query(SQL.sources);console.log(JSON.stringify({identities:result.rows.length,elapsedMs:Date.now()-start,sqlUnchanged:true,planner:'mergejoin off; work_mem 128MB'}));await db.end();

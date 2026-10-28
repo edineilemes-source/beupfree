@@ -1,0 +1,230 @@
+{
+  "mission": "PRODUCT IDENTITY V1.4 REAL CATALOG SHADOW EVALUATION",
+  "status": "BLOCKED",
+  "base": "cb88bc5",
+  "head": "cb88bc54745b23b03dc73ce0365ac6829c802678",
+  "branch": "codespace-preview",
+  "blocker": "AWIN_CATALOG_ADMIN_DATABASE_URL PRESENTE. Direct pg connection failed with EAI_AGAIN (DNS resolution), before BEGIN READ ONLY. transaction_read_only = on could not be proven. Safety stop; zero catalog queries.",
+  "readOnly": {
+    "connectionVariablePresence": "PRESENTE",
+    "connectionAttempted": true,
+    "connectionEstablished": false,
+    "connectionErrorCode": "EAI_AGAIN",
+    "transactionStarted": false,
+    "transactionReadOnly": null,
+    "rollback": null,
+    "rollbackNote": "No transaction started; ROLLBACK not applicable.",
+    "realQueriesExecuted": 0
+  },
+  "sourcesDiscoveredInCode": {
+    "connectionVariable": "AWIN_CATALOG_ADMIN_DATABASE_URL",
+    "publicSource": "server/publicCatalog/operational.ts",
+    "projectionRepository": "server/catalogSearchProjection/repository.ts",
+    "commercialTables": [
+      "catalog_search_products",
+      "commerce_merchants",
+      "offers"
+    ],
+    "identityEntities": [
+      "products",
+      "external_product_identities",
+      "commerce_providers",
+      "commerce_merchants",
+      "commerce_feeds",
+      "brands",
+      "product_variants"
+    ],
+    "realTablesQueried": [],
+    "connectionUsage": "pg.Client with connectionString read directly from process.env; existing pg.Pool convention inspected in scripts/awin-dafiti-catalog-persist.ts. No persistence functions invoked; AWIN_CURATOR_DATABASE_URL not required."
+  },
+  "evaluation": {
+    "status": "NOT_EXECUTED",
+    "availableMerchantProducts": null,
+    "evaluatedMerchantProducts": null,
+    "providers": null,
+    "merchants": null,
+    "brands": null,
+    "master": null,
+    "variant": null,
+    "candidates": null,
+    "groups": null,
+    "suspiciousGroups": null,
+    "samples": null,
+    "stageTimings": null
+  },
+  "existingV13Limits": {
+    "inputLimit": 2000,
+    "minSimilarity": 0.35,
+    "maxCandidatesPerProduct": 5,
+    "maxRetrievalComparisons": 100000,
+    "maxEvaluatedPairs": 20000
+  },
+  "commercialIsolation": {
+    "fixtures": "PASS",
+    "realCatalog": "NOT_VERIFIED",
+    "dimensions": [
+      "publishable products",
+      "prices",
+      "discounts",
+      "availability",
+      "offers",
+      "merchant",
+      "affiliate URLs",
+      "eligibility"
+    ],
+    "note": "Existing commercialIsolation.test.ts compares full projection, public pages, counts, facets, details, redirect and repository requests before/after Shadow; real data unavailable."
+  },
+  "runnerAdapterTests": "NOT_APPLICABLE: no new runner or adapter created after safety stop",
+  "hashes": {
+    "shared/product-identity/parser.ts": {
+      "before": "d13e37922e2a243be4640eddc681db2f71858c93c92af56dd8c306a85b501e08",
+      "after": "d13e37922e2a243be4640eddc681db2f71858c93c92af56dd8c306a85b501e08",
+      "unchanged": true
+    },
+    "shared/product-identity/matcher.ts": {
+      "before": "52bd2c2307496ff149e4c5dbb07bbf0e48d02432cf271e7b8af575cf788b686f",
+      "after": "52bd2c2307496ff149e4c5dbb07bbf0e48d02432cf271e7b8af575cf788b686f",
+      "unchanged": true
+    },
+    "shared/product-identity/identity.test.ts": {
+      "before": "df4512d4ad331a4bdbb70b91584c59269bb5ce3158e69025574e9d28cb013500",
+      "after": "df4512d4ad331a4bdbb70b91584c59269bb5ce3158e69025574e9d28cb013500",
+      "unchanged": true
+    },
+    "shared/product-identity/validation/golden-v1.json": {
+      "before": "6024db9bbfb06b1975d5bb13fb30e7ae028d7519d49e4e4ac1085717c1fa56a9",
+      "after": "6024db9bbfb06b1975d5bb13fb30e7ae028d7519d49e4e4ac1085717c1fa56a9",
+      "unchanged": true
+    },
+    "shared/product-identity/validation/labeling-v1.json": {
+      "before": "5d269cfd8596cff3d37a56287adc64e142420b6f04f229d880959d919c2c599d",
+      "after": "5d269cfd8596cff3d37a56287adc64e142420b6f04f229d880959d919c2c599d",
+      "unchanged": true
+    },
+    "shared/product-identity/validation/shadow-v1-fixture-report.json": {
+      "before": "f6eaa1d4e69ef91d2295f4b2232d041fa2239ab29f7ddae7381309aa8456d35b",
+      "after": "f6eaa1d4e69ef91d2295f4b2232d041fa2239ab29f7ddae7381309aa8456d35b",
+      "unchanged": true
+    },
+    "server/productIdentity/adapter.ts": {
+      "before": "e059625fea508ab5e41d472ca224101d030171c0bb4137d7fdfadcb8804d918b",
+      "after": "e059625fea508ab5e41d472ca224101d030171c0bb4137d7fdfadcb8804d918b",
+      "unchanged": true
+    },
+    "server/productIdentity/candidates.ts": {
+      "before": "19e20aff931615f3cf471f6177d462ef0a4884fc716c7f54737412a05cdbd6b6",
+      "after": "19e20aff931615f3cf471f6177d462ef0a4884fc716c7f54737412a05cdbd6b6",
+      "unchanged": true
+    },
+    "server/productIdentity/commercialIsolation.test.ts": {
+      "before": "144d56a9b3cc0581b1a2d57361cfeb27d28f2356adc277ab0da90c037e694b33",
+      "after": "144d56a9b3cc0581b1a2d57361cfeb27d28f2356adc277ab0da90c037e694b33",
+      "unchanged": true
+    },
+    "server/productIdentity/contracts.ts": {
+      "before": "24149512c00435973b6f6d5b2740b6928847eca3feed94a993a474b22b361af5",
+      "after": "24149512c00435973b6f6d5b2740b6928847eca3feed94a993a474b22b361af5",
+      "unchanged": true
+    },
+    "server/productIdentity/fixtures.ts": {
+      "before": "5d92c773ca3a10b971d771e8eabb8a8460d7fdb9ffb1c7c3ad325abbe5791862",
+      "after": "5d92c773ca3a10b971d771e8eabb8a8460d7fdb9ffb1c7c3ad325abbe5791862",
+      "unchanged": true
+    },
+    "server/productIdentity/grouping.ts": {
+      "before": "7e30eb5e2d2086054ec816194bac38844b3e9856a99a1bff6a7b27c0cf6f9e16",
+      "after": "7e30eb5e2d2086054ec816194bac38844b3e9856a99a1bff6a7b27c0cf6f9e16",
+      "unchanged": true
+    },
+    "server/productIdentity/shadow.test.ts": {
+      "before": "e4813b4ce9be055487bedd009f8db808280884e2b423fff902995e9c0c460407",
+      "after": "e4813b4ce9be055487bedd009f8db808280884e2b423fff902995e9c0c460407",
+      "unchanged": true
+    },
+    "server/productIdentity/shadow.ts": {
+      "before": "c1c8662f62b36c8208775bcc017bfd94bac550c31bb1393418ada50916dc76a5",
+      "after": "c1c8662f62b36c8208775bcc017bfd94bac550c31bb1393418ada50916dc76a5",
+      "unchanged": true
+    }
+  },
+  "preexistingUntracked": [
+    "shared/product-identity/OPERATIONAL-INTEGRATION-V1.md"
+  ],
+  "changes": {
+    "created": [
+      "shared/product-identity/REAL-SHADOW-EVALUATION-V1.md",
+      "shared/product-identity/validation/real-shadow-v1-report.json"
+    ],
+    "modified": []
+  },
+  "actions": {
+    "databaseChanged": false,
+    "migrationCreated": false,
+    "catalogChanged": false,
+    "publicationChanged": false,
+    "importExecuted": false,
+    "parserV12Changed": false,
+    "matcherV12Changed": false,
+    "goldenDatasetChanged": false,
+    "humanLabelsChanged": false,
+    "commit": false,
+    "push": false,
+    "merge": false,
+    "deploy": false
+  },
+  "resumedAt": "2026-10-02",
+  "git": {
+    "diffStat": "",
+    "statusShort": "?? CODEX-LAST-REPORT.txt\n?? shared/product-identity/OPERATIONAL-INTEGRATION-V1.md\n?? shared/product-identity/REAL-SHADOW-EVALUATION-V1.md\n?? shared/product-identity/validation/real-shadow-v1-report.json",
+    "branch": "codespace-preview",
+    "head": "cb88bc54745b23b03dc73ce0365ac6829c802678"
+  },
+  "checksPreviousAttempt": [
+    {
+      "command": "npm run test:product-identity",
+      "exitCode": 0,
+      "passedTestFiles": 4
+    },
+    {
+      "command": "npm run check",
+      "exitCode": 0
+    },
+    {
+      "command": "sha256sum -c /tmp/identity-v14-before.sha256",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "checks": [
+    {
+      "command": "npm run test:product-identity",
+      "exitCode": 0,
+      "passedTestFiles": 4
+    },
+    {
+      "command": "npm run check",
+      "exitCode": 0
+    },
+    {
+      "command": "SHA-256 comparison of 14 protected artifacts against previous report",
+      "unchanged": true
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "limitations": [
+    "Real metrics, universe, cohort, providers, merchants, Master/Variant distributions, candidates, groups, pairwise consistency, deterministic samples and real execution timings remain NOT_MEASURED; no real catalog queries executed.",
+    "Connection attempt used connectionTimeoutMillis=15000; failed at DNS with EAI_AGAIN.",
+    "Required transfer path is outside session writable roots; copy pending filesystem access."
+  ],
+  "transferReport": {
+    "requestedPath": "/workspaces/beupfree/tmp/CODEX-LAST-REPORT.txt",
+    "written": false,
+    "reason": "Outside writable roots /tmp and /workspaces/beupfree-preview; approval unavailable in this session. Preview CODEX-LAST-REPORT.txt preserved."
+  }
+}

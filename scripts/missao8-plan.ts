@@ -1,0 +1,2 @@
+import 'dotenv/config';import pg from 'pg';import {SQL} from '../server/productIdentity/reconciledReader';import {writeFileSync} from 'node:fs';
+const db=new pg.Client({connectionString:process.env.MASTER_DATABASE_URL,options:'-c default_transaction_read_only=on'});await db.connect();writeFileSync('../source-full-plan.txt',(await db.query('EXPLAIN '+SQL.sources)).rows.map(r=>r['QUERY PLAN']).join('\n'));await db.end();

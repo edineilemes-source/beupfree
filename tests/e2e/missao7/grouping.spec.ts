@@ -1,0 +1,24 @@
+import {test,expect} from '@playwright/test';
+test('grouping preserves cards and horizontal scroll; infinite scrolling continues after clearing groups',async({page})=>{
+ const requests:URL[]=[];page.on('request',request=>{const url=new URL(request.url());if(url.pathname==='/api/products')requests.push(url);});
+ await page.goto('/catalogo?marca=Nike,Adidas');
+ const cards=page.locator('[data-testid^="card-product-"]');await expect(cards.first()).toBeVisible();
+ await page.getByTestId('button-organize').click();
+ const initial=await cards.evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-testid')).sort());
+ await page.getByTestId('organizer-available').getByRole('button',{name:'Marca (2)',exact:true}).click();
+ await expect(page.getByTestId('organizer-columns')).toBeVisible();
+ const grouped=await cards.evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-testid')).sort());
+ expect(grouped).toEqual(initial);expect(new Set(grouped).size).toBe(grouped.length);
+ const columns=page.getByTestId('organizer-columns');
+ await columns.evaluate((el:HTMLElement)=>{el.scrollLeft=el.scrollWidth;});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.getByRole('button',{name:'Limpar grupos',exact:true}).click();
+ await expect(columns).toHaveCount(0);
+ const before=await cards.count();
+ await page.getByTestId('catalog-infinite-scroll').scrollIntoViewIfNeeded();
+ await expect.poll(()=>cards.count(),{timeout:20000}).toBeGreaterThan(before);
+ const loaded=await cards.evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-testid')));
+ expect(new Set(loaded).size).toBe(loaded.length);
+ expect(requests.some(url=>Number(url.searchParams.get('offset'))>0)).toBe(true);
+ expect(requests.every(url=>url.searchParams.get('limit')==='21')).toBe(true);
+});
