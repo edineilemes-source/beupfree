@@ -257,18 +257,6 @@ export default function CatalogFilterSidebar({
           </div>
         )}
 
-        {/* Lojas: estabelecimentos comerciais, não redes de afiliados */}
-        {(facets.merchants?.length ?? 0) > 0 && (
-          <Section title="Lojas">
-            {facets.merchants!.map((store) => (
-              <CheckRow key={store.label} label={store.label} count={store.count}
-                checked={filters.loja.includes(store.label)}
-                onToggle={() => onToggle("loja", store.label)}
-                testId={`filter-loja-${store.label}`} />
-            ))}
-          </Section>
-        )}
-
         {/* Marca */}
         <Section title="Marca">
           {facets.brands.length > PINNED_BRANDS.length && (
@@ -566,6 +554,19 @@ export default function CatalogFilterSidebar({
             </div>
           </Section>
         )}
+
+        {/* Lojas: estabelecimentos comerciais, não redes de afiliados */}
+        {(facets.merchants?.length ?? 0) > 0 && (
+          <Section title="Lojas">
+            {facets.merchants!.map((store) => (
+              <CheckRow key={store.label} label={store.label} count={store.count}
+                checked={filters.loja.includes(store.label)}
+                onToggle={() => onToggle("loja", store.label)}
+                testId={`filter-loja-${store.label}`} />
+            ))}
+          </Section>
+        )}
+
 
       </div>
     </aside>
