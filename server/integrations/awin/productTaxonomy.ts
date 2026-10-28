@@ -144,7 +144,6 @@ export function classifyProductTaxonomy(input: ProductTaxonomyInput): ProductTax
   const lifestyleBasketballModels = /\\b(?:air force 1|court vision|court borough|dunk low|dunk high|japan s|superstar(?: ii)?|hoops (?:classic|4\\.0)|new balance (?:480|550)|jabbar lo|gamma force|ebernon|caven 2\\.0|rebound v6|sb force 58)\\b/;
   if (activities.includes("BASKETBALL") && lifestyleBasketballModels.test(name)) {
     activities = activities.filter(activity => activity !== "BASKETBALL");
-    reasons.push("CONFLICTING_SIGNALS");
     evidence.push("activity:basketball_heritage_not_performance");
   }
   if (activities.includes("OTHER_SPORT") && activities.length > 1) activities = activities.filter(value => value !== "OTHER_SPORT");
