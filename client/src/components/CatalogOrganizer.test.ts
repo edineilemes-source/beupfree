@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { groupCatalogPage } from "./CatalogOrganizer";
+import { groupCatalogPage, organizerFirstColumnValues } from "./CatalogOrganizer";
 import type { CatalogProduct } from "@/lib/catalogFilters";
 
 function product(id: string, brand: string, gender: "MASCULINO" | "FEMININO", size: string): CatalogProduct {
@@ -65,4 +65,15 @@ test("discount buckets sort descending as first grouping criterion", () => {
     { ...products[1], bestOffer: { ...products[1].bestOffer!, discountPercent: 80 } },
   ], ["desconto", "marca"]);
   assert.deepEqual(rows.map(row => row.title), ["80%+ › Adidas", "30%+ › Nike"]);
+});
+
+
+test("selected brands remain visible as columns before their products load", () => {
+  const rows = groupCatalogPage([product("1", "Nike", "MASCULINO", "40")], ["marca"]);
+  assert.deepEqual(organizerFirstColumnValues(rows, "marca", ["Nike", "Adidas", "Puma"]), ["Adidas", "Nike", "Puma"]);
+});
+
+test("selected brand labels do not create duplicate columns when casing differs", () => {
+  const rows = groupCatalogPage([product("1", "adidas", "MASCULINO", "40")], ["marca"]);
+  assert.deepEqual(organizerFirstColumnValues(rows, "marca", ["Adidas"]), ["Adidas"]);
 });
