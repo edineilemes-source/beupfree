@@ -293,6 +293,7 @@ export default function CatalogV2() {
   const filters = useMemo(() => filtersFromSearch(search), [search]);
   const query = useMemo(() => queryFromSearch(search), [search]);
   const [sortMode, setSortMode] = useState<SortMode>("maior-desconto");
+  const [brandGrouping, setBrandGrouping] = useState(false);
   const resultsStartRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -342,13 +343,13 @@ export default function CatalogV2() {
   }, [pagesData]);
   useEffect(() => {
     const node = loadMoreRef.current;
-    if (!node || !hasNextPage) return;
+    if (!node || !hasNextPage || brandGrouping) return;
     const observer = new IntersectionObserver(entries => {
       if (entries[0]?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
     }, { rootMargin: "600px" });
     observer.observe(node);
     return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, products.length]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, products.length, brandGrouping]);
 
   const catalogDemonstrative = data?.demonstrative ?? products[0]?.demonstrative ?? PUBLIC_DEMO_MODE;
   const favoriteProducts = useMemo<FavoriteProduct[]>(
@@ -468,7 +469,8 @@ export default function CatalogV2() {
           resultsRef={resultsStartRef}
         >
           <CatalogOrganizer filters={filters} products={visible} sortMode={sortMode}
-            onSortChange={setSortMode} serverDriven={serverDriven} total={resultTotal}>
+            onSortChange={setSortMode} serverDriven={serverDriven} total={resultTotal}
+            query={query} onBrandGroupingChange={setBrandGrouping}>
             {(groupProducts, columnMode) => (
           <div
             className={columnMode ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"}
@@ -504,9 +506,9 @@ export default function CatalogV2() {
             )}
           </CatalogOrganizer>
 
-          <div ref={loadMoreRef} className="mt-6 py-4 text-center text-sm text-muted-foreground" data-testid="catalog-infinite-scroll" aria-live="polite">
+          {!brandGrouping && <div ref={loadMoreRef} className="mt-6 py-4 text-center text-sm text-muted-foreground" data-testid="catalog-infinite-scroll" aria-live="polite">
             {isFetchingNextPage ? "Carregando mais produtos..." : hasNextPage ? "Role para carregar mais produtos" : `Exibindo ${visible.length} de ${resultTotal} produtos`}
-          </div>
+          </div>}
         </CatalogResults>
       </main>
 
