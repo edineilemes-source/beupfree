@@ -45,6 +45,7 @@ function filtersFromSearch(search: string): CatalogFilters {
   const params = new URLSearchParams(search);
   const next: CatalogFilters = {
     marca: [],
+    loja: [],
     cor: [],
     desconto: [],
     frete: [],
