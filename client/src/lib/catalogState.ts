@@ -13,7 +13,7 @@ export type CatalogUrlFilters = Omit<CatalogFilters, "price"> & {
 };
 export type CatalogSortMode = "maior-desconto" | "relevantes" | "menor-preco" | "recentes";
 export const URL_FILTER_KEYS: MultiFilterKey[] = [
-  "marca", "cor", "desconto", "frete", "tamanho", "genero", "idade",
+  "marca", "loja", "cor", "desconto", "frete", "tamanho", "genero", "idade",
   "modalidade", "tipo", "avaliacao",
 ];
 
@@ -26,11 +26,11 @@ function priceFromParam(raw: string | null): number | null {
 export function filtersFromSearch(search: string): CatalogUrlFilters {
   const params = new URLSearchParams(search);
   const filters: CatalogUrlFilters = {
-    marca: [], cor: [], desconto: [], frete: [], tamanho: [], genero: [],
+    marca: [], loja: [], cor: [], desconto: [], frete: [], tamanho: [], genero: [],
     idade: [], modalidade: [], tipo: [], avaliacao: [], price: null,
   };
   for (const key of URL_FILTER_KEYS) {
-    filters[key] = (params.get(key) ?? "").split(",").map(value => value.trim()).filter(Boolean);
+    filters[key] = (params.get(key === "loja" ? "merchant" : key) ?? "").split(",").map(value => value.trim()).filter(Boolean);
     if (key === "genero" || key === "idade") filters[key] = demographicSelection(key, params.getAll(key));
     if (key === "cor") {
       // Stable families; keep invalid constraints visible and removable.
@@ -56,8 +56,9 @@ export function toggleFilterSearch(search: string, key: MultiFilterKey, value: s
   const values = filtersFromSearch(search)[key];
   const next = values.includes(value) ? values.filter(item => item !== value) : [...values, value];
   const canonical = key === "genero" || key === "idade" ? demographicSelection(key,next) : key === "cor" ? next.sort() : next;
-  if (canonical.length) params.set(key, canonical.join(","));
-  else params.delete(key);
+  const paramKey = key === "loja" ? "merchant" : key;
+  if (canonical.length) params.set(paramKey, canonical.join(","));
+  else params.delete(paramKey);
   return params.toString();
 }
 
@@ -73,7 +74,7 @@ export function priceSearch(search: string, price: CatalogPrice | null): string 
 
 export function clearFiltersSearch(search: string): string {
   const params = new URLSearchParams(priceSearch(search, null));
-  URL_FILTER_KEYS.forEach(key => params.delete(key));
+  URL_FILTER_KEYS.forEach(key => params.delete(key === "loja" ? "merchant" : key));
   return params.toString();
 }
 
@@ -108,7 +109,7 @@ export function catalogRequestParams(
   if (query) params.set("q", query);
   for (const key of URL_FILTER_KEYS) {
     const values = key === "genero" || key === "idade" ? demographicSelection(key,filters[key]) : filters[key];
-    if (values.length) params.set(key, values.join(","));
+    if (values.length) params.set(key === "loja" ? "merchant" : key, values.join(","));
   }
   return new URLSearchParams(priceSearch(params.toString(), filters.price));
 }
