@@ -182,6 +182,7 @@ export default function CatalogFilterSidebar({
 
   const chips: { key: MultiFilterKey; value: string; label: string }[] = [];
   filters.marca.forEach((v) => chips.push({ key: "marca", value: v, label: v }));
+  filters.loja.forEach((v) => chips.push({ key: "loja", value: v, label: `Loja: ${v}` }));
   filters.cor.forEach((v) => {
     const color = facets.colors.find((item) => item.value === v);
     chips.push({ key: "cor", value: v, label: `Cor: ${color?.label ?? v}` });
@@ -254,6 +255,18 @@ export default function CatalogFilterSidebar({
               )}
             </div>
           </div>
+        )}
+
+        {/* Lojas: estabelecimentos comerciais, não redes de afiliados */}
+        {(facets.merchants?.length ?? 0) > 0 && (
+          <Section title="Lojas">
+            {facets.merchants!.map((store) => (
+              <CheckRow key={store.label} label={store.label} count={store.count}
+                checked={filters.loja.includes(store.label)}
+                onToggle={() => onToggle("loja", store.label)}
+                testId={`filter-loja-${store.label}`} />
+            ))}
+          </Section>
         )}
 
         {/* Marca */}
