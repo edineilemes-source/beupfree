@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, GripVertical, Settings2, X } from "lucide-react";
 import type { CatalogProduct, MultiFilterKey } from "@/lib/catalogFilters";
 import { brandNameOf, colorsOf, discountOf, genderOf, sizeOf, ageOf, modalityOf, typeOf } from "@/lib/catalogFilters";
-import type { CatalogUrlFilters, CatalogSortMode } from "@/lib/catalogState";
+import { catalogRequestParams, type CatalogUrlFilters, type CatalogSortMode } from "@/lib/catalogState";
 
 const LABELS: Partial<Record<MultiFilterKey, string>> = {
   marca: "Marca", cor: "Cor", tamanho: "Tamanho", genero: "Gênero",
@@ -67,6 +68,56 @@ export function groupCatalogPage(products: CatalogProduct[], dimensions: MultiFi
   return rows.map(row => ({ title: row.path.join(" › "), products: row.products }));
 }
 
+type BrandPage = { products: CatalogProduct[]; total: number; serverDriven?: boolean };
+
+// Each brand has its own server-side pagination, so brands with fewer discounts
+// do not wait behind pages dominated by other brands.
+function BrandColumnProducts({ brand, filters, query, sortMode, dimensions, children }: {
+  brand: string; filters: CatalogUrlFilters; query: string; sortMode: CatalogSortMode;
+  dimensions: MultiFilterKey[]; children: Props["children"];
+}) {
+  const sentinel = useRef<HTMLDivElement>(null);
+  const brandFilters = { ...filters, marca: [brand] };
+  const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery<BrandPage>({
+    queryKey: ["organizer-brand", brand, filters, query, sortMode],
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const params = catalogRequestParams(brandFilters, query, sortMode, Number(pageParam), 21);
+      const response = await fetch(`/api/products?${params}`);
+      if (!response.ok) throw new Error("Falha ao carregar produtos da marca");
+      const result = await response.json() as BrandPage;
+      if (!result.serverDriven) throw new Error("Agrupamento por marca exige catálogo operacional");
+      return result;
+    },
+    getNextPageParam: (last, all) => {
+      const count = all.reduce((sum, page) => sum + page.products.length, 0);
+      return last.products.length > 0 && count < last.total ? all.length + 1 : undefined;
+    },
+  });
+  const products = (data?.pages ?? []).flatMap(page => page.products);
+  const rows = groupCatalogPage(products, dimensions.slice(1));
+  useEffect(() => {
+    const node = sentinel.current;
+    if (!node || !hasNextPage || isFetchingNextPage) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0]?.isIntersecting) void fetchNextPage();
+    }, { rootMargin: "350px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, products.length]);
+  return <>
+    <div className="mb-3 text-xs text-muted-foreground">{products.length} de {data?.pages[0]?.total ?? 0} produtos da marca</div>
+    {isPending && <p className="px-2 py-3 text-xs">Carregando produtos...</p>}
+    {isError && <p role="alert" className="px-2 py-3 text-xs text-red-600">Não foi possível carregar esta marca.</p>}
+    {!isPending && !isError && products.length === 0 && <p className="px-2 py-3 text-xs text-muted-foreground">Nenhum produto para os filtros selecionados.</p>}
+    {rows.map((row, index) => <div key={row.title || index} className="mb-5" data-testid="organizer-group">
+      {dimensions.length > 1 && <h4 className="mb-3 rounded-md border-l-4 border-emerald-600 bg-emerald-100/90 px-3 py-2 text-sm font-bold text-emerald-900">{row.title}</h4>}
+      {children(row.products, true)}
+    </div>)}
+    <div ref={sentinel} className="py-2 text-center text-xs text-muted-foreground">{isFetchingNextPage ? "Carregando mais..." : hasNextPage ? "Role para carregar mais" : ""}</div>
+  </>;
+}
+
 interface Props {
   filters: CatalogUrlFilters;
   products: CatalogProduct[];
@@ -75,8 +126,10 @@ interface Props {
   children: (products: CatalogProduct[], columnMode?: boolean) => React.ReactNode;
   serverDriven: boolean;
   total: number;
+  query?: string;
+  onBrandGroupingChange?: (active: boolean) => void;
 }
-export default function CatalogOrganizer({ filters, products, sortMode, onSortChange, children, serverDriven, total }: Props) {
+export default function CatalogOrganizer({ filters, products, sortMode, onSortChange, children, serverDriven, total, query = "", onBrandGroupingChange }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [dimensions, setDimensions] = useState<MultiFilterKey[]>([]);
   const available = GROUPABLE.filter(key => filters[key].length > 0);
@@ -104,6 +157,8 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
     return () => { observer.disconnect(); window.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
   }, [selected.join("|"), products.length]);
   const rows = groupCatalogPage(products, selected);
+  const perBrand = serverDriven && selected[0] === "marca" && filters.marca.length > 0;
+  useEffect(() => { onBrandGroupingChange?.(perBrand); }, [perBrand, onBrandGroupingChange]);
   const firstColumnValues = organizerFirstColumnValues(rows, selected[0], selected[0] === "marca" ? filters.marca : []);
   const addAt = (key: MultiFilterKey, index?: number) => {
     if (!available.includes(key)) return;
@@ -176,8 +231,8 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
                   <h3 className="text-sm font-bold">{firstValue}</h3>
                   <span className="text-xs text-muted-foreground">{columnCount} nesta página</span>
                 </div>
-                {columnRows.length === 0 && <p className="px-2 py-3 text-xs text-muted-foreground" data-testid="organizer-awaiting-products">Aguardando produtos desta marca nas próximas cargas.</p>}
-                {columnRows.map((row, index) => (
+                {!perBrand && columnRows.length === 0 && <p className="px-2 py-3 text-xs text-muted-foreground" data-testid="organizer-awaiting-products">Aguardando produtos desta marca nas próximas cargas.</p>}
+                {perBrand ? <BrandColumnProducts brand={firstValue} filters={filters} query={query} sortMode={sortMode} dimensions={selected} children={children} /> : columnRows.map((row, index) => (
                   <div key={index} className="mb-5" data-testid="organizer-group">
                     {selected.length > 1 && <h4 className="mb-3 rounded-md border-l-4 border-emerald-600 bg-emerald-100/90 px-3 py-2 text-sm font-bold leading-snug text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100">{row.title.split(" › ").slice(1).join(" › ")}</h4>}
                     {children(row.products, true)}
