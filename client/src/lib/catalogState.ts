@@ -13,7 +13,7 @@ export type CatalogUrlFilters = Omit<CatalogFilters, "price"> & {
 };
 export type CatalogSortMode = "maior-desconto" | "relevantes" | "menor-preco" | "recentes";
 export const URL_FILTER_KEYS: MultiFilterKey[] = [
-  "marca", "cor", "desconto", "frete", "tamanho", "genero", "idade",
+  "marca", "loja", "cor", "desconto", "frete", "tamanho", "genero", "idade",
   "modalidade", "tipo", "avaliacao",
 ];
 
@@ -26,7 +26,7 @@ function priceFromParam(raw: string | null): number | null {
 export function filtersFromSearch(search: string): CatalogUrlFilters {
   const params = new URLSearchParams(search);
   const filters: CatalogUrlFilters = {
-    marca: [], cor: [], desconto: [], frete: [], tamanho: [], genero: [],
+    marca: [], loja: [], cor: [], desconto: [], frete: [], tamanho: [], genero: [],
     idade: [], modalidade: [], tipo: [], avaliacao: [], price: null,
   };
   for (const key of URL_FILTER_KEYS) {
@@ -108,7 +108,7 @@ export function catalogRequestParams(
   if (query) params.set("q", query);
   for (const key of URL_FILTER_KEYS) {
     const values = key === "genero" || key === "idade" ? demographicSelection(key,filters[key]) : filters[key];
-    if (values.length) params.set(key, values.join(","));
+    if (values.length) params.set(key === "loja" ? "merchant" : key, values.join(","));
   }
   return new URLSearchParams(priceSearch(params.toString(), filters.price));
 }
