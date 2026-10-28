@@ -30,7 +30,7 @@ export function filtersFromSearch(search: string): CatalogUrlFilters {
     idade: [], modalidade: [], tipo: [], avaliacao: [], price: null,
   };
   for (const key of URL_FILTER_KEYS) {
-    filters[key] = (params.get(key) ?? "").split(",").map(value => value.trim()).filter(Boolean);
+    filters[key] = (params.get(key === "loja" ? "merchant" : key) ?? "").split(",").map(value => value.trim()).filter(Boolean);
     if (key === "genero" || key === "idade") filters[key] = demographicSelection(key, params.getAll(key));
     if (key === "cor") {
       // Stable families; keep invalid constraints visible and removable.
@@ -56,8 +56,9 @@ export function toggleFilterSearch(search: string, key: MultiFilterKey, value: s
   const values = filtersFromSearch(search)[key];
   const next = values.includes(value) ? values.filter(item => item !== value) : [...values, value];
   const canonical = key === "genero" || key === "idade" ? demographicSelection(key,next) : key === "cor" ? next.sort() : next;
-  if (canonical.length) params.set(key, canonical.join(","));
-  else params.delete(key);
+  const paramKey = key === "loja" ? "merchant" : key;
+  if (canonical.length) params.set(paramKey, canonical.join(","));
+  else params.delete(paramKey);
   return params.toString();
 }
 
@@ -73,7 +74,7 @@ export function priceSearch(search: string, price: CatalogPrice | null): string 
 
 export function clearFiltersSearch(search: string): string {
   const params = new URLSearchParams(priceSearch(search, null));
-  URL_FILTER_KEYS.forEach(key => params.delete(key));
+  URL_FILTER_KEYS.forEach(key => params.delete(key === "loja" ? "merchant" : key));
   return params.toString();
 }
 
