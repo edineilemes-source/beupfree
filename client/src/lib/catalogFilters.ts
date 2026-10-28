@@ -45,6 +45,7 @@ export interface CatalogProduct {
 
 export type MultiFilterKey =
   | "marca"
+  | "loja"
   | "cor"
   | "desconto"
   | "frete"
@@ -57,6 +58,7 @@ export type MultiFilterKey =
 
 export interface CatalogFilters {
   marca: string[];
+  loja: string[];
   cor: string[];
   desconto: string[];
   frete: string[];
@@ -71,6 +73,7 @@ export interface CatalogFilters {
 
 export const EMPTY_FILTERS: CatalogFilters = {
   marca: [],
+  loja: [],
   cor: [],
   desconto: [],
   frete: [],
@@ -291,6 +294,7 @@ function matchesFrete(p: CatalogProduct, labels: string[]): boolean {
 
 export function applyFilters(products: CatalogProduct[], f: CatalogFilters): CatalogProduct[] {
   return products.filter((p) => {
+    if (f.loja.length && !f.loja.includes(p.bestOffer?.marketplaceName ?? p.bestOffer?.sellerName ?? "")) return false;
     if (f.marca.length > 0) {
       if (!f.marca.includes(brandNameOf(p))) return false;
     }
@@ -330,6 +334,7 @@ export function applyFilters(products: CatalogProduct[], f: CatalogFilters): Cat
 
 export interface CatalogFacets {
   brands: { label: string; count: number }[];
+  merchants?: { label: string; count: number }[];
   colors: { value: string; label: string; count: number }[];
   desconto: Record<string, number>;
   frete: { Sim: number; Não: number };
@@ -346,6 +351,7 @@ export interface CatalogFacets {
 const TIPO_ORDER = ["Calçados", "Acessórios"];
 
 export function computeFacets(products: CatalogProduct[]): CatalogFacets {
+  const merchantCounts = new Map<string, number>();
   const brandCounts = new Map<string, number>();
   const colorCounts = new Map<string, { label: string; count: number }>();
   const sizeCounts = new Map<string, number>();
@@ -366,6 +372,8 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
 
   for (const p of products) {
     bump(brandCounts, brandNameOf(p));
+    const merchant = p.bestOffer?.marketplaceName ?? p.bestOffer?.sellerName;
+    if (merchant) bump(merchantCounts, merchant);
     const colors = colorsOf(p);
     for (const color of colors) {
       const current = colorCounts.get(color.value);
@@ -436,6 +444,7 @@ export function computeFacets(products: CatalogProduct[]): CatalogFacets {
 
   return {
     brands,
+    merchants: Array.from(merchantCounts, ([label,count])=>({label,count})).sort((a,b)=>a.label.localeCompare(b.label,"pt-BR")),
     colors,
     desconto,
     frete,
@@ -478,6 +487,7 @@ export function computeCrossFacets(
     computeFacets(applyFilters(products, { ...filters, [key]: [] }));
 
   const marca = facetWithout("marca");
+  const loja = facetWithout("loja");
   const cor = facetWithout("cor");
   const desconto = facetWithout("desconto");
   const frete = facetWithout("frete");
@@ -491,6 +501,7 @@ export function computeCrossFacets(
 
   return {
     brands: withSelected(marca.brands, filters.marca),
+    merchants: withSelected(loja.merchants ?? [], filters.loja),
     colors: preserveSelectedFacets(cor, filters).colors,
     desconto: desconto.desconto,
     frete: frete.frete,
@@ -510,6 +521,7 @@ export function computeCrossFacets(
 export function countActiveFilters(f: CatalogFilters): number {
   return (
     f.marca.length +
+    f.loja.length +
     f.cor.length +
     f.desconto.length +
     f.frete.length +
@@ -526,7 +538,7 @@ export function countActiveFilters(f: CatalogFilters): number {
 // Apply to API and local facets alike; never manufacture positive counts.
 export function preserveSelectedFacets(facets: CatalogFacets, filters: Pick<CatalogFilters, MultiFilterKey>): CatalogFacets {
   const result = { ...facets };
-  const dimensions = { brands: "marca", sizes: "tamanho", modalidades: "modalidade", tipos: "tipo" } as const;
+  const dimensions = { brands: "marca", merchants: "loja", sizes: "tamanho", modalidades: "modalidade", tipos: "tipo" } as const;
   for (const [facet, filter] of Object.entries(dimensions) as [keyof typeof dimensions, MultiFilterKey][]) {
     result[facet] = withSelected(facets[facet].filter(item => item.count > 0 || filters[filter].includes(item.label)), filters[filter]);
   }
