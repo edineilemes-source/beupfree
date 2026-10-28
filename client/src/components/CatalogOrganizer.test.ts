@@ -77,3 +77,11 @@ test("selected brand labels do not create duplicate columns when casing differs"
   const rows = groupCatalogPage([product("1", "adidas", "MASCULINO", "40")], ["marca"]);
   assert.deepEqual(organizerFirstColumnValues(rows, "marca", ["Adidas"]), ["Adidas"]);
 });
+
+
+test("operational classification groups selected activity rather than title inference", () => {
+  const shoe = { ...product("basket-1", "Nike", "MASCULINO", "40"), mainName: "Nike Court Vision", catalogSource: "operational" as const, normalizedSizes: [40, 41], activities: ["BASKETBALL", "WALKING"] };
+  const rows = groupCatalogPage([shoe], ["modalidade", "tamanho"]);
+  assert.deepEqual(rows.map(row => row.title), ["Basquete › 40", "Basquete › 41", "Caminhada › 40", "Caminhada › 41"]);
+  assert.equal(rows.some(row => row.title.includes("Não identificado")), false);
+});
