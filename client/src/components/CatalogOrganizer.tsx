@@ -26,6 +26,20 @@ function valuesOf(product: CatalogProduct, field: MultiFilterKey): string[] {
     default: return [];
   }
 }
+// Preserve selected brand columns even before their products arrive through infinite scroll.
+export function organizerFirstColumnValues(
+  rows: Array<{ title: string }>, firstDimension: MultiFilterKey | undefined, selectedValues: string[],
+): string[] {
+  const loaded = rows.map(row => row.title.split(" › ")[0]);
+  if (firstDimension !== "marca") return [...new Set(loaded)];
+  const byNormalized = new Map<string, string>();
+  for (const value of [...selectedValues, ...loaded]) {
+    const key = value.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLocaleLowerCase("pt-BR").trim();
+    if (!byNormalized.has(key)) byNormalized.set(key, value);
+  }
+  return [...byNormalized.values()].sort(collator.compare);
+}
+
 export function groupCatalogPage(products: CatalogProduct[], dimensions: MultiFilterKey[]) {
   if (!dimensions.length) return [{ title: "", products }];
   // Each selected dimension creates distinct buckets, including the final one.
@@ -90,6 +104,7 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
     return () => { observer.disconnect(); window.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
   }, [selected.join("|"), products.length]);
   const rows = groupCatalogPage(products, selected);
+  const firstColumnValues = organizerFirstColumnValues(rows, selected[0], selected[0] === "marca" ? filters.marca : []);
   const addAt = (key: MultiFilterKey, index?: number) => {
     if (!available.includes(key)) return;
     const next = selected.filter(item => item !== key);
@@ -152,8 +167,8 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
       {selected.length > 0 && serverDriven && <p role="note" className="mb-3 text-xs text-muted-foreground">Exibindo {products.length} de {total} produtos; mais produtos são carregados ao rolar.</p>}
       {selected.length === 0 ? children(products) : (
         <div ref={columnsRef} onScroll={event => { if (barRef.current) barRef.current.scrollLeft = event.currentTarget.scrollLeft; }} className="flex items-start gap-4 overflow-x-auto pb-5" data-testid="organizer-columns" aria-label={`Comparação por ${LABELS[selected[0]]}`}>
-          {[...new Set(rows.map(row => row.title.split(" › ")[0]))].map((firstValue, columnIndex) => {
-            const columnRows = rows.filter(row => row.title.split(" › ")[0] === firstValue);
+          {firstColumnValues.map((firstValue, columnIndex) => {
+            const columnRows = rows.filter(row => collator.compare(row.title.split(" › ")[0], firstValue) === 0);
             const columnCount = columnRows.reduce((sum, row) => sum + row.products.length, 0);
             return (
               <section key={firstValue} className={`w-[280px] min-w-[280px] shrink-0 rounded-lg border border-border p-3 sm:w-[320px] sm:min-w-[320px] ${columnIndex % 2 === 0 ? "bg-background" : "bg-emerald-50/80 dark:bg-emerald-950/25"}`} data-testid="organizer-column">
@@ -161,6 +176,7 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
                   <h3 className="text-sm font-bold">{firstValue}</h3>
                   <span className="text-xs text-muted-foreground">{columnCount} nesta página</span>
                 </div>
+                {columnRows.length === 0 && <p className="px-2 py-3 text-xs text-muted-foreground" data-testid="organizer-awaiting-products">Aguardando produtos desta marca nas próximas cargas.</p>}
                 {columnRows.map((row, index) => (
                   <div key={index} className="mb-5" data-testid="organizer-group">
                     {selected.length > 1 && <h4 className="mb-3 rounded-md border-l-4 border-emerald-600 bg-emerald-100/90 px-3 py-2 text-sm font-bold leading-snug text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100">{row.title.split(" › ").slice(1).join(" › ")}</h4>}
