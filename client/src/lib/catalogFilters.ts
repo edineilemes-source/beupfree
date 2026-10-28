@@ -22,6 +22,8 @@ export interface CatalogProduct {
   mainName: string;
   gender?: Gender|null;
   ageGroup?: AgeGroup|null;
+  normalizedSizes?: number[];
+  activities?: string[];
   demographicTaxonomyVersion?: string|null;
   mainImageUrl: string | null;
   primaryColor: string | null;
@@ -160,7 +162,15 @@ export function ageOf(p: CatalogProduct): string | null {
 // aparece depois (ex.: "... 40 Br ... 35 Eu"). Se não houver "Br", caímos no último
 // número isolado de 2 dígitos dentro da faixa (\b...\b ignora códigos de modelo
 // como "R7524100020015" ou "Cm6ow43te689").
+export function sizesOf(p: CatalogProduct): string[] {
+  if (p.normalizedSizes !== undefined) return p.normalizedSizes.map(String);
+  const legacy = legacySizeOf(p);
+  return legacy ? [legacy] : [];
+}
 export function sizeOf(p: CatalogProduct): string | null {
+  return sizesOf(p)[0] ?? null;
+}
+function legacySizeOf(p: CatalogProduct): string | null {
   const brMatch = p.mainName.toLowerCase().match(/\b(\d{2})(?:[.,]0)?\s+br\b/);
   if (brMatch) {
     const n = Number(brMatch[1]);
@@ -187,7 +197,20 @@ const MODALITY_RULES: { label: string; terms: string[] }[] = [
   },
 ];
 
+const CANONICAL_ACTIVITIES: Record<string, string> = {
+  RUNNING: "Corrida", WALKING: "Caminhada", TRAINING: "Treino",
+  FOOTBALL: "Futebol", FUTSAL: "Futebol", BASKETBALL: "Basquete",
+  SKATE: "Skate", LIFESTYLE: "Casual",
+};
+export function modalitiesOf(p: CatalogProduct): string[] {
+  if (p.activities !== undefined) return [...new Set(p.activities.map(code => CANONICAL_ACTIVITIES[code] ?? code))];
+  const legacy = legacyModalityOf(p);
+  return legacy ? [legacy] : [];
+}
 export function modalityOf(p: CatalogProduct): string | null {
+  return modalitiesOf(p)[0] ?? null;
+}
+function legacyModalityOf(p: CatalogProduct): string | null {
   const lower = p.mainName.toLowerCase();
   for (const rule of MODALITY_RULES) {
     if (rule.terms.some((t) => lower.includes(t))) return rule.label;
@@ -305,8 +328,7 @@ export function applyFilters(products: CatalogProduct[], f: CatalogFilters): Cat
     if (!matchesDesconto(p, f.desconto)) return false;
     if (!matchesFrete(p, f.frete)) return false;
     if (f.tamanho.length > 0) {
-      const s = sizeOf(p);
-      if (!s || !f.tamanho.includes(s)) return false;
+      if (!sizesOf(p).some(s => f.tamanho.includes(s))) return false;
     }
     if (f.genero.length > 0) {
       const g = genderOf(p);
@@ -317,8 +339,7 @@ export function applyFilters(products: CatalogProduct[], f: CatalogFilters): Cat
       if (!age || !demographicSelection("idade",f.idade).includes(AGE_GROUPS.find(x=>x.label===age)!.id)) return false;
     }
     if (f.modalidade.length > 0) {
-      const m = modalityOf(p);
-      if (!m || !f.modalidade.includes(m)) return false;
+      if (!modalitiesOf(p).some(m => f.modalidade.includes(m))) return false;
     }
     if (f.tipo.length > 0) {
       if (!f.tipo.includes(typeOf(p))) return false;
