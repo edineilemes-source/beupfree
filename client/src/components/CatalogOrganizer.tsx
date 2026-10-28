@@ -95,7 +95,16 @@ function BrandColumnProducts({ brand, filters, query, sortMode, dimensions, chil
     },
   });
   const products = (data?.pages ?? []).flatMap(page => page.products);
-  const rows = groupCatalogPage(products, dimensions.slice(1));
+  // The server is authoritative for filtering. Do not present a missing grouping
+  // value as a matching selected value; flag inconsistencies explicitly.
+  const invalidProducts = products.filter(product => dimensions.slice(1).some(field => {
+    const selected = filters[field];
+    if (!Array.isArray(selected) || selected.length === 0) return false;
+    const values = valuesOf(product, field);
+    return values.length === 0 || !values.some(value => selected.some(choice => collator.compare(choice, value) === 0));
+  }));
+  const validProducts = products.filter(product => !invalidProducts.includes(product));
+  const rows = groupCatalogPage(validProducts, dimensions.slice(1));
   useEffect(() => {
     const node = sentinel.current;
     if (!node || !hasNextPage || isFetchingNextPage) return;
@@ -107,6 +116,7 @@ function BrandColumnProducts({ brand, filters, query, sortMode, dimensions, chil
   }, [hasNextPage, isFetchingNextPage, fetchNextPage, products.length]);
   return <>
     <div className="mb-3 text-xs text-muted-foreground">{products.length} de {data?.pages[0]?.total ?? 0} produtos da marca</div>
+    {invalidProducts.length > 0 && <p role="alert" className="mb-2 px-2 py-2 text-xs text-red-700">Inconsistência de classificação: {invalidProducts.length} produto(s) retornados pelo catálogo não correspondem aos agrupamentos selecionados e foram excluídos desta coluna.</p>}
     {isPending && <p className="px-2 py-3 text-xs">Carregando produtos...</p>}
     {isError && <p role="alert" className="px-2 py-3 text-xs text-red-600">Não foi possível carregar esta marca.</p>}
     {!isPending && !isError && products.length === 0 && <p className="px-2 py-3 text-xs text-muted-foreground">Nenhum produto para os filtros selecionados.</p>}
@@ -219,7 +229,7 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
           })}
         </div>
       </div>}
-      {selected.length > 0 && serverDriven && <p role="note" className="mb-3 text-xs text-muted-foreground">Exibindo {products.length} de {total} produtos; mais produtos são carregados ao rolar.</p>}
+      {selected.length > 0 && serverDriven && !perBrand && <p role="note" className="mb-3 text-xs text-muted-foreground">Exibindo {products.length} de {total} produtos; mais produtos são carregados ao rolar.</p>}
       {selected.length === 0 ? children(products) : (
         <div ref={columnsRef} onScroll={event => { if (barRef.current) barRef.current.scrollLeft = event.currentTarget.scrollLeft; }} className="flex items-start gap-4 overflow-x-auto pb-5" data-testid="organizer-columns" aria-label={`Comparação por ${LABELS[selected[0]]}`}>
           {firstColumnValues.map((firstValue, columnIndex) => {
@@ -229,7 +239,7 @@ export default function CatalogOrganizer({ filters, products, sortMode, onSortCh
               <section key={firstValue} className={`w-[280px] min-w-[280px] shrink-0 rounded-lg border border-border p-3 sm:w-[320px] sm:min-w-[320px] ${columnIndex % 2 === 0 ? "bg-background" : "bg-emerald-50/80 dark:bg-emerald-950/25"}`} data-testid="organizer-column">
                 <div className="sticky top-0 z-10 mb-3 flex items-center justify-between gap-2 rounded-md bg-background p-2 shadow-sm">
                   <h3 className="text-sm font-bold">{firstValue}</h3>
-                  <span className="text-xs text-muted-foreground">{columnCount} nesta página</span>
+                  {!perBrand && <span className="text-xs text-muted-foreground">{columnCount} nesta página</span>}
                 </div>
                 {!perBrand && columnRows.length === 0 && <p className="px-2 py-3 text-xs text-muted-foreground" data-testid="organizer-awaiting-products">Aguardando produtos desta marca nas próximas cargas.</p>}
                 {perBrand ? <BrandColumnProducts brand={firstValue} filters={filters} query={query} sortMode={sortMode} dimensions={selected} children={children} /> : columnRows.map((row, index) => (
