@@ -44,3 +44,15 @@ test("V3 invalid or repeated cor rejects before any repository/database access",
   }
  }finally{disable();}
 });
+
+
+test("operational API returns canonical classification used by filtering and organizer",async()=>{
+ enable();try{
+  const classified={...row,normalized_sizes:[35,41],activities:["RUNNING","BASKETBALL"]};
+  const mocked:any={...repo,listProducts:async()=>[classified]};
+  const res=response();
+  await createOperationalPublicCatalogHandlers(()=>mocked).list(request({modalidade:"Corrida,Basquete",tamanho:"35,41"}),res,()=>assert.fail());
+  assert.deepEqual(res.body.products[0].activities,["RUNNING","BASKETBALL"]);
+  assert.deepEqual(res.body.products[0].normalizedSizes,[35,41]);
+ }finally{disable()}
+});
