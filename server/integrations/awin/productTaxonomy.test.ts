@@ -176,3 +176,18 @@ test("v4 cabeçalho de feed concatenado preserva autodescrição do tipo",()=>{
  assert.equal(r.universe,"SNEAKER_CONFIRMED");
  assert.equal(classifyCatalogEligibility(r,commercial).status,"IN_SCOPE_CONFIRMED");
 });
+
+
+test("heritage basketball shoes stay eligible without a playing-basketball activity",()=>{
+ for(const name of ["Tênis Nike Court Vision Low Next Nature","Tênis Nike Air Force 1 07","Tênis Nike SB Force 58","Tênis ASICS Japan S","Tênis Adidas Superstar II","Tênis New Balance 550","Tênis Adidas Hoops Classic"]){
+  const result=classify("Calçados > Basquete",name);
+  assert.equal(result.universe,"SNEAKER_CONFIRMED",name);
+  assert.equal(result.activities.includes("BASKETBALL"),false,name);
+  assert.equal(classifyCatalogEligibility(result,commercial).status,"IN_SCOPE_CONFIRMED",name);
+ }
+});
+test("purpose-built basketball shoes remain classified for basketball",()=>{
+ for(const name of ["Tênis Nike Team Hustle D12","Tênis Puma Genetics"]){
+  assert.equal(classify("Tênis Basquete",name).activities.includes("BASKETBALL"),true,name);
+ }
+});
