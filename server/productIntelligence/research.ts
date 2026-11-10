@@ -40,7 +40,10 @@ function waitFor<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
       reject(signal.reason);
     };
     signal.addEventListener("abort", abort, { once: true });
-    operation.then(resolve, reject).finally(() => signal.removeEventListener("abort", abort));
+    operation.then(
+      value => { signal.removeEventListener("abort", abort); resolve(value); },
+      error => { signal.removeEventListener("abort", abort); reject(error); },
+    );
     if (signal.aborted) abort();
   });
 }
