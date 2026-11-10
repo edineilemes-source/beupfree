@@ -70,3 +70,10 @@ Antes de propor execução: ler `AGENTS.md`, este arquivo, `.ai/PROJECT_STATE.md
 - [Relatório da Missão 10.6](relatorios/MISSAO10_6_CONCORRENCIA_CUSTOS.md).
 
 **Publicação desta execução:** RELATÓRIO NÃO PUBLICADO. Consulte o comando de publicação documental no relatório.
+
+## Confirmação remota — código da Missão 10.6 publicado (2026-11-10)
+
+- **PUBLICADO NO GITHUB:** dez arquivos de implementação, testes e proposta de migração da Missão 10.6 foram confirmados por comparação entre `f25889c` e a branch remota `feat/uppulse-missao10-supercatalogo`: um commit adicional, dez arquivos alterados, sem divergência de histórico. A indicação anterior de que o código estava somente no Codespaces está superada.
+- **NÃO HOMOLOGADO:** a publicação do arquivo `migrations/mission10_research_coordination.sql` não significa que ele foi aplicado ao PostgreSQL. Permanecem pendentes autorização de migração, confirmação de backup atual, testes com duas conexões PostgreSQL reais e validação de recuperação de reservas órfãs após falha abrupta.
+- **NÃO EXECUTADO NESTA VERIFICAÇÃO:** TypeScript, testes automatizados, build, acesso ao banco, chamadas pagas e deploy. A conferência foi de conteúdo e histórico GitHub.
+- **PRIORIDADE:** concluir a Missão 10.6 antes de iniciar a Missão 11. Não repetir transferência de arquivos já versionados.
