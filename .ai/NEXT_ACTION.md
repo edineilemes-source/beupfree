@@ -27,3 +27,11 @@ Referência: [relatório da Missão 10.5](../docs/relatorios/MISSAO10_5_INTEGRAC
 O código da Missão 10.5 **já foi publicado** no commit `8afe2dd` na branch `feat/uppulse-missao10-supercatalogo`; a indicação anterior de código apenas local está superada. A homologação PostgreSQL transacional ocorreu antes dos ajustes finais do script, sem segunda execução real após os ajustes.
 
 **Próxima ação:** executar a [Missão 10.6 — concorrência e custos](../docs/missoes/MISSAO10_6_CONCORRENCIA_CUSTOS.md). O Codex deve publicar somente o relatório `docs/relatorios/MISSAO10_6_CONCORRENCIA_CUSTOS.md`, este estado e `docs/ESTADO_OPERACIONAL.md`, conforme `AGENTS.md`. Código e migrações requerem autorização posterior. Não chamar APIs pagas ou executar migrações.
+
+## Atualização — Missão 10.6 implementada localmente, 2026-11-10
+
+A coordenação e o orçamento passaram em testes simulados. A homologação multi-instância permanece pendente. Revisar a proposta de migração, confirmar backup e obter autorização explícita antes de aplicá-la. Após autorização, testar coordenação, falha, recuperação e orçamento com dois clientes PostgreSQL e provedores simulados. Manter as APIs pagas desabilitadas. Código, testes e migração permanecem locais.
+
+[Relatório e estado da publicação documental](../docs/relatorios/MISSAO10_6_CONCORRENCIA_CUSTOS.md).
+
+**Publicação desta execução:** RELATÓRIO NÃO PUBLICADO. Consulte o comando de publicação documental no relatório.

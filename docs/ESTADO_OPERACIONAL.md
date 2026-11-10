@@ -61,3 +61,12 @@ Antes de propor execução: ler `AGENTS.md`, este arquivo, `.ai/PROJECT_STATE.md
 ## Atualização posterior — Missão 10.5 publicada, 2026-11-10
 
 **PUBLICADO:** o código da Missão 10.5 foi revisado pelo Codex, considerado apto para publicação e enviado à branch `feat/uppulse-missao10-supercatalogo` no commit `8afe2dd`. Foram versionados exatamente quatro arquivos: `server/productIntelligence/postgresCache.ts`, `server/productIntelligence/postgresCache.test.ts`, `server/productIntelligence/postgresResearch.ts` e `scripts/mission10-postgres-integration.ts`. O resultado de push foi confirmado pelo operador. A homologação PostgreSQL transacional foi aprovada **antes** dos últimos ajustes de segurança do script; estes passaram nos testes de código, mas não foram reexecutados no banco real após os ajustes. As frases anteriores 'não versionado' são histórico superado. Não houve deploy nem ativação de pesquisas pagas. **Próxima missão: 10.6**, concorrência e limites de custos. Seguir o contrato de publicação documental em `AGENTS.md`.
+
+## Atualização — Missão 10.6, 2026-11-10
+
+- **IMPLEMENTADO E TESTADO LOCALMENTE:** deduplicação por SuperHash no processo, reserva compartilhada de execução para o serviço PostgreSQL e reserva de orçamento estimado antes de cada chamada Tavily/OpenAI. O checkout de código está em `8afe2dd`. A base documental remota consultada é `d698d23`.
+- **PENDENTE DE HOMOLOGAÇÃO:** coordenação e orçamento em PostgreSQL real dependem da proposta aditiva local `migrations/mission10_research_coordination.sql`. A migração não foi aplicada. Manter `RESEARCH_PAID_ENABLED` e `RESEARCH_POSTGRES_HOMOLOGATED` desabilitados. Nenhum acesso a banco, alteração comercial ou chamada paga nesta execução.
+- **Verificações:** TypeScript e testes Mission 10 passaram com provedores e armazenamento simulados. A evidência transacional da Missão 10.5 continua sendo a referência do cache instalado.
+- [Relatório da Missão 10.6](relatorios/MISSAO10_6_CONCORRENCIA_CUSTOS.md).
+
+**Publicação desta execução:** RELATÓRIO NÃO PUBLICADO. Consulte o comando de publicação documental no relatório.
