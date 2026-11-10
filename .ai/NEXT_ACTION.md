@@ -20,3 +20,10 @@ A homologação transacional PostgreSQL **foi aprovada no terminal normal do Cod
 **Próxima ação efetiva:** revisar o diff local de `server/productIntelligence/postgresResearch.ts`, `server/productIntelligence/postgresCache.ts`, `server/productIntelligence/postgresCache.test.ts` e `scripts/mission10-postgres-integration.ts`; conferir segurança e testes; solicitar autorização explícita para commit/push de código. O código permanece apenas no Codespaces. Depois, planejar integração ao consumidor de aplicação/UI e controle de custos/concorrência. Não executar migrações, `db:push`, chamadas pagas nem deploy sem autorização.
 
 Referência: [relatório da Missão 10.5](../docs/relatorios/MISSAO10_5_INTEGRACAO.md).
+
+
+## Atualização mais recente — Missão 10.6 autorizada, 2026-11-10
+
+O código da Missão 10.5 **já foi publicado** no commit `8afe2dd` na branch `feat/uppulse-missao10-supercatalogo`; a indicação anterior de código apenas local está superada. A homologação PostgreSQL transacional ocorreu antes dos ajustes finais do script, sem segunda execução real após os ajustes.
+
+**Próxima ação:** executar a [Missão 10.6 — concorrência e custos](../docs/missoes/MISSAO10_6_CONCORRENCIA_CUSTOS.md). O Codex deve publicar somente o relatório `docs/relatorios/MISSAO10_6_CONCORRENCIA_CUSTOS.md`, este estado e `docs/ESTADO_OPERACIONAL.md`, conforme `AGENTS.md`. Código e migrações requerem autorização posterior. Não chamar APIs pagas ou executar migrações.
