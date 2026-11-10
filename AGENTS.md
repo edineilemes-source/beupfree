@@ -148,3 +148,16 @@ Uma tarefa está concluída quando:
 - Se a missão não puder atualizar os registros ou validar o ambiente, registrar `BLOCKED`/pendência, não declarar `COMPLETED`.
 - O usuário pode interromper Codex com Ctrl+C; preferir alterações diretas no GitHub quando possível. Não iniciar processos Codex longos sem necessidade.
 - Toda alteração de esquema exige revisão, backup confirmado e autorização explícita; proibir `db:push` indiscriminado. Nunca publicar credenciais ou dumps no repositório.
+
+
+## Contrato obrigatório de entrega GitHub — Missões 10.6+ (2026-11-10)
+
+**Fonte canônica atual:** repositório `edineilemes-source/beupfree`, branch `feat/uppulse-missao10-supercatalogo`, checkout observado `/workspaces/uppulse-homologacao/missao9/codigo`. Os caminhos `codespace-working` e `/workspaces/beupfree` citados acima são históricos e não prevalecem nesta missão. Confirmar com `git branch --show-current` antes de agir.
+
+1. **Um relatório por missão:** `docs/relatorios/MISSAO10_<numero>_<assunto>.md`, com caminho exato definido na missão. Não inventar outro diretório ou branch. A atualização de `docs/ESTADO_OPERACIONAL.md` e `.ai/NEXT_ACTION.md` acompanha o relatório.
+2. **Publicação documental autorizada:** após revisão e remoção de segredos, Codex pode fazer commit/push **somente** desses três arquivos documentais para a branch atual indicada acima. Código, migrações, testes e configurações NÃO podem ser incluídos nesse commit sem autorização separada. Não usar `git add .`, `git add -A` nem `git push --force`. Verificar o índice com `git diff --cached --name-only` e inspecionar commits a enviar.
+3. **Entrega só é considerada publicada quando comprovada no remoto:** confirmar `git ls-remote`/consulta GitHub e leitura do relatório na branch remota; registrar SHA do commit documental e URL exata no resumo final. Criar o arquivo apenas no Codespaces não é publicação.
+4. **Se sandbox, DNS, GitHub ou Git index impedir publicação:** não mudar permissões indiscriminadamente, não contornar controles, não afirmar que publicou. Registrar `RELATÓRIO NÃO PUBLICADO` e o erro exato, preservar todos os arquivos, e fornecer **um único comando seguro** para publicação documental pelo terminal normal, ou usar conector GitHub autorizado se disponível. Não bloquear a implementação por causa da publicação.
+5. **Ao usuário basta dizer 'terminou':** o ChatGPT deve buscar diretamente o caminho canônico no GitHub e ler o relatório, sem pedir cópia de logs quando ele estiver publicado. Se o relatório remoto não existir, declarar isso e resolver o bloqueio concreto.
+6. **Rastreabilidade:** indicar branch, commit-base, commits documentais, arquivos de código ainda locais, testes realmente executados, banco/impactos, migrações pendentes, riscos e próxima ação. Diferenciar `IMPLEMENTADO`, `TESTADO`, `HOMOLOGADO`, `PUBLICADO` e `BLOCKED`.
+7. Não apagar `.cache/`, backups ou stash; não fazer reset, merge, migração, deploy ou chamada paga sem autorização correspondente.
