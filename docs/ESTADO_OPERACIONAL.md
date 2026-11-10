@@ -48,3 +48,11 @@ Antes de propor execução: ler `AGENTS.md`, este arquivo, `.ai/PROJECT_STATE.md
 - Cada missão deve atualizar: branch/commit, alterações, testes **realmente** executados, versão do esquema, instância/banco/porta, contagens de referência quando verificadas, infraestrutura, layout, APIs/custos, decisões, riscos e próximo passo.
 - Separar **CONFIRMADO**, **RELATADO**, **IMPLEMENTADO MAS NÃO HOMOLOGADO** e **PENDENTE**. Usar data e evidência; nunca transformar intenção em fato.
 - Relatório versionado no GitHub, não exigir que o usuário copie logs para o chat. Em falha de validação, registrar bloqueio e não declarar missão concluída.
+
+
+## Atualização — Missão 10.5, 2026-11-10 (posterior ao estado acima)
+- **HOMOLOGADO no terminal normal do Codespaces:** `node --import tsx scripts/mission10-postgres-integration.ts` retornou `MISSÃO 10.5: integração PostgreSQL aprovada e registro sintético ausente após ROLLBACK`, com `DATABASE_URL` temporária apontando para o banco existente `uppulse_catalog` em `127.0.0.1:5435`. A evidência é o resultado fornecido pelo operador; o teste foi preparado para usar IDs reais e dados sintéticos sob transação.
+- **IMPLEMENTADO LOCALMENTE, NÃO VERSIONADO:** `server/productIntelligence/postgresResearch.ts`, alterações em `postgresCache.ts` e `postgresCache.test.ts`, e `scripts/mission10-postgres-integration.ts`. O piloto em arquivo permanece. O código não foi publicado; não interpretar a publicação desta documentação como deploy ou integração ativa em produção.
+- **TESTES DO CODEX:** `npm run check`, `npm run test:mission10` e testes direcionados do adaptador passaram; conexão TCP falhou apenas no sandbox. A homologação PostgreSQL ocorreu posteriormente no terminal normal.
+- **PENDENTE:** revisão e autorização para commit/push do código, integração ao consumidor de aplicação/UI, controle de custos/concorrência e gates gerais. Não foram reconferidas contagens comerciais nesta etapa.
+- Relatório: [Missão 10.5](relatorios/MISSAO10_5_INTEGRACAO.md). As afirmações anteriores de que o adaptador PostgreSQL não foi homologado representam o estado *anterior* a esta atualização.
