@@ -53,15 +53,26 @@ test("PostgreSQL real: exclusao entre pools e liberacao do detentor", { skip: pr
 test("PostgreSQL real: dez reservas concorrentes respeitam teto agregado", { skip: process.env.MISSION10_POSTGRES_INTEGRATION !== "true" }, async () => {
   const firstPool = new pg.Pool(config);
   const secondPool = new pg.Pool(config);
+  const sqlErrors: string[] = [];
+  const diagnosticExecutor = (pool: pg.Pool) => ({
+    query: async (sql: string, params: readonly unknown[]) => {
+      try { return { rows: (await pool.query(sql, [...params])).rows }; }
+      catch (error) {
+        const pgError = error as { code?: string; message?: string };
+        sqlErrors.push(`${pgError.code ?? "UNKNOWN"}: ${pgError.message ?? "unknown error"}`);
+        throw error;
+      }
+    },
+  });
   try {
-    const first = createResearchBudget(executor(firstPool), budgetEnv);
-    const second = createResearchBudget(executor(secondPool), budgetEnv);
+    const first = createResearchBudget(diagnosticExecutor(firstPool), budgetEnv);
+    const second = createResearchBudget(diagnosticExecutor(secondPool), budgetEnv);
     const results = await Promise.allSettled(Array.from({ length: 10 }, (_, i) =>
       (i % 2 ? first : second).reserve(i < 5 ? "tavily" : "openai"),
     ));
     const failures = results.filter((result): result is PromiseRejectedResult => result.status === "rejected");
     assert.equal(results.filter(result => result.status === "fulfilled").length, 3,
-      `Reservation failures: ${JSON.stringify(failures.map(result => String(result.reason)))}`);
+      `Reservation failures: ${JSON.stringify(failures.map(result => String(result.reason)))}; SQL errors: ${JSON.stringify([...new Set(sqlErrors)])}`);
     const { rows: [row] } = await firstPool.query(
       "SELECT tavily_calls, openai_calls, reserved_microusd FROM research_budget WHERE singleton=true",
     );
