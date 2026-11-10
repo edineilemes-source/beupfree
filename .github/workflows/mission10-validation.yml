@@ -58,6 +58,6 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f migrations/mission10_research_coordination.sql
           psql -v ON_ERROR_STOP=1 -c "INSERT INTO products(id) VALUES ('test-master');"
           psql -v ON_ERROR_STOP=1 -c "INSERT INTO research_claims(super_hash, master_id, owner) VALUES (repeat('a',64), 'test-master', '00000000-0000-4000-8000-000000000001');"
-          psql -v ON_ERROR_STOP=1 -c "DO \\$\\$ BEGIN IF (SELECT COUNT(*) FROM research_claims) <> 1 THEN RAISE EXCEPTION 'claim not persisted'; END IF; END \\$\\$;"
+          psql -v ON_ERROR_STOP=1 -c "DO \$\$ BEGIN IF (SELECT COUNT(*) FROM research_claims) <> 1 THEN RAISE EXCEPTION 'claim not persisted'; END IF; END \$\$;"
           psql -v ON_ERROR_STOP=1 -c "INSERT INTO research_budget(singleton,policy,window_end,tavily_calls,openai_calls,reserved_microusd) VALUES (true,'{}',NOW()+INTERVAL '1 hour',0,0,0);"
           psql -v ON_ERROR_STOP=1 -c "SELECT singleton, tavily_calls, openai_calls FROM research_budget;"
