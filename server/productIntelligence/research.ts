@@ -27,8 +27,8 @@ export type ResearchOptions = { maxSources?: number; maxFieldsPerSource?: number
 /** Diagnostic codes only: never propagate raw API errors or credentials. */
 function failureCode(error: unknown, stage: "SEARCH" | "EXTRACTION"): string {
   const message = error instanceof Error ? error.message : "";
-  const match = /^RESEARCH_PROVIDER_HTTP_(\d{3})$/.exec(message);
-  if (match) return stage + "_HTTP_" + match[1];
+  const match = /^RESEARCH_PROVIDER_HTTP_(\d{3})(_(?:MISSING_SCOPE|INVALID_API_KEY|INSUFFICIENT_QUOTA|MODEL_NOT_FOUND|RATE_LIMIT_EXCEEDED|ORGANIZATION_NOT_FOUND))?$/.exec(message);
+  if (match) return stage + "_HTTP_" + match[1] + (match[2] ?? "");
   if (message === "RESEARCH_EXTRACTION_INVALID_JSON") return stage + "_INVALID_JSON";
   if (error instanceof Error && error.name === "TimeoutError") return stage + "_TIMEOUT";
   return stage + "_FAILED";
