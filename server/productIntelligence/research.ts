@@ -24,6 +24,15 @@ export interface ResearchCache {
   set(key: string, result: ResearchResult): Promise<void>;
 }
 export type ResearchOptions = { maxSources?: number; maxFieldsPerSource?: number };
+/** Diagnostic codes only: never propagate raw API errors or credentials. */
+function failureCode(error: unknown, stage: "SEARCH" | "EXTRACTION"): string {
+  const message = error instanceof Error ? error.message : "";
+  const match = /^RESEARCH_PROVIDER_HTTP_(\d{3})$/.exec(message);
+  if (match) return stage + "_HTTP_" + match[1];
+  if (message === "RESEARCH_EXTRACTION_INVALID_JSON") return stage + "_INVALID_JSON";
+  if (error instanceof Error && error.name === "TimeoutError") return stage + "_TIMEOUT";
+  return stage + "_FAILED";
+}
 const safeUrl = (url: string) => {
   try { const parsed = new URL(url); return ["https:","http:"].includes(parsed.protocol) && !!parsed.hostname && !parsed.username && !parsed.password; } catch { return false; }
 };
@@ -43,7 +52,7 @@ export async function enrichProduct(
   const query = [identity.brand, identity.model, identity.version, identity.manufacturerCode, "especificações tênis"].filter(Boolean).join(" ");
   let hits: ResearchHit[];
   try { hits = await provider.search(query, maxSources); }
-  catch { return { card: initial, state: "RESEARCH_FAILED", queried: true, warnings: ["SEARCH_FAILED"] }; }
+  catch (error) { return { card: initial, state: "RESEARCH_FAILED", queried: true, warnings: [failureCode(error,"SEARCH")] }; }
   const evidence: TechnicalEvidence[] = [];
   const seen = new Set<string>();
   for (const hit of hits.slice(0, maxSources)) {
@@ -57,7 +66,7 @@ export async function enrichProduct(
         if (item.sourceUrl === hit.url && item.sourceType === hit.sourceType) evidence.push(item);
         else warnings.push("UNTRUSTED_CITATION");
       }
-    } catch { warnings.push("EXTRACTION_FAILED"); }
+    } catch (error) { warnings.push(failureCode(error,"EXTRACTION")); }
   }
   const card = createSuperCatalogCard(identity,evidence);
   const result: ResearchResult = {card, state: card.sourcesConsulted ? "ENRICHED" : "NO_EVIDENCE", queried: true, warnings};
