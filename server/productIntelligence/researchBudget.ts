@@ -31,6 +31,7 @@ export function createResearchBudget(
       if (!period || period > 2147483647 || !limit || !tavilyLimit || !openaiLimit || !tavilyCost || !openaiCost) {
         throw new Error("RESEARCH_BUDGET_INVALID");
       }
+      if (operation !== "tavily" && operation !== "openai") throw new Error("RESEARCH_BUDGET_INVALID");
       const tavily = operation === "tavily" ? 1 : 0;
       const openai = operation === "openai" ? 1 : 0;
       const cost = tavily ? tavilyCost : openaiCost;
