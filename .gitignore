@@ -42,3 +42,6 @@ Thumbs.db
 # Codespaces
 .devcontainer/.env
 node_modules
+
+# Local research cache and diagnostic artifacts (Mission 10)
+/artifacts/mission10/
