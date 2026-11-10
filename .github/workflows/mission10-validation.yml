@@ -17,6 +17,26 @@ jobs:
   static-and-unit:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: mission10
+          POSTGRES_PASSWORD: mission10_ci_only
+          POSTGRES_DB: mission10_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mission10 -d mission10_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: mission10
+      PGPASSWORD: mission10_ci_only
+      PGDATABASE: mission10_ci
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,3 +52,12 @@ jobs:
         env:
           RESEARCH_PAID_ENABLED: 'false'
           RESEARCH_POSTGRES_HOMOLOGATED: 'false'
+      - name: Homologar SQL em PostgreSQL efemero (sem dados reais)
+        run: |
+          psql -v ON_ERROR_STOP=1 -c 'CREATE TABLE products (id varchar(36) PRIMARY KEY);'
+          psql -v ON_ERROR_STOP=1 -f migrations/mission10_research_coordination.sql
+          psql -v ON_ERROR_STOP=1 -c "INSERT INTO products(id) VALUES ('test-master');"
+          psql -v ON_ERROR_STOP=1 -c "INSERT INTO research_claims(super_hash, master_id, owner) VALUES (repeat('a',64), 'test-master', '00000000-0000-4000-8000-000000000001');"
+          psql -v ON_ERROR_STOP=1 -c "DO \\$\\$ BEGIN IF (SELECT COUNT(*) FROM research_claims) <> 1 THEN RAISE EXCEPTION 'claim not persisted'; END IF; END \\$\\$;"
+          psql -v ON_ERROR_STOP=1 -c "INSERT INTO research_budget(singleton,policy,window_end,tavily_calls,openai_calls,reserved_microusd) VALUES (true,'{}',NOW()+INTERVAL '1 hour',0,0,0);"
+          psql -v ON_ERROR_STOP=1 -c "SELECT singleton, tavily_calls, openai_calls FROM research_budget;"
