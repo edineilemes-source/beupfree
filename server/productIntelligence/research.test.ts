@@ -107,3 +107,26 @@ test("cache identity conflict blocks the provider and cache write conflicts stay
  assert.equal(result.state, "ENRICHED");
  assert.deepEqual(result.warnings, ["CACHE_WRITE_FAILED"]);
 });
+
+test("late rejection after cancellation is observed without unhandled promise rejection", async () => {
+ const cache: ResearchCache = { get: async () => null, set: async () => {} };
+ let rejectSearch!: (error: Error) => void;
+ let started!: () => void;
+ const startedPromise = new Promise<void>(resolve => { started = resolve; });
+ const provider: ResearchProvider = {
+  search: () => {
+   started();
+   return new Promise((_, reject) => { rejectSearch = reject; });
+  },
+  extract: async () => [],
+ };
+ const controller = new AbortController();
+ const request = enrichProduct(identity, provider, cache, { signal: controller.signal });
+ await startedPromise;
+ controller.abort();
+ assert.deepEqual((await request).warnings, ["RESEARCH_CANCELLED"]);
+ rejectSearch(new Error("late provider rejection"));
+ await new Promise<void>(resolve => setImmediate(resolve));
+ const healthy: ResearchProvider = { search: async () => [], extract: async () => [] };
+ assert.equal((await enrichProduct(identity, healthy, cache)).state, "NO_EVIDENCE");
+});
