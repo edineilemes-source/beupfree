@@ -1,29 +1,13 @@
-# Próxima ação — atualizada em 2026-11-10 (Missão 10.1)
+# Próxima ação — 2026-11-10 (após migração da Missão 10)
 
 ```yaml
-originating_mission: MISSAO10.1-GOVERNANCA
-recommended_next_mission: "Validar backup do uppulse_catalog, compatibilidade da migração de cache, e homologar adaptador PostgreSQL após autorização explícita."
-reason: "Banco consolidado confirmado com 32707 products, 96851 offers, 16945 catalog_search_products; migração mission10_product_intelligence_cache.sql ainda não aplicada."
-requires_user_decision: true
+originating_mission: MISSAO10.3-CACHE-PG
+recommended_next_mission: "Homologar leitura/escrita do cache PostgreSQL com Master ID real, dados sintéticos e ROLLBACK; em seguida integrar o adaptador ao fluxo da aplicação."
+reason: "Migração autorizada aplicada com COMMIT; tabela product_intelligence_cache criada com 3 índices e zero registros; contagens de products, offers e catalog_search_products preservadas."
+requires_user_decision: false
 requires_chatgpt_review: true
 ```
 
-- Fonte canônica: [docs/ESTADO_OPERACIONAL.md](../docs/ESTADO_OPERACIONAL.md).
-- Não utilizar o antigo banco da Missão 8, não executar `db:push`, não acionar Tavily/OpenAI em lote.
-- Relatórios futuros devem ser salvos em `docs/relatorios/` no GitHub; não exigir cópia manual de logs.
-- O conteúdo abaixo foi substituído e fica apenas como referência histórica:
-
-<details><summary>Próxima ação histórica — UPCAT003</summary>
-
-# Próxima ação
-
-```yaml
-originating_mission: UPCAT003
-recommended_next_mission: "Reexecutar a homologação real do catálogo operacional em Codespaces com DNS/rede disponíveis, cobrindo lista sanitizada, detalhe, redirect afiliado sem seguir até compra e rollback HTTP para demo; não ativar produção."
-reason: "Os defeitos de detalhe, clique e encaminhamento de filtros foram corrigidos e validados com fixtures, mas EAI_AGAIN impediu qualquer evidência contra catalog_search_products real."
-requires_user_decision: true
-requires_chatgpt_review: true
-```
-
-
-</details>
+- Referência: [docs/ESTADO_OPERACIONAL.md](../docs/ESTADO_OPERACIONAL.md).
+- Relatório: [docs/relatorios/MISSAO10_3_MIGRACAO_CACHE_2026-11-10.md](../docs/relatorios/MISSAO10_3_MIGRACAO_CACHE_2026-11-10.md).
+- Não rodar novamente a migração como se ainda estivesse pendente; não usar db:push; não disparar chamadas pagas para testar persistência.
