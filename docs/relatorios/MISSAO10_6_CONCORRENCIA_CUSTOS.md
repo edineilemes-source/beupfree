@@ -91,3 +91,13 @@ PUBLICAR_MISSAO_10_6
 **PUBLICADO NO GITHUB.** A indicação `BLOCKED` acima descreve apenas a tentativa original dentro do sandbox do Codex; foi superada. O operador publicou os três documentos por worktree temporário, sem incluir código ou migração, no commit `51cafac` da branch `feat/uppulse-missao10-supercatalogo`. O conteúdo publicado foi confirmado por leitura direta do GitHub. O código e os testes da Missão 10.6 continuam apenas no checkout do Codespaces; a migração SQL não foi aplicada. A publicação documental não constitui homologação do PostgreSQL nem autorização de APIs pagas.
 
 **Regra de continuidade:** usar GitHub como fonte canônica dos relatórios; não pedir ao operador para copiar relatórios já publicados. Acesso direto ao GitHub não equivale a acesso ao sistema de arquivos não publicado do Codespaces. Não registrar testes, backup ou commit de código sem evidência de execução.
+
+## Revisão direta pelo GitHub — 2026-11-10
+
+- **Código publicado:** comparação remota confirmou dez arquivos da Missão 10.6, incluindo testes e a migração proposta; não é necessário repetir o transporte do Codespaces.
+- **Correção adicional publicada:** `server/productIntelligence/research.ts` foi ajustado para tratar as duas saídas de `operation.then` e remover o listener de abort sem criar uma promessa rejeitada e não observada pelo encadeamento `.finally`. Commit `4fb7c9f`.
+- **Teste de regressão adicionado:** `server/productIntelligence/research.test.ts` cobre rejeição tardia do provedor depois do cancelamento e a possibilidade de nova pesquisa. Commit `38ebc4f`.
+- **Verificação feita:** leitura direta dos arquivos e comparação dos commits no GitHub; **não** foram executados testes Node, TypeScript, build ou PostgreSQL nesta revisão. O teste novo precisa ser executado antes de declarar o defeito resolvido em runtime.
+- **Ponto crítico ainda aberto:** `research_claims` não possui recuperação automática de reserva órfã após queda abrupta do processo. Remoção de reserva exige comprovar ausência de worker ativo, para evitar pesquisa duplicada. Não ativar pesquisas pagas nem marcar `RESEARCH_POSTGRES_HOMOLOGATED=true` sem homologação.
+- **Migração:** `migrations/mission10_research_coordination.sql` está **versionada, mas não aplicada**. Aplicação depende de acesso ao banco de homologação, confirmação de backup e autorização; não confundir push de SQL com execução no PostgreSQL.
+- **Situação:** implementação publicada; testes locais anteriores relatados; homologação real da Missão 10.6 permanece pendente. A Missão 11 segue adiada até fechamento técnico.
