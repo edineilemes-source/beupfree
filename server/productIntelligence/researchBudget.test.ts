@@ -47,3 +47,11 @@ test("budget fails closed for missing opt-in, invalid configuration and unavaila
   await assert.rejects(createResearchBudget(executor, { ...policy, RESEARCH_BUDGET_USD: "Infinity" }).reserve("openai"), /RESEARCH_BUDGET_INVALID/);
   await assert.rejects(createResearchBudget(executor, policy).reserve("openai"), /RESEARCH_BUDGET_UNAVAILABLE/);
 });
+
+test("unknown operation is rejected before database reservation", async () => {
+ let queries = 0;
+ const executor: SqlExecutor = { query: async () => { queries++; return { rows: [] }; } };
+ const budget = createResearchBudget(executor, policy);
+ await assert.rejects(budget.reserve("unexpected" as "tavily"), /RESEARCH_BUDGET_INVALID/);
+ assert.equal(queries, 0);
+});
