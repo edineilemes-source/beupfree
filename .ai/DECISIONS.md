@@ -129,3 +129,12 @@ Registro append-only de decisões técnicas e operacionais que precisam sobreviv
 - Contexto: maior desconto isolado favorece percentuais promocionais sem assegurar relevância ou qualidade.
 - Decisão: usar disponibilidade, completude, atividades, força de oferta com desconto limitado e recência, com Product e merchant como desempates determinísticos; manter ordenações explícitas separadas.
 - Consequências: desconto continua filtrável e ordenável sob escolha explícita, mas não domina o ranking público padrão.
+
+
+## MISSAO10.1-D001 — Estado canônico e continuidade obrigatória
+
+- Data: 2026-11-10.
+- Status: aceita para a branch da Missão 10; não implica merge em produção.
+- Contexto: retomada após 11 dias provocou investigação desnecessária de bancos históricos, apesar de a Missão 9 ter consolidado o catálogo. Os arquivos `.ai/` estavam desatualizados desde setembro.
+- Decisão: manter `docs/ESTADO_OPERACIONAL.md` como índice operacional canônico, validado contra Git e SQL read-only, com fatos confirmados, relatos e pendências separados. Atualizar documentação e relatório GitHub ao encerrar cada missão; `AGENTS.md` exige esse procedimento.
+- Consequências: o operador não precisa transportar relatórios manualmente; divergências entre documentos e ambiente bloqueiam conclusão até serem registradas. Não versionar segredos, não executar migrações sem backup e autorização.
