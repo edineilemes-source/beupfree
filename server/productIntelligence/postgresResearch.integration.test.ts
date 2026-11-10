@@ -29,7 +29,7 @@ const executor = (pool: pg.Pool) => ({
   },
 });
 
-test("PostgreSQL real: exclusao entre pools e liberacao do detentor", async () => {
+test("PostgreSQL real: exclusao entre pools e liberacao do detentor", { skip: process.env.MISSION10_POSTGRES_INTEGRATION !== "true" }, async () => {
   const firstPool = new pg.Pool(config);
   const secondPool = new pg.Pool(config);
   const card = createSuperCatalogCard({ masterId: "test-master", brand: "Test", model: "Concurrent" });
@@ -50,7 +50,7 @@ test("PostgreSQL real: exclusao entre pools e liberacao do detentor", async () =
   }
 });
 
-test("PostgreSQL real: dez reservas concorrentes respeitam teto agregado", async () => {
+test("PostgreSQL real: dez reservas concorrentes respeitam teto agregado", { skip: process.env.MISSION10_POSTGRES_INTEGRATION !== "true" }, async () => {
   const firstPool = new pg.Pool(config);
   const secondPool = new pg.Pool(config);
   try {
