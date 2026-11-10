@@ -23,14 +23,21 @@ export function createPostgresResearchCache(executor: SqlExecutor): ResearchCach
     async set(key, result) {
       validKey(key);
       if (result.state !== "ENRICHED" || result.card.superHash !== key) throw new Error("INVALID_CACHE_ENTRY");
-      await executor.query(
+      const { rows } = await executor.query(
         `INSERT INTO product_intelligence_cache (super_hash, master_id, result, updated_at)
          VALUES ($1, $2, $3::jsonb, NOW())
          ON CONFLICT (super_hash) DO UPDATE SET
-           result = EXCLUDED.result, updated_at = NOW()
-         WHERE product_intelligence_cache.master_id = EXCLUDED.master_id`,
+           result = EXCLUDED.result,
+           updated_at = NOW(),
+           expires_at = CASE
+             WHEN product_intelligence_cache.expires_at <= NOW() THEN EXCLUDED.expires_at
+             ELSE product_intelligence_cache.expires_at
+           END
+         WHERE product_intelligence_cache.master_id = EXCLUDED.master_id
+         RETURNING super_hash`,
         [key, result.card.masterId, JSON.stringify({ ...result, queried: false })],
       );
+      if (rows.length === 0) throw new Error("CACHE_MASTER_ID_MISMATCH");
     },
   };
 }
