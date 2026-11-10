@@ -43,3 +43,8 @@ Revisar o diff do código local, conferir testes e segurança e obter autorizaç
 ## Publicação deste relatório
 
 Documento publicado diretamente no GitHub após a homologação comunicada pelo operador. O conteúdo descreve a implementação local; **não** representa commit ou push do código da Missão 10.5.
+
+
+## Encerramento de versionamento — atualização posterior em 2026-11-10
+
+O estado 'código não versionado' acima é **histórico**. Após revisão final do Codex, `npm run check`, `npm run test:mission10` e `git diff --check` aprovados, os quatro arquivos de código foram publicados no commit `8afe2dd` da branch `feat/uppulse-missao10-supercatalogo`. O operador confirmou o push. A revisão acrescentou proteção aos diagnósticos do teste e reforçou o `ROLLBACK` em `finally`. A homologação PostgreSQL real foi feita antes desses ajustes e não foi repetida depois. A próxima etapa é a Missão 10.6, sem ativação de chamadas pagas.
