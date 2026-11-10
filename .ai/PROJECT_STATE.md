@@ -1,3 +1,5 @@
+> **ATENÇÃO — estado histórico (setembro/2026).** O estado operacional validado em 2026-11-10 está em [docs/ESTADO_OPERACIONAL.md](../docs/ESTADO_OPERACIONAL.md). Em caso de conflito, verificar código/ambiente e corrigir o documento. Branch `codespace-working`, caminhos e banco descritos abaixo não são referências atuais confirmadas. Esta anotação preserva o protocolo histórico sem apagar decisões.
+
 # Estado do projeto
 
 Estado técnico consolidado e relativamente estável do BeUpFree/UpPulse. Registre aqui somente fatos atuais e úteis entre sessões. As regras do `AGENTS.md` têm precedência; não copie credenciais, tokens, dados pessoais ou conteúdo de `.env`.
