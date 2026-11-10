@@ -56,3 +56,8 @@ Antes de propor execução: ler `AGENTS.md`, este arquivo, `.ai/PROJECT_STATE.md
 - **TESTES DO CODEX:** `npm run check`, `npm run test:mission10` e testes direcionados do adaptador passaram; conexão TCP falhou apenas no sandbox. A homologação PostgreSQL ocorreu posteriormente no terminal normal.
 - **PENDENTE:** revisão e autorização para commit/push do código, integração ao consumidor de aplicação/UI, controle de custos/concorrência e gates gerais. Não foram reconferidas contagens comerciais nesta etapa.
 - Relatório: [Missão 10.5](relatorios/MISSAO10_5_INTEGRACAO.md). As afirmações anteriores de que o adaptador PostgreSQL não foi homologado representam o estado *anterior* a esta atualização.
+
+
+## Atualização posterior — Missão 10.5 publicada, 2026-11-10
+
+**PUBLICADO:** o código da Missão 10.5 foi revisado pelo Codex, considerado apto para publicação e enviado à branch `feat/uppulse-missao10-supercatalogo` no commit `8afe2dd`. Foram versionados exatamente quatro arquivos: `server/productIntelligence/postgresCache.ts`, `server/productIntelligence/postgresCache.test.ts`, `server/productIntelligence/postgresResearch.ts` e `scripts/mission10-postgres-integration.ts`. O resultado de push foi confirmado pelo operador. A homologação PostgreSQL transacional foi aprovada **antes** dos últimos ajustes de segurança do script; estes passaram nos testes de código, mas não foram reexecutados no banco real após os ajustes. As frases anteriores 'não versionado' são histórico superado. Não houve deploy nem ativação de pesquisas pagas. **Próxima missão: 10.6**, concorrência e limites de custos. Seguir o contrato de publicação documental em `AGENTS.md`.
