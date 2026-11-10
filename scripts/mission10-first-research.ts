@@ -2,6 +2,7 @@ import { createLiveResearchProvider } from "../server/productIntelligence/livePr
 import { enrichProduct, type ResearchCache, type ResearchResult } from "../server/productIntelligence/research";
 import { writeFile, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
+import { createFileResearchCache } from "../server/productIntelligence/fileCache";
 
 const identity = { masterId:"pilot-adidas-adizero-adios-pro-4",brand:"Adidas",model:"Adizero Adios Pro",version:"4" };
 const openaiApiKey = process.env.OPENAI_API_KEY ?? "";
@@ -11,10 +12,11 @@ if (!openaiApiKey || !tavilyApiKey) {
   process.exitCode=2;
 } else {
   const provider=createLiveResearchProvider({openaiApiKey,tavilyApiKey,openaiModel:process.env.OPENAI_RESEARCH_MODEL});
-  const cache:ResearchCache={get:async()=>null,set:async()=>{}};
+  const cache:ResearchCache=createFileResearchCache(resolve("artifacts/mission10/cache"));
   const result=await enrichProduct(identity,provider,cache,{maxSources:2,maxFieldsPerSource:12});
   const report={
     model:identity.brand+" "+identity.model+" "+identity.version,
+    fromCache:!result.queried,
     status:result.state,
     sourceCount:result.card.sourcesConsulted,
     warnings:result.warnings,
