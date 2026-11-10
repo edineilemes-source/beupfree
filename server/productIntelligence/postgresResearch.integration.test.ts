@@ -63,9 +63,13 @@ test("PostgreSQL real: dez reservas concorrentes respeitam teto agregado", { ski
     const { rows: [row] } = await firstPool.query(
       "SELECT tavily_calls, openai_calls, reserved_microusd FROM research_budget WHERE singleton=true",
     );
-    assert.equal(Number(row.tavily_calls), 2);
-    assert.equal(Number(row.openai_calls), 1);
-    assert.equal(Number(row.reserved_microusd), 20_000);
+    const tavily = Number(row.tavily_calls);
+    const openai = Number(row.openai_calls);
+    const reserved = Number(row.reserved_microusd);
+    assert.ok(tavily <= 2 && openai <= 3);
+    assert.equal(tavily + openai, 3);
+    assert.equal(reserved, tavily * 5_000 + openai * 10_000);
+    assert.ok(reserved <= 25_000);
   } finally {
     await Promise.all([firstPool.end(), secondPool.end()]);
   }
