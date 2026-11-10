@@ -1,0 +1,34 @@
+name: Missao 10 - validacao segura
+
+on:
+  push:
+    branches:
+      - feat/uppulse-missao10-supercatalogo
+    paths:
+      - 'server/productIntelligence/**'
+      - 'migrations/mission10_research_coordination.sql'
+      - '.github/workflows/mission10-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-and-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Instalar dependencias sem scripts de instalacao
+        run: npm ci --ignore-scripts
+      - name: Verificar TypeScript
+        run: npm run check
+      - name: Testes da Missao 10 sem APIs pagas
+        run: npm run test:mission10
+        env:
+          RESEARCH_PAID_ENABLED: 'false'
+          RESEARCH_POSTGRES_HOMOLOGATED: 'false'
