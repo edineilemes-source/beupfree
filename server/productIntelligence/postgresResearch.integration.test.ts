@@ -59,7 +59,9 @@ test("PostgreSQL real: dez reservas concorrentes respeitam teto agregado", { ski
     const results = await Promise.allSettled(Array.from({ length: 10 }, (_, i) =>
       (i % 2 ? first : second).reserve(i < 5 ? "tavily" : "openai"),
     ));
-    assert.equal(results.filter(result => result.status === "fulfilled").length, 3);
+    const failures = results.filter((result): result is PromiseRejectedResult => result.status === "rejected");
+    assert.equal(results.filter(result => result.status === "fulfilled").length, 3,
+      `Reservation failures: ${JSON.stringify(failures.map(result => String(result.reason)))}`);
     const { rows: [row] } = await firstPool.query(
       "SELECT tavily_calls, openai_calls, reserved_microusd FROM research_budget WHERE singleton=true",
     );
