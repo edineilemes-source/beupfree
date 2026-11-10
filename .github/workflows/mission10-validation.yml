@@ -63,3 +63,9 @@ jobs:
           psql -v ON_ERROR_STOP=1 -c "SELECT singleton, tavily_calls, openai_calls FROM research_budget;"
 
 # Trigger de validacao automatica da Missao 10.6 em 2026-11-10.
+      - name: Testes de concorrencia e orcamento em dois pools PostgreSQL reais
+        run: node --import tsx --test server/productIntelligence/postgresResearch.integration.test.ts
+        env:
+          MISSION10_POSTGRES_INTEGRATION: 'true'
+          RESEARCH_PAID_ENABLED: 'false'
+          RESEARCH_POSTGRES_HOMOLOGATED: 'false'
