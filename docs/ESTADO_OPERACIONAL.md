@@ -19,7 +19,7 @@ Antes de propor execução: ler `AGENTS.md`, este arquivo, `.ai/PROJECT_STATE.md
 - `beupfree-recovery-postgres` (5434) estava ativo mas seu banco `postgres` não tinha tabelas de usuário; não é a referência do catálogo. Instâncias históricas `beupfree-postgres` (5433) e bases das Missões 7/8 não são fontes de verdade.
 - Se o Codespace reiniciar, o contêiner 5435 pode estar parado. Inspecionar `docker ps -a` e o volume antes de iniciar **o contêiner existente**; jamais recriar/remover volumes.
 - Credenciais **não** ficam no Git. O terminal da Missão 10 não tinha `DATABASE_URL`; não copiar `.env` antigo nem usar senha da Missão 8. Para leitura no contêiner, usar `docker exec -i beupfree-catalog-pg17 sh -c 'psql -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-postgres}" -X -v ON_ERROR_STOP=1'`.
-- Backup pré-migração: **ainda não confirmado**. Não rodar `db:push`, migrações ou testes mutáveis antes de verificar backup e autorização.
+- Backup pré-migração: **arquivo de 109 MB confirmado e índice legível por pg_restore -l em 2026-11-10; restauração completa ainda não testada**. A PK de products.id foi confirmada e o maior ID mede 36 caracteres (nenhum acima de 36). Relatório: docs/relatorios/MISSAO10_2_PREFLIGHT_2026-11-10.md. Não rodar `db:push`, migrações ou testes mutáveis antes de verificar backup e autorização.
 
 ## Produto e catálogo
 - Missão 9 consolidou código/banco e o operador relatou agrupamentos reais funcionando na interface antes do recesso. Esse funcionamento é **relato histórico**, não homologação reproduzida nesta sessão.
