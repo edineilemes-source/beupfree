@@ -35,3 +35,9 @@ A coordenação e o orçamento passaram em testes simulados. A homologação mul
 [Relatório e estado da publicação documental](../docs/relatorios/MISSAO10_6_CONCORRENCIA_CUSTOS.md).
 
 **Publicação desta execução:** RELATÓRIO NÃO PUBLICADO. Consulte o comando de publicação documental no relatório.
+
+## Prioridade de produto — Missão 11 (2026-11-10)
+
+**Esta seção substitui as recomendações anteriores como próxima ação.** O foco agora é **colocar a aplicação no ar no preview, validar o catálogo real, integrar novos parceiros e evoluir o layout**, sem ficar repetindo a Missão 10.6. Plano operacional: [Missão 11 — retomada da aplicação, catálogo e layout](../docs/missoes/MISSAO11_RETOMADA_APLICACAO_CATALOGO_LAYOUT.md).
+
+O relatório 10.6 já está publicado no GitHub. Seu código permanece local no Codespaces; não executar rebase/reset/force-push sobre esse checkout. A documentação GitHub não prova que o servidor HTTP esteja ativo. Preservar dados, não executar migração 10.6 nem API paga. Próxima evidência desejada: URL/porta de preview respondendo e navegação real catálogo → oferta, seguida de relatório de falhas e correções.
