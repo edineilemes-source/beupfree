@@ -53,7 +53,7 @@
     "identity:worker:homologation": "node --import tsx scripts/missao7-worker.ts",
     "test:master-catalog": "node --import tsx --test server/productIdentity/catalog.test.ts server/productIdentity/facets.missao8.test.ts",
     "identity:catalog:homologation": "node --max-old-space-size=6000 --import tsx scripts/missao8-catalog.ts",
-    "test:mission10": "node --import tsx --test server/productIntelligence/superCatalog.test.ts"
+    "test:mission10": "node --import tsx --test server/productIntelligence/*.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
