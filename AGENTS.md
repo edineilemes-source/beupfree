@@ -138,3 +138,13 @@ Uma tarefa está concluída quando:
 - o código foi revisado;
 - limitações e verificações não executadas foram declaradas;
 - a alteração está pronta para revisão em branch ou pull request separado.
+
+
+## Continuidade operacional — Missão 10.1 (2026-11-10)
+
+- **Antes de qualquer missão**, consultar `docs/ESTADO_OPERACIONAL.md`, `.ai/NEXT_ACTION.md`, este AGENTS.md e código/testes relevantes. As referências antigas deste arquivo a branch, pasta e script de inicialização são históricas e **não substituem a verificação da branch e do ambiente atuais**.
+- Não inferir banco de dados pelo nome de diretório, arquivo `.env` antigo ou porta padrão. A referência de homologação confirmada em 2026-11-10 é `uppulse_catalog` no contêiner `beupfree-catalog-pg17` (host 5435), conforme `docs/ESTADO_OPERACIONAL.md`. Reconferir estado antes de escrever.
+- **Critério adicional de conclusão**: atualizar o estado operacional e salvar relatório de execução em `docs/relatorios/` na branch do GitHub. O relatório deve conter commit, alterações, verificações executadas e não executadas, dados/banco impactados, riscos e próximo passo. Não pedir ao usuário que copie relatório para o chat quando o GitHub estiver acessível.
+- Se a missão não puder atualizar os registros ou validar o ambiente, registrar `BLOCKED`/pendência, não declarar `COMPLETED`.
+- O usuário pode interromper Codex com Ctrl+C; preferir alterações diretas no GitHub quando possível. Não iniciar processos Codex longos sem necessidade.
+- Toda alteração de esquema exige revisão, backup confirmado e autorização explícita; proibir `db:push` indiscriminado. Nunca publicar credenciais ou dumps no repositório.
