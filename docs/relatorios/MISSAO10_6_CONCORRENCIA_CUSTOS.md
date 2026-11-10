@@ -85,3 +85,9 @@ git -C "$publication_dir" show "FETCH_HEAD:$report" >/dev/null
 printf 'SHA: %s\nhttps://github.com/edineilemes-source/beupfree/blob/%s/%s\n' "$sha" "$sha" "$report"
 PUBLICAR_MISSAO_10_6
 ```
+
+## Confirmação posterior de publicação — 2026-11-10
+
+**PUBLICADO NO GITHUB.** A indicação `BLOCKED` acima descreve apenas a tentativa original dentro do sandbox do Codex; foi superada. O operador publicou os três documentos por worktree temporário, sem incluir código ou migração, no commit `51cafac` da branch `feat/uppulse-missao10-supercatalogo`. O conteúdo publicado foi confirmado por leitura direta do GitHub. O código e os testes da Missão 10.6 continuam apenas no checkout do Codespaces; a migração SQL não foi aplicada. A publicação documental não constitui homologação do PostgreSQL nem autorização de APIs pagas.
+
+**Regra de continuidade:** usar GitHub como fonte canônica dos relatórios; não pedir ao operador para copiar relatórios já publicados. Acesso direto ao GitHub não equivale a acesso ao sistema de arquivos não publicado do Codespaces. Não registrar testes, backup ou commit de código sem evidência de execução.
