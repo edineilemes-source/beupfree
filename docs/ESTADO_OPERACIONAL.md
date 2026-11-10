@@ -15,7 +15,7 @@ Antes de propor execução: ler `AGENTS.md`, este arquivo, `.ai/PROJECT_STATE.md
 - Contêiner Docker: `beupfree-catalog-pg17`; imagem `postgres:17-alpine`; porta do host `127.0.0.1:5435` → 5432 no contêiner.
 - Banco: `uppulse_catalog`; volume persistente `beupfree-catalog-pg17-data`.
 - Contagens exatas: `public.products=32707`, `public.offers=96851`, `public.catalog_search_products=16945`; tamanho observado ~1112 MB.
-- `products.id` é varchar; validar conteúdo e restrições reais antes de aplicar FK/migração. `product_intelligence_cache` **não existia** em 2026-11-10.
+- `products.id` é varchar; validar conteúdo e restrições reais antes de aplicar FK/migração. `product_intelligence_cache` **foi criada com sucesso em 2026-11-10**, por migração aditiva autorizada, com 0 linhas iniciais; índices `product_intelligence_cache_pkey`, `idx_m10_cache_master`, `idx_m10_cache_expiration`. Confirmado por SQL após COMMIT.
 - `beupfree-recovery-postgres` (5434) estava ativo mas seu banco `postgres` não tinha tabelas de usuário; não é a referência do catálogo. Instâncias históricas `beupfree-postgres` (5433) e bases das Missões 7/8 não são fontes de verdade.
 - Se o Codespace reiniciar, o contêiner 5435 pode estar parado. Inspecionar `docker ps -a` e o volume antes de iniciar **o contêiner existente**; jamais recriar/remover volumes.
 - Credenciais **não** ficam no Git. O terminal da Missão 10 não tinha `DATABASE_URL`; não copiar `.env` antigo nem usar senha da Missão 8. Para leitura no contêiner, usar `docker exec -i beupfree-catalog-pg17 sh -c 'psql -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-postgres}" -X -v ON_ERROR_STOP=1'`.
@@ -29,7 +29,7 @@ Antes de propor execução: ler `AGENTS.md`, este arquivo, `.ai/PROJECT_STATE.md
 ## Missão 10 — inteligência de produtos
 - Implementado: `server/productIntelligence/superCatalog.ts` (identidade, SuperHash e conflitos), `research.ts` (orquestração), `liveProvider.ts` (Tavily/OpenAI), `fileCache.ts` (cache persistente local), `postgresCache.ts` (adaptador SQL), testes relacionados e migração aditiva `migrations/mission10_product_intelligence_cache.sql`.
 - Smoke real já informado: Adidas Adizero Adios Pro 4, resultado ENRICHED; segunda execução reutilizou cache local, sem novas chamadas pagas. Resultados de evidências podem divergir; não fundir Master IDs automaticamente.
-- `scripts/mission10-first-research.ts` usa **cache em arquivo** e identidade piloto; NÃO está integrado ao PostgreSQL. Adaptador PG testado com executor simulado, não contra banco real. A migração não foi aplicada.
+- `scripts/mission10-first-research.ts` usa **cache em arquivo** e identidade piloto; NÃO está integrado ao PostgreSQL. Adaptador PG testado com executor simulado, não contra banco real. A migração foi aplicada em 2026-11-10; o adaptador PostgreSQL ainda não foi homologado com escrita/leitura real.
 - Credenciais de API somente em ambiente seguro. Custos, limites, concorrência e TTL ainda exigem controle antes de pesquisa em escala. Não disparar pesquisa paga automaticamente.
 - Documentos: `docs/missao10-research.md` e `docs/missao10-postgres.md`.
 
@@ -40,8 +40,8 @@ Antes de propor execução: ler `AGENTS.md`, este arquivo, `.ai/PROJECT_STATE.md
 
 ## Próxima ação e critérios de encerramento
 1. Preservar este estado no GitHub e manter `.ai/` sincronizado; relatório da Missão 10.1 em `docs/relatorios/`.
-2. Conferir backup legível do `uppulse_catalog` e compatibilidade da FK `products.id` com a migração.
-3. Solicitar autorização separada antes de executar migração aditiva no banco; depois homologar adaptador PG sem API paga.
+2. Backup de 109 MB com índice legível; restauração completa não testada. Migração aditiva já executada e validada.
+3. Homologar adaptador PG com produto Master real e dados sintéticos, sem API paga; limpar somente registros de teste mediante plano seguro.
 4. Concluir integração de IA com orçamento, cache, evidências e UI testados; não chamar de concluída antes disso.
 
 ## Contrato permanente de continuidade
