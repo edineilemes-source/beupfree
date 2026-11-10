@@ -24,7 +24,18 @@ function safeUrl(value: string): boolean {
 }
 async function jsonRequest(fetcher: Fetcher, url: string, headers: Record<string,string>, body: unknown): Promise<unknown> {
   const response = await fetcher(url, {method:"POST",headers:{"content-type":"application/json",...headers},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});
-  if (!response.ok) throw new Error("RESEARCH_PROVIDER_HTTP_"+response.status);
+  if (!response.ok) {
+    // Only emit a fixed allowlisted API error code; never log request headers,
+    // credentials, provider response bodies, or arbitrary error messages.
+    let code = "";
+    try {
+      const payload = object(await response.json());
+      const error = object(payload?.error);
+      const candidate = text(error?.code);
+      if (["missing_scope","invalid_api_key","insufficient_quota","model_not_found","rate_limit_exceeded","organization_not_found"].includes(candidate)) code = "_" + candidate.toUpperCase();
+    } catch { /* Preserve HTTP status when response is not JSON. */ }
+    throw new Error("RESEARCH_PROVIDER_HTTP_"+response.status+code);
+  }
   return response.json();
 }
 const allowedFields = new Set(["cabedal","entressola","solado","drop","peso","amortecimento","estabilidade","indicacao_de_uso","tecnologia","material","altura_do_solado","modalidade"]);
