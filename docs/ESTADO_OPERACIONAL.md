@@ -77,3 +77,12 @@ Antes de propor execução: ler `AGENTS.md`, este arquivo, `.ai/PROJECT_STATE.md
 - **NÃO HOMOLOGADO:** a publicação do arquivo `migrations/mission10_research_coordination.sql` não significa que ele foi aplicado ao PostgreSQL. Permanecem pendentes autorização de migração, confirmação de backup atual, testes com duas conexões PostgreSQL reais e validação de recuperação de reservas órfãs após falha abrupta.
 - **NÃO EXECUTADO NESTA VERIFICAÇÃO:** TypeScript, testes automatizados, build, acesso ao banco, chamadas pagas e deploy. A conferência foi de conteúdo e histórico GitHub.
 - **PRIORIDADE:** concluir a Missão 10.6 antes de iniciar a Missão 11. Não repetir transferência de arquivos já versionados.
+
+## Homologação PostgreSQL Missão 10.6 — confirmada em 2026-11-10
+- Operador executou migração aditiva autorizada em `uppulse_catalog`, contêiner `beupfree-catalog-pg17`, PostgreSQL 17.11: `research_claims` e `research_budget` criadas em transação com COMMIT.
+- Contagens antes e depois: 32.707 produtos, 96.851 ofertas, 16.945 projeções; nenhuma alteração nas contagens.
+- Backup `/workspaces/backups/uppulse_catalog_pre_missao10.dump` (114.180.296 bytes) com índice e entradas TABLE DATA conferidas pelo pg_restore 17; restauração integral não comprovada.
+- Testes do GitHub Actions reportados aprovados: TypeScript, testes Missão 10 e concorrência/orçamento em PostgreSQL efêmero. Execução real no Codespaces do script `scripts/mission10-6-homologate.sh`: `M10_6_HOMOLOGATION_SQL_ROLLBACK_OK` e `M10_6_HOMOLOGATION_COMPLETE`, zero linhas remanescentes em ambas as tabelas de controle. Esse script verifica regras SQL transacionais, não simula dois processos no banco de homologação.
+- Pesquisas pagas seguem desativadas. Reserva órfã após falha abrupta ainda exige recuperação operacional segura; não declarar ativação de IA paga autorizada.
+- Checkout local continua divergente (1 commit exclusivo local, 29 remotos na verificação anterior), com alterações locais; não executar pull/rebase/reset destrutivos.
+- **Próxima prioridade: Missão 11**, iniciar aplicação e validar catálogo e UX com dados reais. Não bloquear o catálogo por ativação de IA paga.
