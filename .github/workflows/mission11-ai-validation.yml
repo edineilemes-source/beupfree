@@ -1,0 +1,41 @@
+name: Missao 11.1 - IA interna sem custos
+on:
+  push:
+    branches:
+      - feat/uppulse-missao10-supercatalogo
+    paths:
+      - 'client/src/components/CatalogAssistant.tsx'
+      - 'client/src/components/ProductKnowledge.tsx'
+      - 'client/src/components/Header.tsx'
+      - 'client/src/components/MasterOffers.tsx'
+      - 'client/src/lib/catalogAssistant*'
+      - 'server/productIntelligence/knowledgeRoutes.ts'
+      - 'server/routes.ts'
+      - '.github/workflows/mission11-ai-validation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Instalar dependencias
+        run: npm ci --ignore-scripts
+      - name: TypeScript
+        run: npm run check
+      - name: Teste do consultor local sem APIs externas
+        run: node --import tsx --test client/src/lib/catalogAssistant.test.ts
+        env:
+          RESEARCH_PAID_ENABLED: 'false'
+          RESEARCH_POSTGRES_HOMOLOGATED: 'false'
+      - name: Build do cliente e servidor
+        run: npm run build
+        env:
+          RESEARCH_PAID_ENABLED: 'false'
+          RESEARCH_POSTGRES_HOMOLOGATED: 'false'
