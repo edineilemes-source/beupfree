@@ -53,3 +53,59 @@ test("ficha exibe identidade superhash e informa que nao pesquisou APIs pagas",a
  await expect(page.getByTestId("product-knowledge")).toContainText("Sem chamadas pagas");
  await expect(page.getByTestId("product-knowledge")).toContainText("Sem evidências externas validadas");
 });
+
+test("mudar de marca renova filtros, produtos e contagem consultada",async({page})=>{
+ const itemNike={...item,id:"ai-test-nike-002",mainName:"Nike Caminhada Teste",brand:{name:"Nike",slug:"nike"}};
+ const queries:string[]=[];
+ await page.route("**/api/products?*",async route=>{
+  const q=new URL(route.request().url()).searchParams;
+  queries.push(q.toString());
+  const nike=q.get("marca")==="Nike";
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
+   catalogSource:"operational",demonstrative:false,serverDriven:true,
+   total:nike?23:147,products:nike?[itemNike]:[item],
+  })});
+ });
+ await page.goto("/");
+ await page.getByTestId("open-catalog-assistant").click();
+ const field=page.getByRole("textbox",{name:"Converse com o consultor de tênis"});
+ await field.fill("Adidas para corrida até R$ 500 tamanho 41");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await expect(page.getByTestId("assistant-total")).toContainText("147");
+ await expect(page.getByTestId("assistant-result")).toContainText("Adidas");
+ await field.fill("Agora quero Nike para caminhada");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await expect(page.getByTestId("assistant-total")).toContainText("23");
+ await expect(page.getByTestId("assistant-result")).toContainText("Nike Caminhada Teste");
+ await expect(page.getByTestId("assistant-applied-filters")).toContainText("Marca: Nike");
+ await expect(page.getByTestId("assistant-applied-filters")).not.toContainText("Adidas");
+ await expect(page.getByTestId("assistant-applied-filters")).not.toContainText("R$ 500");
+ const last=new URLSearchParams(queries.at(-1));
+ expect(last.get("marca")).toBe("Nike");
+ expect(last.get("modalidade")).toBe("Caminhada");
+ expect(last.has("priceMax")).toBe(false);
+ expect(last.has("tamanho")).toBe(false);
+});
+test("mensagem desconhecida não reutiliza resultados antigos nem dispara nova busca",async({page})=>{
+ let calls=0;
+ await page.route("**/api/products?*",async route=>{
+  calls++;
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
+   catalogSource:"operational",demonstrative:false,serverDriven:true,total:1,products:[item]
+  })});
+ });
+ await page.goto("/");
+ await page.getByTestId("open-catalog-assistant").click();
+ const field=page.getByRole("textbox",{name:"Converse com o consultor de tênis"});
+ await field.fill("Adidas corrida");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await expect(page.getByTestId("assistant-result")).toHaveCount(1);
+ const before=calls;
+ await field.fill("Quero muito amortecimento e maciez");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await expect(page.getByTestId("assistant-not-understood")).toBeVisible();
+ await expect(page.getByTestId("assistant-result")).toHaveCount(0);
+ expect(calls).toBe(before);
+ await page.getByTestId("assistant-new-search").click();
+ await expect(page.getByTestId("assistant-query-info")).toHaveCount(0);
+});
