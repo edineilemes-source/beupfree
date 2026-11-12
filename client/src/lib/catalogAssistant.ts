@@ -1,5 +1,5 @@
 /** Consultor offline: interpretação transparente, sem chamadas a modelos externos. */
-export type CatalogIntent = {brand?:string;activity?:string;priceMax?:number;size?:number};
+export type CatalogIntent = {brand?:string;activity?:string;priceMax?:number;size?:number;technical?:string[]};
 export type CatalogRequest = {
   intent:CatalogIntent;
   mode:"new"|"refine";
@@ -22,9 +22,14 @@ function extract(message:string):CatalogIntent{
   const price=/\b(?:ate|abaixo de|menos de|limite de|maximo|orcamento de)\s*(?:r\$\s*)?(\d{2,5})(?:[.,]\d{2})?\b/.exec(text);
   const size=/\b(?:numero|numeracao|calco|tamanho)\s*(\d{2})\b/.exec(text);
   const priceMax=price?Number(price[1]):undefined;
-  return {brand,activity,priceMax:priceMax&&priceMax>0?priceMax:undefined,size:size?Number(size[1]):undefined};
+  const technical=[
+    [/amortec/,"amortecimento"],[/maci[oa]|maciez/,"maciez"],[/confort/,"conforto"],
+    [/cabedal/,"cabedal"],[/\bdrop\b/,"drop"],[/solado/,"solado"],[/material/,"material"],
+  ].filter(([pattern])=>(pattern as RegExp).test(text)).map(([,token])=>token as string);
+  return {brand,activity,priceMax:priceMax&&priceMax>0?priceMax:undefined,size:size?Number(size[1]):undefined,
+    ...(technical.length?{technical}: {})};
 }
-export const hasCatalogIntent=(value:CatalogIntent)=>Boolean(value.brand||value.activity||value.priceMax||value.size);
+export const hasCatalogIntent=(value:CatalogIntent)=>Boolean(value.brand||value.activity||value.priceMax||value.size||value.technical?.length);
 export function parseCatalogIntent(message:string,previous:CatalogIntent={}):CatalogIntent {
   return {...previous,...Object.fromEntries(Object.entries(extract(message)).filter(([,v])=>v!==undefined))};
 }
@@ -36,10 +41,11 @@ export function interpretCatalogRequest(message:string,previous:CatalogIntent={}
   const explicitRefine=/\b(refin(ar|e)|mantendo|mesma busca|mesmos filtros|tambem|continue|so mudar|troque apenas)\b/.test(text);
   // A troca de marca/modalidade é tratada como nova pesquisa por padrão.
   // Uma mensagem contendo somente preço/numeração refina a consulta atual.
-  const onlyRestrictions=!found.brand&&!found.activity&&Boolean(found.priceMax||found.size);
+  const onlyRestrictions=!found.brand&&!found.activity&&Boolean(found.priceMax||found.size||found.technical?.length);
   const mode:CatalogRequest["mode"]=!explicitNew&&(explicitRefine||onlyRestrictions)?"refine":"new";
   const base=mode==="refine"?previous:{};
   const intent:CatalogIntent={...base,...Object.fromEntries(Object.entries(found).filter(([,v])=>v!==undefined))};
+  if(mode==="refine"&&found.technical?.length) intent.technical=[...new Set([...(base.technical??[]),...found.technical])];
   if (/\b(qualquer marca|sem marca|todas as marcas)\b/.test(text))delete intent.brand;
   if (/\b(qualquer modalidade|sem modalidade|qualquer uso)\b/.test(text))delete intent.activity;
   if (/\b(sem limite|sem orcamento|qualquer preco|sem teto de preco)\b/.test(text))delete intent.priceMax;
@@ -54,6 +60,7 @@ export function catalogAssistantParams(intent:CatalogIntent){
   if(intent.activity&&intent.activity!=="Trilha")p.set("modalidade",intent.activity);
   if(intent.priceMax)p.set("priceMax",String(intent.priceMax));
   if(intent.size)p.set("tamanho",String(intent.size));
+  if(intent.technical?.length)p.set("tecnica",intent.technical.join(","));
   return p;
 }
 export function catalogFilterLabels(intent:CatalogIntent):string[]{
@@ -62,6 +69,7 @@ export function catalogFilterLabels(intent:CatalogIntent):string[]{
     intent.activity?"Modalidade: "+intent.activity:null,
     intent.priceMax?"Preço máximo: R$ "+intent.priceMax:null,
     intent.size?"Tamanho: "+intent.size:null,
+    intent.technical?.length?"Evidências técnicas: "+intent.technical.join(", "):null,
   ].filter((label):label is string=>Boolean(label));
 }
 export function assistantExplanation(intent:CatalogIntent,_product:{mainName:string;activities?:string[];bestOffer?:{currentPrice?:string|number;discountPercent?:number}}){
