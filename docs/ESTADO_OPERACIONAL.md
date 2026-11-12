@@ -95,3 +95,11 @@ Antes de propor execução: ler `AGENTS.md`, este arquivo, `.ai/PROJECT_STATE.md
 - Playwright no navegador real, com fixtures simuladas: **3 testes aprovados em 18,6 s**: filtros/recomendação/link, bloqueio de DEMO e ficha inteligente/SuperHash. Não confundir estes testes UI simulados com navegação completa no catálogo real.
 - Não houve migração nem chamada paga; checkout local divergente preservado. Preview na aba PORTS → `5002` → Open in Browser.
 - Próximo gate: conferir manualmente a experiência no preview com produtos reais, validar filtros e fluxo de oferta; auditar configuração de runtime e registrar eventuais erros. Pesquisa externa paga permanece desativada.
+
+
+## Missão 11.1 — melhoria de busca e diagnóstico (2026-11-12)
+- Após constatação do operador de resultados repetidos, o consultor foi atualizado para distinguir **nova busca** de **refinamento por preço/tamanho**, limpar filtros antigos em novas pesquisas e não reutilizar resultados em mensagens não compreendidas.
+- A interface agora exibe filtros ativos e **total informado pelo backend operacional** (até seis ofertas exibidas); mostra aviso para modalidade trilha ainda sem filtro específico; botão `Nova pesquisa` reinicializa o estado.
+- Testes unitários adicionais cobrem troca de marca, preservação intencional de filtros, perguntas não reconhecidas e modalidade sem filtro. Playwright adicional cobre mudança de consulta, contagens, bloqueio da repetição e limpeza de estado.
+- Script de homologação `scripts/mission11-1-real-preview-test.sh` foi atualizado para usar a **porta 5003** e realizar consultas distintas diretamente ao banco de homologação, preservando os previews anteriores nas portas 5000/5002.
+- **PENDENTE:** execução dessa nova versão do script e confirmação dos novos testes; não declarar aprovação antes da saída do terminal. IA externa paga continua desabilitada e a IA interna continua baseada em regras/filtros, não em LLM.
