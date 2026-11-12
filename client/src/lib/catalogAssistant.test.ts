@@ -48,3 +48,19 @@ test("trilha bloqueada sem filtro operacional suportado",()=>{
 test("explicações sem afirmação técnica inventada",()=>{
  assert.match(assistantExplanation({brand:"Adidas"},{mainName:"Modelo"}),/Classificação comercial/);
 });
+
+test("critério técnico usa ficha enriquecida e não herda marca ou preço anteriores",()=>{
+ const before=interpretCatalogRequest("Adidas corrida até R$ 500 tamanho 41").intent;
+ const after=interpretCatalogRequest("quero muito amortecimento e maciez",before);
+ assert.equal(after.mode,"new");
+ assert.deepEqual(after.intent,{brand:undefined,activity:undefined,priceMax:undefined,size:undefined,technical:["amortecimento","maciez"]});
+ const params=catalogAssistantParams(after.intent);
+ assert.equal(params.get("tecnica"),"amortecimento,maciez");
+ assert.equal(params.has("marca"),false);
+ assert.equal(params.has("priceMax"),false);
+});
+test("pesquisa por material e cabedal sinaliza filtros técnicos",()=>{
+ const current=interpretCatalogRequest("Nike com cabedal e material confortável");
+ assert.deepEqual(current.intent.technical,["conforto","cabedal","material"]);
+ assert.equal(current.intent.brand,"Nike");
+});
