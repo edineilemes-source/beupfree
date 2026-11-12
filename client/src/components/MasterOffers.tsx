@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import ProductKnowledge from './ProductKnowledge';
 import {useQuery} from '@tanstack/react-query';
 import {Button} from '@/components/ui/button';
 import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription} from '@/components/ui/dialog';
@@ -10,10 +11,11 @@ export default function MasterOffers({productId}:{productId:string}){
   queryFn:async()=>{const response=await fetch(`/api/master-identities/${encodeURIComponent(productId)}`);if(!response.ok)throw Error('IDENTITY_UNAVAILABLE');return response.json();}});
  const data=query.data,master=data?.master;
  return <>
-  <Button type="button" variant="outline" className="mt-2 w-full" onClick={()=>setOpen(true)} data-testid={`master-offers-${productId}`}>Modelo e fornecedores</Button>
+  <Button type="button" variant="outline" className="mt-2 w-full" onClick={()=>setOpen(true)} data-testid={`master-offers-${productId}`}>Ficha inteligente e fornecedores</Button>
   <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl" data-testid="master-dialog">
    <DialogHeader><DialogTitle>Identidade e ofertas do modelo</DialogTitle><DialogDescription>O mesmo modelo pode ter cores e tamanhos diferentes. Confira a variante na loja.</DialogDescription></DialogHeader>
-   {query.isPending&&<p role="status">Carregando identidade…</p>}
+   <ProductKnowledge productId={productId}/>
+   {query.isPending&&<p role="status">Carregando identidade comercial…</p>}
    {query.isError&&<div role="alert">Identidade temporariamente indisponível. As ofertas do catálogo continuam disponíveis.<Button variant="outline" onClick={()=>query.refetch()}>Tentar novamente</Button></div>}
    {data?.status==='NO_CONFIRMED_IDENTITY'&&<p>Não há identidade confirmada disponível para este produto.</p>}
    {master&&<div className="space-y-4 text-sm">
