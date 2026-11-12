@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ export default function CatalogAssistant({open,onOpenChange,initialQuery=""}:{
   const [lastMode,setLastMode]=useState<"new"|"refine">("new");
   const [warning,setWarning]=useState("");
   const requestVersion=useRef(0);
-  useEffect(()=>{if(open && initialQuery && !history.length)setDraft(initialQuery);},[open,initialQuery,history.length]);
+  // Never repopulate this form from an old catalog URL or prior conversation.
   function newSearch(){
     requestVersion.current++;
     setIntent({});setDraft("");setHistory([]);setProducts([]);setTotal(null);
@@ -65,10 +65,14 @@ export default function CatalogAssistant({open,onOpenChange,initialQuery=""}:{
       setProducts(eligible);setStatus(eligible.length?"results":"empty");
     }catch{if(version===requestVersion.current)setStatus("error");}
   }
-  return <Dialog open={open} onOpenChange={onOpenChange}>
+  function handleOpenChange(next:boolean){
+    if(!next)newSearch();
+    onOpenChange(next);
+  }
+  return <Dialog open={open} onOpenChange={handleOpenChange}>
     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl" data-testid="catalog-assistant">
       <DialogHeader>
-        <DialogTitle>Consultor UpPulse — escolha seu tênis</DialogTitle>
+        <DialogTitle>Consultor UpPulse — escolha seu tênis <span className="text-xs font-normal text-muted-foreground" data-testid="assistant-version">v11.1.2</span></DialogTitle>
         <DialogDescription>Busca guiada no catálogo real, sem IA generativa ou serviços pagos. Os critérios e a quantidade encontrada são exibidos abaixo.</DialogDescription>
       </DialogHeader>
       <div className="space-y-3">
