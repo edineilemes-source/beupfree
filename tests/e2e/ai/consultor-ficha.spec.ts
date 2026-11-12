@@ -170,3 +170,32 @@ test("sem evidencias técnicas não inventa especificações",async({page})=>{
  await expect(page.getByRole("status")).toContainText("Nenhuma oferta com evidências técnicas");
  await expect(page.getByTestId("assistant-result")).toHaveCount(0);
 });
+
+test("frase exata Nike corrida nao herda Adidas preco ou numeracao em conversa aberta",async({page})=>{
+ const recorded:string[]=[];
+ await page.route("**/api/products?*",async route=>{
+  const q=new URL(route.request().url()).searchParams;
+  recorded.push(q.toString());
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
+   catalogSource:"operational",demonstrative:false,serverDriven:true,total:12,
+   products:[{...item,mainName:q.get("marca")+" Corrida Teste"}]
+  })});
+ });
+ await page.goto("/");
+ await page.getByTestId("open-catalog-assistant").click();
+ const field=page.getByRole("textbox",{name:"Converse com o consultor de tênis"});
+ await field.fill("Adidas corrida até R$ 500 tamanho 41");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await expect(page.getByTestId("assistant-applied-filters")).toContainText("Tamanho: 41");
+ await field.fill("quero um tenis nike de corrida");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await expect(page.getByTestId("assistant-query-mode")).toHaveText("Nova pesquisa");
+ await expect(page.getByTestId("assistant-applied-filters")).toContainText("Marca: Nike");
+ await expect(page.getByTestId("assistant-applied-filters")).not.toContainText("Preço máximo:");
+ await expect(page.getByTestId("assistant-applied-filters")).not.toContainText("Tamanho:");
+ const q=new URLSearchParams(recorded.at(-1));
+ expect(q.get("marca")).toBe("Nike");
+ expect(q.get("modalidade")).toBe("Corrida");
+ expect(q.has("priceMax")).toBe(false);
+ expect(q.has("tamanho")).toBe(false);
+});
