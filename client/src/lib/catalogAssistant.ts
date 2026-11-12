@@ -41,7 +41,7 @@ export function interpretCatalogRequest(message:string,previous:CatalogIntent={}
   const explicitRefine=/\b(refin(ar|e)|mantendo|mesma busca|mesmos filtros|tambem|continue|so mudar|troque apenas)\b/.test(text);
   // A troca de marca/modalidade é tratada como nova pesquisa por padrão.
   // Uma mensagem contendo somente preço/numeração refina a consulta atual.
-  const onlyRestrictions=!found.brand&&!found.activity&&Boolean(found.priceMax||found.size||found.technical?.length);
+  const onlyRestrictions=!found.brand&&!found.activity&&!found.technical?.length&&Boolean(found.priceMax||found.size)&&/^(?:ate|abaixo de|menos de|limite de|maximo|orcamento de|numero|numeracao|calco|tamanho)\b/.test(text.trim());
   const mode:CatalogRequest["mode"]=!explicitNew&&(explicitRefine||onlyRestrictions)?"refine":"new";
   const base=mode==="refine"?previous:{};
   const intent:CatalogIntent={...base,...Object.fromEntries(Object.entries(found).filter(([,v])=>v!==undefined))};
