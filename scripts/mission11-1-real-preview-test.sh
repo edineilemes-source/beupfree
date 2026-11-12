@@ -97,7 +97,21 @@ for(const [brand,activity] of [["Adidas","Corrida"],["Nike","Caminhada"]]){
  console.log("REAL_SEARCH_OK",brand,activity,"total",data.total,"returned",data.products.length);
 }
 NODE
-echo "=== PLAYWRIGHT IA UI V11.1.2 (MOCK DATA, REAL BROWSER) ==="
+echo "=== READ-ONLY TECHNICAL EVIDENCE SEARCH ==="
+node --input-type=module - <<'NODE'
+const url="http://127.0.0.1:"+process.env.PORT+"/api/assistant/technical/search?tecnica=amortecimento&marca=Nike";
+const response=await fetch(url);
+if(!response.ok)throw Error("TECHNICAL_SEARCH_HTTP_"+response.status);
+const data=await response.json();
+if(data.catalogSource!=="operational"||data.technicalSource!=="verified-cache-only"||!Number.isInteger(data.total))
+ throw Error("TECHNICAL_SEARCH_RESPONSE_INVALID");
+for(const p of data.products??[]){
+ if(p.brand?.name?.toLowerCase()!=="nike"||!p.verifiedEvidence?.length)throw Error("TECHNICAL_EVIDENCE_MISSING");
+ if(p.verifiedEvidence.some(f=>!["VERIFIED","SINGLE_SOURCE"].includes(f.status)))throw Error("UNVERIFIED_EVIDENCE_EXPOSED");
+}
+console.log("REAL_TECHNICAL_SEARCH_OK","matching_knowledge_rows",data.total);
+NODE
+echo "=== PLAYWRIGHT IA UI V11.1.3 (MOCK DATA, REAL BROWSER) ==="
 export PLAYWRIGHT_BASE_URL=http://127.0.0.1:${preview_port} PLAYWRIGHT_EXTERNAL_SERVER=true
 npx playwright install chromium
 if ! npx playwright test --config=playwright.mission11-ai.config.ts; then
