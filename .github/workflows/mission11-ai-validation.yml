@@ -12,6 +12,8 @@ on:
       - 'server/productIntelligence/knowledgeRoutes.ts'
       - 'server/routes.ts'
       - '.github/workflows/mission11-ai-validation.yml'
+      - 'playwright.mission11-ai.config.ts'
+      - 'tests/e2e/ai/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -39,3 +41,23 @@ jobs:
         env:
           RESEARCH_PAID_ENABLED: 'false'
           RESEARCH_POSTGRES_HOMOLOGATED: 'false'
+
+      - name: Instalar Chromium do Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Testar consultor e ficha IA no navegador
+        run: npx playwright test --config=playwright.mission11-ai.config.ts
+        env:
+          CI: 'true'
+          DATABASE_URL: 'postgresql://test:test@127.0.0.1:5432/test'
+          UPPULSE_DISABLE_EXTERNAL_JOBS: 'true'
+          RESEARCH_PAID_ENABLED: 'false'
+          RESEARCH_POSTGRES_HOMOLOGATED: 'false'
+      - name: Preservar rastros de falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mission11-ai-playwright-failures
+          path: |
+            test-results/mission11-ai
+            playwright-report/mission11-ai
+          if-no-files-found: ignore
