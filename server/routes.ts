@@ -1,5 +1,6 @@
 import { createMasterIdentityRouter } from "./productIdentity/routes";
 import { createProductKnowledgeRouter } from "./productIntelligence/knowledgeRoutes";
+import { createTechnicalCatalogRouter } from "./productIntelligence/technicalRoutes";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
@@ -52,6 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.set("trust proxy", 1);
   app.use("/api/master-identities", createMasterIdentityRouter());
   app.use("/api/product-knowledge", createProductKnowledgeRouter());
+  app.use("/api/assistant/technical", createTechnicalCatalogRouter());
   app.use(authSession());
   app.use(createPublicDemoGuard());
   app.use("/api/auth", createAuthRouter(userRepository));
