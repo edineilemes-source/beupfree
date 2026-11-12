@@ -1,4 +1,5 @@
-import { Search, User, Heart, ShoppingCart, Settings } from "lucide-react";
+import { Search, User, Heart, ShoppingCart, Settings, Sparkles } from "lucide-react";
+import CatalogAssistant from "@/components/CatalogAssistant";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
@@ -34,6 +35,7 @@ export default function Header() {
     : searchParams.get("q") ?? "";
   const [searchQuery, setSearchQuery] = useState(urlQuery);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<"login" | "register">("login");
 
@@ -81,6 +83,7 @@ export default function Header() {
             </div>
           </Link>
 
+          <button type="button" className="order-last rounded-md border px-3 py-2 text-sm font-semibold md:order-none" style={{borderColor:NEON,color:NEON}} onClick={()=>setAssistantOpen(true)} data-testid="open-catalog-assistant" aria-label="Conversar com consultor UpPulse"><span className="flex items-center gap-2"><Sparkles className="h-4 w-4"/> Consultor IA</span></button>
           {/* Search */}
           <form
             onSubmit={submitSearch}
@@ -219,6 +222,7 @@ export default function Header() {
       </nav>
       <FavoritesDrawer open={favoritesOpen} onOpenChange={setFavoritesOpen} />
       <AuthDialog open={authOpen} onOpenChange={setAuthOpen} initialMode={authInitialMode} />
+      <CatalogAssistant open={assistantOpen} onOpenChange={setAssistantOpen} initialQuery={searchQuery} />
     </header>
   );
 }
