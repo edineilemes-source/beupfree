@@ -109,3 +109,25 @@ test("mensagem desconhecida não reutiliza resultados antigos nem dispara nova b
  await page.getByTestId("assistant-new-search").click();
  await expect(page.getByTestId("assistant-query-info")).toHaveCount(0);
 });
+
+test("versao corrigida nao herda filtros nem texto ao fechar e reabrir",async({page})=>{
+ await page.goto("/");
+ await page.getByTestId("input-search").fill("busca antiga do topo");
+ await page.getByTestId("open-catalog-assistant").click();
+ await expect(page.getByTestId("assistant-version")).toHaveText("v11.1.2");
+ const input=page.getByRole("textbox",{name:"Converse com o consultor de tênis"});
+ await expect(input).toHaveValue("");
+ await input.fill("Adidas corrida até R$ 500 tamanho 41");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await expect(page.getByTestId("assistant-applied-filters")).toContainText("Tamanho: 41");
+ await page.keyboard.press("Escape");
+ await expect(page.getByTestId("catalog-assistant")).toBeHidden();
+ await page.getByTestId("open-catalog-assistant").click();
+ await expect(input).toHaveValue("");
+ await expect(page.getByTestId("assistant-query-info")).toHaveCount(0);
+ await input.fill("quero um tenis nike de corrida");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await expect(page.getByTestId("assistant-applied-filters")).toContainText("Marca: Nike");
+ await expect(page.getByTestId("assistant-applied-filters")).not.toContainText("500");
+ await expect(page.getByTestId("assistant-applied-filters")).not.toContainText("41");
+});
