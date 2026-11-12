@@ -114,7 +114,7 @@ test("versao corrigida nao herda filtros nem texto ao fechar e reabrir",async({p
  await page.goto("/");
  await page.getByTestId("input-search").fill("busca antiga do topo");
  await page.getByTestId("open-catalog-assistant").click();
- await expect(page.getByTestId("assistant-version")).toHaveText("v11.1.2");
+ await expect(page.getByTestId("assistant-version")).toHaveText("v11.1.3");
  const input=page.getByRole("textbox",{name:"Converse com o consultor de tênis"});
  await expect(input).toHaveValue("");
  await input.fill("Adidas corrida até R$ 500 tamanho 41");
@@ -130,4 +130,43 @@ test("versao corrigida nao herda filtros nem texto ao fechar e reabrir",async({p
  await expect(page.getByTestId("assistant-applied-filters")).toContainText("Marca: Nike");
  await expect(page.getByTestId("assistant-applied-filters")).not.toContainText("500");
  await expect(page.getByTestId("assistant-applied-filters")).not.toContainText("41");
+});
+
+test("caracteristica tecnica pesquisa somente evidencias armazenadas",async({page})=>{
+ let technicalCalls=0;
+ await page.route("**/api/assistant/technical/search?*",async route=>{
+  technicalCalls++;
+  const params=new URL(route.request().url()).searchParams;
+  expect(params.get("tecnica")).toBe("amortecimento,maciez");
+  expect(params.has("marca")).toBe(false);
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
+   catalogSource:"operational",demonstrative:false,technicalSource:"verified-cache-only",
+   total:1,products:[{...item,verifiedEvidence:[{field:"amortecimento",value:"macio",status:"SINGLE_SOURCE"}]}]
+  })});
+ });
+ await page.goto("/");
+ await page.getByTestId("open-catalog-assistant").click();
+ const field=page.getByRole("textbox",{name:"Converse com o consultor de tênis"});
+ await field.fill("Nike corrida até R$ 500 tamanho 41");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await expect(page.getByTestId("assistant-applied-filters")).toContainText("Marca: Nike");
+ await field.fill("quero muito amortecimento e maciez");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await expect(page.getByTestId("assistant-query-mode")).toContainText("Nova pesquisa");
+ await expect(page.getByTestId("assistant-applied-filters")).toContainText("Evidências técnicas: amortecimento, maciez");
+ await expect(page.getByTestId("assistant-applied-filters")).not.toContainText("Nike");
+ await expect(page.getByTestId("assistant-applied-filters")).not.toContainText("R$ 500");
+ await expect(page.getByTestId("assistant-evidence")).toContainText("Fonte única");
+ expect(technicalCalls).toBe(1);
+});
+test("sem evidencias técnicas não inventa especificações",async({page})=>{
+ await page.route("**/api/assistant/technical/search?*",route=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
+  catalogSource:"operational",demonstrative:false,technicalSource:"verified-cache-only",total:0,products:[]
+ })}));
+ await page.goto("/");
+ await page.getByTestId("open-catalog-assistant").click();
+ await page.getByRole("textbox",{name:"Converse com o consultor de tênis"}).fill("quero um tenis com drop");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await expect(page.getByRole("status")).toContainText("Nenhuma oferta com evidências técnicas");
+ await expect(page.getByTestId("assistant-result")).toHaveCount(0);
 });
