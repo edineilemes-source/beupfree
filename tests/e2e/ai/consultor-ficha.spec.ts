@@ -1,11 +1,11 @@
 import {test,expect} from "@playwright/test";
 
 const item={
- id:"ai-test-adidas-001",mainName:"Adidas Corrida Teste",mainImageUrl:"https://example.org/shoe.png",
+ id:"ai-test-adidas-001",mainName:"Adidas Corrida Teste",mainImageUrl:"https://example.org/shoe.png",primaryColor:null,normalizedSizes:[41],activities:["RUNNING"],averageRating:null,totalReviews:0,
  brand:{name:"Adidas",slug:"adidas"},category:{name:"Calçados",slug:"calcados"},
  catalogStatus:"published",catalogSource:"operational",demonstrative:false,
  offersCount:1,bestOffer:{id:"offer-001",currentPrice:"399.90",originalPrice:"499.90",discountPercent:20,
- affiliateUrl:"https://example.org/offer-001",marketplaceName:"Dafiti",sellerName:"Dafiti",demonstrative:false}
+ affiliateUrl:"https://example.org/offer-001",marketplaceName:"Dafiti",sellerName:"Dafiti",freeShipping:false,demonstrative:false}
 };
 const knowledge={status:"IDENTITY_ONLY",catalogSource:"operational",brand:"Adidas",model:"Adidas Corrida Teste",
  researchPaidEnabled:false,card:{masterId:item.id,familyKey:"a".repeat(64),modelKey:"b".repeat(64),
@@ -16,7 +16,7 @@ test.beforeEach(async({page})=>{
   const matching=q.get("marca")==="Adidas"&&q.get("modalidade")==="Corrida"&&q.get("priceMax")==="500"&&q.get("tamanho")==="41";
   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
    catalogSource:"operational",demonstrative:false,serverDriven:true,total:matching?1:1,
-   products:[item],facets:{brands:[{label:"Adidas",count:1}],priceMin:399,priceMax:500,merchants:[{label:"Dafiti",count:1}],modalidades:[{label:"Corrida",count:1}]}
+   products:[item],facets:{brands:[{label:"Adidas",count:1}],colors:[],sizes:[],generos:[],idades:[],modalidades:[{label:"Corrida",count:1}],tipos:[{label:"Calçados",count:1}],merchants:[{label:"Dafiti",count:1}],desconto:{"Até 19%":0,"20% - 29%":1,"30% - 39%":0,"40% - 49%":0,"50% ou mais":0},frete:{Sim:0,"Não":1},avaliacoes:{},priceMin:399,priceMax:500}
   })});
  });
  await page.route("**/api/master-identities/*",route=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"NO_CONFIRMED_IDENTITY",offers:[],members:[]})}));
