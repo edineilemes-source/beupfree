@@ -37,7 +37,7 @@ export default function CatalogAssistant({open,onOpenChange,initialQuery=""}:{
     setDraft("");
     if(!parsed.recognized || !hasCatalogIntent(parsed.intent)){
       requestVersion.current++;
-      setProducts([]);setTotal(null);setWarning("");
+      setIntent({});setProducts([]);setTotal(null);setWarning("");
       setStatus("not-understood");
       return;
     }
