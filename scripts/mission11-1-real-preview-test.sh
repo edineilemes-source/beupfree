@@ -6,7 +6,7 @@ checkout=/workspaces/uppulse-homologacao/missao9/codigo
 cd "$checkout"
 ref=origin/feat/uppulse-missao10-supercatalogo
 container=beupfree-catalog-pg17
-preview_port=${UPPULSE_AI_PREVIEW_PORT:-5003}
+preview_port=${UPPULSE_AI_PREVIEW_PORT:-5004}
 if [[ ! "$preview_port" =~ ^[0-9]{4,5}$ ]]; then echo "INVALID_PREVIEW_PORT"; exit 1; fi
 echo "=== PREPARING ISOLATED PREVIEW (NO GIT CHECKOUT CHANGES) ==="
 docker start "$container" >/dev/null
@@ -97,7 +97,7 @@ for(const [brand,activity] of [["Adidas","Corrida"],["Nike","Caminhada"]]){
  console.log("REAL_SEARCH_OK",brand,activity,"total",data.total,"returned",data.products.length);
 }
 NODE
-echo "=== PLAYWRIGHT IA UI (MOCK DATA, REAL BROWSER) ==="
+echo "=== PLAYWRIGHT IA UI V11.1.2 (MOCK DATA, REAL BROWSER) ==="
 export PLAYWRIGHT_BASE_URL=http://127.0.0.1:${preview_port} PLAYWRIGHT_EXTERNAL_SERVER=true
 npx playwright install chromium
 if ! npx playwright test --config=playwright.mission11-ai.config.ts; then
