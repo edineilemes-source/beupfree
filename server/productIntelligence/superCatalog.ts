@@ -1,3 +1,4 @@
+import { TECHNICAL_FIELD_SET, TECHNICAL_FIELDS } from "./technicalFields";
 import { createHash } from "node:crypto";
 
 /** Mission 10: auditable knowledge attached to an existing Product Identity Master.
@@ -39,7 +40,7 @@ export type KnowledgeCard = {
 const normalize = (s: string) => s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
 const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const fieldKey = (s: string) => normalize(s).replace(/ /g, "_");
-const allowedFields = new Set(["cabedal","entressola","solado","drop","peso","amortecimento","estabilidade","indicacao_de_uso","tecnologia","material","altura_do_solado","modalidade"]);
+const allowedFields = TECHNICAL_FIELD_SET;
 const allowedSources = new Set<EvidenceSource>(["MANUFACTURER","RETAILER","INDEPENDENT_TEST","FEED"]);
 function sourceUrl(value: string): boolean {
   try { const url = new URL(value); return url.protocol === "https:" || url.protocol === "http:"; } catch { return false; }
@@ -65,7 +66,7 @@ export function createSuperCatalogCard(identity: IdentityDescriptor, evidence: T
     if (!entries.some(existing => existing.sourceUrl === item.sourceUrl && normalize(existing.value) === normalize(item.value))) entries.push(item);
     grouped.set(field, entries);
   }
-  const fields = [...allowedFields].sort().map(field => {
+  const fields = [...TECHNICAL_FIELDS].sort().map(field => {
     const sources = (grouped.get(field) ?? []).sort((a,b) => a.sourceUrl.localeCompare(b.sourceUrl) || a.value.localeCompare(b.value));
     const values = [...new Set(sources.map(item => normalize(item.value)))];
     const status: FieldAssessment["status"] = !values.length ? "UNAVAILABLE" : values.length > 1 ? "CONFLICT" : new Set(sources.map(s => new URL(s.sourceUrl).hostname)).size > 1 ? "VERIFIED" : "SINGLE_SOURCE";
