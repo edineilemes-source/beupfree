@@ -81,9 +81,9 @@ NODE
 rm -f "$knowledge"
 echo "=== PLAYWRIGHT IA UI (MOCK DATA, REAL BROWSER) ==="
 export PLAYWRIGHT_BASE_URL=http://127.0.0.1:5002 PLAYWRIGHT_EXTERNAL_SERVER=true
+npx playwright install chromium
 if ! npx playwright test --config=playwright.mission11-ai.config.ts; then
  echo "PLAYWRIGHT_FAILED; results under $sandbox/test-results/mission11-ai"
- echo "To install browser if missing: cd $sandbox && npx playwright install chromium"
  exit 1
 fi
 echo "M11_1_REAL_CATALOG_AND_PLAYWRIGHT_OK"
