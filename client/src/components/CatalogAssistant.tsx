@@ -8,8 +8,8 @@ import {
 } from "@/lib/catalogAssistant";
 
 type Offer = { affiliateUrl?:string; currentPrice?:string|number; marketplaceName?:string; discountPercent?:number };
-type Product = { id:string;mainName:string;mainImageUrl?:string;bestOffer?:Offer;demonstrative?:boolean };
-type Response = { catalogSource:string;demonstrative?:boolean;total?:number;products:Product[] };
+type Product = { id:string;mainName:string;mainImageUrl?:string;bestOffer?:Offer;demonstrative?:boolean; verifiedEvidence?:Array<{field:string;value:string;status:"VERIFIED"|"SINGLE_SOURCE"}> };
+type Response = { catalogSource:string;demonstrative?:boolean;total?:number;products:Product[];technicalSource?:string;notice?:string };
 type Status = "idle"|"loading"|"results"|"empty"|"unavailable"|"error"|"not-understood"|"unsupported";
 const money=(n:string|number|undefined)=>Number(n).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 export default function CatalogAssistant({open,onOpenChange,initialQuery=""}:{
@@ -51,7 +51,8 @@ export default function CatalogAssistant({open,onOpenChange,initialQuery=""}:{
     const version=++requestVersion.current;
     try{
       const query=catalogAssistantParams(parsed.intent);
-      const response=await fetch("/api/products?"+query.toString(),{headers:{accept:"application/json"}});
+      const url=parsed.intent.technical?.length ? "/api/assistant/technical/search?" : "/api/products?";
+      const response=await fetch(url+query.toString(),{headers:{accept:"application/json"}});
       if(!response.ok)throw Error("CATALOG_UNAVAILABLE");
       const data:Response=await response.json();
       if(version!==requestVersion.current)return;
@@ -72,7 +73,7 @@ export default function CatalogAssistant({open,onOpenChange,initialQuery=""}:{
   return <Dialog open={open} onOpenChange={handleOpenChange}>
     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl" data-testid="catalog-assistant">
       <DialogHeader>
-        <DialogTitle>Consultor UpPulse — escolha seu tênis <span className="text-xs font-normal text-muted-foreground" data-testid="assistant-version">v11.1.2</span></DialogTitle>
+        <DialogTitle>Consultor UpPulse — escolha seu tênis <span className="text-xs font-normal text-muted-foreground" data-testid="assistant-version">v11.1.3</span></DialogTitle>
         <DialogDescription>Busca guiada no catálogo real, sem IA generativa ou serviços pagos. Os critérios e a quantidade encontrada são exibidos abaixo.</DialogDescription>
       </DialogHeader>
       <div className="space-y-3">
@@ -100,15 +101,16 @@ export default function CatalogAssistant({open,onOpenChange,initialQuery=""}:{
         {status==="loading"&&<p role="status">Consultando produtos publicáveis…</p>}
         {status==="unavailable"&&<p role="alert">O catálogo operacional não está ativo. Para evitar sugestões demonstrativas, nenhuma recomendação foi exibida.</p>}
         {status==="error"&&<p role="alert">Não foi possível consultar o catálogo agora. Tente novamente.</p>}
-        {status==="empty"&&<p role="status">Não encontrei ofertas elegíveis com esses critérios. Tente outra marca, modalidade, preço ou tamanho.</p>}
+        {status==="empty"&&<p role="status">{intent.technical?.length ? "Nenhuma oferta com evidências técnicas já cadastradas corresponde a esses termos. Isso não significa que os demais tênis não tenham essas características. O enriquecimento externo ainda não foi executado para todos os produtos." : "Não encontrei ofertas elegíveis com esses critérios. Tente outra marca, modalidade, preço ou tamanho."}</p>}
         {status==="results"&&<>
-          <p className="text-sm">Exibindo {products.length} ofertas dos produtos retornados pela consulta. Não há garantia de que a primeira opção seja a melhor para sua biomecânica.</p>
+          <p className="text-sm">Exibindo {products.length} ofertas dos produtos retornados pela consulta. {intent.technical?.length?"Busca técnica realizada apenas nas evidências armazenadas na ficha, sem pesquisa externa. ":""}Não há garantia de que a primeira opção seja a melhor para sua biomecânica.</p>
           <div className="space-y-3">{products.map(product=><article key={product.id} className="flex gap-3 rounded border p-3" data-testid="assistant-result">
             {product.mainImageUrl&&<img src={product.mainImageUrl} alt="" className="h-20 w-20 shrink-0 object-contain"/>}
             <div className="min-w-0 space-y-1 text-sm">
               <p className="font-semibold">{product.mainName}</p>
               <p>{money(product.bestOffer?.currentPrice)} · {product.bestOffer?.marketplaceName??"Loja parceira"}</p>
               <p className="text-xs text-muted-foreground">{assistantExplanation(intent,product)}</p>
+              {product.verifiedEvidence?.map((f,index)=><p className="text-xs" data-testid="assistant-evidence" key={f.field+index}><strong>{f.field.replace(/_/g," ")}:</strong> {f.value} · {f.status==="VERIFIED"?"Verificado por mais de uma fonte":"Fonte única"}</p>)}
               <a className="inline-block underline" href={product.bestOffer?.affiliateUrl} target="_blank" rel="noopener noreferrer">Ver oferta na loja</a>
             </div>
           </article>)}</div>
