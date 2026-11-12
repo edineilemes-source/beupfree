@@ -1,0 +1,55 @@
+import {test,expect} from "@playwright/test";
+
+const item={
+ id:"ai-test-adidas-001",mainName:"Adidas Corrida Teste",mainImageUrl:"https://example.org/shoe.png",
+ brand:{name:"Adidas",slug:"adidas"},category:{name:"Calçados",slug:"calcados"},
+ catalogStatus:"published",catalogSource:"operational",demonstrative:false,
+ offersCount:1,bestOffer:{id:"offer-001",currentPrice:"399.90",originalPrice:"499.90",discountPercent:20,
+ affiliateUrl:"https://example.org/offer-001",marketplaceName:"Dafiti",sellerName:"Dafiti",demonstrative:false}
+};
+const knowledge={status:"IDENTITY_ONLY",catalogSource:"operational",brand:"Adidas",model:"Adidas Corrida Teste",
+ researchPaidEnabled:false,card:{masterId:item.id,familyKey:"a".repeat(64),modelKey:"b".repeat(64),
+ variantKey:null,superHash:"c".repeat(64),fields:[],sourcesConsulted:0}};
+test.beforeEach(async({page})=>{
+ await page.route("**/api/products?*",async route=>{
+  const q=new URL(route.request().url()).searchParams;
+  const matching=q.get("marca")==="Adidas"&&q.get("modalidade")==="Corrida"&&q.get("priceMax")==="500"&&q.get("tamanho")==="41";
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
+   catalogSource:"operational",demonstrative:false,serverDriven:true,total:matching?1:1,
+   products:[item],facets:{brands:[{label:"Adidas",count:1}],priceMin:399,priceMax:500,merchants:[{label:"Dafiti",count:1}],modalidades:[{label:"Corrida",count:1}]}
+  })});
+ });
+ await page.route("**/api/master-identities/*",route=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({status:"NO_CONFIRMED_IDENTITY",offers:[],members:[]})}));
+ await page.route("**/api/product-knowledge/*",route=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(knowledge)}));
+});
+test("consultor usa criterios reais, preserva contexto e oferece link de afiliado",async({page})=>{
+ await page.goto("/");
+ await page.getByTestId("open-catalog-assistant").click();
+ await expect(page.getByTestId("catalog-assistant")).toBeVisible();
+ await page.getByRole("textbox",{name:"Converse com o consultor de tênis"}).fill("Adidas para corrida até R$ 500 tamanho 41");
+ const request=page.waitForRequest(req=>req.url().includes("/api/products?")&&new URL(req.url()).searchParams.get("marca")==="Adidas"&&new URL(req.url()).searchParams.get("tamanho")==="41");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await request;
+ await expect(page.getByTestId("assistant-result")).toHaveCount(1);
+ await expect(page.getByTestId("assistant-result")).toContainText("Adidas Corrida Teste");
+ await expect(page.getByTestId("assistant-result").getByRole("link",{name:"Ver oferta na loja"})).toHaveAttribute("href","https://example.org/offer-001");
+});
+test("consultor bloqueia dados demo e nao recomenda ofertas demonstrativas",async({page})=>{
+ await page.route("**/api/products?*",route=>route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({catalogSource:"demo",demonstrative:true,products:[item]})}));
+ await page.goto("/");
+ await page.getByTestId("open-catalog-assistant").click();
+ await page.getByRole("textbox",{name:"Converse com o consultor de tênis"}).fill("Adidas para corrida");
+ await page.getByRole("button",{name:"Consultar"}).click();
+ await expect(page.getByRole("alert")).toContainText("catálogo operacional não está ativo");
+ await expect(page.getByTestId("assistant-result")).toHaveCount(0);
+});
+test("ficha exibe identidade superhash e informa que nao pesquisou APIs pagas",async({page})=>{
+ await page.goto("/catalogo");
+ const card=page.getByTestId("card-product-"+item.id);
+ await expect(card).toBeVisible();
+ await card.getByTestId("master-offers-"+item.id).click();
+ await expect(page.getByTestId("product-knowledge")).toBeVisible();
+ await expect(page.getByTestId("product-superhash")).toContainText("c".repeat(64));
+ await expect(page.getByTestId("product-knowledge")).toContainText("Sem chamadas pagas");
+ await expect(page.getByTestId("product-knowledge")).toContainText("Sem evidências externas validadas");
+});
