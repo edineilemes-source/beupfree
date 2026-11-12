@@ -86,3 +86,12 @@ Antes de propor execução: ler `AGENTS.md`, este arquivo, `.ai/PROJECT_STATE.md
 - Pesquisas pagas seguem desativadas. Reserva órfã após falha abrupta ainda exige recuperação operacional segura; não declarar ativação de IA paga autorizada.
 - Checkout local continua divergente (1 commit exclusivo local, 29 remotos na verificação anterior), com alterações locais; não executar pull/rebase/reset destrutivos.
 - **Próxima prioridade: Missão 11**, iniciar aplicação e validar catálogo e UX com dados reais. Não bloquear o catálogo por ativação de IA paga.
+
+
+## Missão 11.1 — validação executada no Codespaces (2026-11-12)
+- Operador executou `scripts/mission11-1-real-preview-test.sh` com código remoto no commit `d385a98` em snapshot isolado `/tmp/uppulse-m11-ai-AeHhG5` e porta `5002`. A execução reportou `M11_1_REAL_CATALOG_AND_PLAYWRIGHT_OK`.
+- Banco PostgreSQL existente estava acessível. GET `/api/products?limit=2` retornou `catalogSource: operational`, dois produtos e `total: 16945`. Produto utilizado na checagem: `02474478-a62e-40c8-8459-dd4deb47d5a0`.
+- GET `/api/product-knowledge/<productId>` retornou `IDENTITY_ONLY`, Master ID correspondente e SuperHash `9f8964b20d0392db98f1c2e0b51860d200d0e9b099a1ad460d7e463f258e6299`. Isso confirma identidade calculada, **não** pesquisa/enriquecimento externos.
+- Playwright no navegador real, com fixtures simuladas: **3 testes aprovados em 18,6 s**: filtros/recomendação/link, bloqueio de DEMO e ficha inteligente/SuperHash. Não confundir estes testes UI simulados com navegação completa no catálogo real.
+- Não houve migração nem chamada paga; checkout local divergente preservado. Preview na aba PORTS → `5002` → Open in Browser.
+- Próximo gate: conferir manualmente a experiência no preview com produtos reais, validar filtros e fluxo de oferta; auditar configuração de runtime e registrar eventuais erros. Pesquisa externa paga permanece desativada.
