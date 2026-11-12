@@ -55,7 +55,7 @@ if (( ready == 0 )); then
 fi
 echo "=== VALIDATING ACTUAL OPERATIONAL API (READ ONLY) ==="
 response=$(mktemp /tmp/uppulse-ai-catalog-XXXXXX.json)
-curl -fsS --max-time 30 'http://127.0.0.1:${preview_port}/api/products?limit=2' -o "$response"
+curl -fsS --max-time 30 "http://127.0.0.1:${preview_port}/api/products?limit=2" -o "$response"
 product_id=$(node - "$response" <<'NODE'
 const fs=require('fs');
 const data=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
