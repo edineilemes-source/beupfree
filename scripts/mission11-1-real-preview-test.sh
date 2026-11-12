@@ -41,6 +41,9 @@ export RESEARCH_PAID_ENABLED=false RESEARCH_POSTGRES_HOMOLOGATED=false
 export UPPULSE_DISABLE_EXTERNAL_JOBS=true PUBLIC_DEMO_MODE=false
 export PORT="$preview_port" NODE_ENV=development
 cd "$sandbox"
+echo "=== TYPESCRIPT + UNIT TESTS ==="
+npm run check
+node --import tsx --test client/src/lib/catalogAssistant.test.ts server/productIntelligence/technicalRoutes.test.ts
 echo "=== STARTING PREVIEW ${preview_port} ==="
 nohup npm run dev > "$sandbox/mission11-ai-server.log" 2>&1 < /dev/null &
 echo "$!" > "$sandbox/mission11-ai-server.pid"
