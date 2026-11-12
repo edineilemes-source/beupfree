@@ -51,9 +51,9 @@ export function createTechnicalCatalogRouter(){
      "FROM catalog_search_products c "+
      "JOIN commerce_merchants m ON m.id=c.merchant_id "+
      "JOIN offers o ON o.id=c.representative_offer_id "+
-     "JOIN product_intelligence_cache cache ON cache.master_id=c.product_id "+
+     "JOIN product_intelligence_cache cache ON cache.master_id=c.product_id::text "+
      "WHERE "+built.sql+" AND (cache.expires_at IS NULL OR cache.expires_at>NOW()) "+
-     "AND cache.result->>'state'='ENRICHED' AND cache.result->'card'->>'masterId'=c.product_id "+
+     "AND cache.result->>'state'='ENRICHED' AND cache.result->'card'->>'masterId'=c.product_id::text "+
      "AND "+conditions.join(" AND ")+" ORDER BY c.discount_percent DESC,c.product_id,c.merchant_id LIMIT "+limit;
    const {rows}=await pool.query({text:sql,values:args,query_timeout:8000});
    const products=rows.map(row=>({
