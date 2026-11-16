@@ -5,17 +5,19 @@ import type {KnowledgeCard} from "../../../server/productIntelligence/superCatal
 type Pilot={pilot:true;pilotVersion:string;status:string;identity:{brand:string;model:string};card:KnowledgeCard;
  sources:Array<{name:string;url:string;type:string}>;metrics:{sourcePages:number;fields:number;verifiedFields:number;singleSourceFields:number;conflictingFields:number};
  narrative:string;warnings:string[]};
-type LiveReport={live:true;started:string;finished:string;status:string;searchProvider:string;extractionProvider:string;requestsReserved:{tavily:number;openai:number};sourceCount:number;distinctDomains:number;searchedSources:Array<{url:string;title:string}>;fields:Array<{field:string;value:string|null;status:"VERIFIED"|"SINGLE_SOURCE"|"CONFLICT";sources:Array<{url:string;value:string}>}>;warnings:string[];limitations:string[]};
+type LiveReport={live:true;qualityGate?:boolean;metrics?:{fields:number;verified:number;conflicts:number;domainsWithEvidence:number};perSource?:Array<{url:string;extracted:number;fields:string[]}>;started:string;finished:string;status:string;searchProvider:string;extractionProvider:string;requestsReserved:{tavily:number;openai:number};sourceCount:number;distinctDomains:number;searchedSources:Array<{url:string;title:string}>;fields:Array<{field:string;value:string|null;status:"VERIFIED"|"SINGLE_SOURCE"|"CONFLICT";sources:Array<{url:string;value:string}>}>;warnings:string[];limitations:string[]};
 const statusLabel={VERIFIED:"Fontes concordam",SINGLE_SOURCE:"Uma fonte",CONFLICT:"Divergência entre fontes",UNAVAILABLE:"Não encontrado"} as const;
 export default function EvoSlPilot(){
  const [data,setData]=useState<Pilot|null>(null);
  const [state,setState]=useState<"ready"|"loading"|"error">("ready");
  const [live,setLive]=useState<LiveReport|null>(null);
+ const [liveVersion,setLiveVersion]=useState<"v1"|"v2">("v1");
  const [liveState,setLiveState]=useState<"idle"|"loading"|"not-run"|"error">("idle");
- async function readLive(){
+ async function readLive(version:"v1"|"v2"="v1"){
+  setLiveVersion(version);
   setLiveState("loading");
   try{
-   const response=await fetch("/api/product-knowledge/pilot/live-evo-sl",{cache:"no-store"});
+   const response=await fetch(version==="v2"?"/api/product-knowledge/pilot/live-evo-sl-v2":"/api/product-knowledge/pilot/live-evo-sl",{cache:"no-store"});
    if(response.status===404){setLive(null);setLiveState("not-run");return;}
    if(!response.ok)throw Error("LIVE_RESEARCH_UNAVAILABLE");
    const body:LiveReport=await response.json();
@@ -45,12 +47,15 @@ export default function EvoSlPilot(){
   </Button>
   <div className="space-y-2 rounded border p-3">
    <strong>Pesquisa real com Tavily + OpenAI</strong>
-   <p className="text-xs text-muted-foreground">A pesquisa real é executada uma única vez no terminal, com autorização e limites de chamadas. Este botão apenas consulta o relatório, sem consumir créditos.</p>
-   <Button type="button" variant="outline" data-testid="read-evo-sl-live" disabled={liveState==="loading"} onClick={()=>void readLive()}>{liveState==="loading"?"Consultando relatório…":"Ver resultado da IA real"}</Button>
-   {liveState==="not-run"&&<p role="status">Ainda não foi encontrada uma pesquisa real nesta instância. Execute o piloto Tavily/OpenAI no Codespaces.</p>}
+   <p className="text-xs text-muted-foreground">As pesquisas reais são executadas no terminal com limite de chamadas. Estes botões só consultam relatórios existentes, sem consumir créditos.</p>
+   <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" data-testid="read-evo-sl-live" disabled={liveState==="loading"} onClick={()=>void readLive("v1")}>Ver IA real — rodada 1</Button>
+   <Button type="button" variant="outline" data-testid="read-evo-sl-live-v2" disabled={liveState==="loading"} onClick={()=>void readLive("v2")}>Ver IA real — rodada 2</Button></div>
+   {liveState==="not-run"&&<p role="status">Ainda não há relatório da rodada {liveVersion==="v1"?"1":"2"} nesta instância. O botão não faz chamadas pagas.</p>}
    {liveState==="error"&&<p role="alert">Falha ao consultar o relatório da pesquisa real.</p>}
    {live&&<div className="space-y-2" data-testid="evo-sl-live-results">
     <p><strong>Resultado da pesquisa real:</strong> {live.status} · {live.sourceCount} fonte(s) com evidências · {live.distinctDomains} domínio(s) pesquisados</p>
+    {live.metrics&&<p className="text-xs">Qualidade: {live.metrics.verified} campos com concordância · {live.metrics.conflicts} conflitos · {live.metrics.domainsWithEvidence} domínios úteis. Critério mínimo: {live.qualityGate?"atingido":"não atingido"}.</p>}
+    {live.perSource&&<ul className="text-xs list-disc list-inside">{live.perSource.map(s=><li key={s.url}>{new URL(s.url).hostname}: {s.extracted} campos extraídos</li>)}</ul>}
     {live.sourceCount<2&&<p role="status" className="font-medium">Ficha ainda não aprovada: é necessário obter evidências técnicas de pelo menos duas fontes independentes. O status ENRICHED indica extração realizada, não validação de qualidade.</p>}
     <p className="text-xs">Chamadas: Tavily {live.requestsReserved.tavily}; OpenAI {live.requestsReserved.openai}. Pesquisa realizada em {new Date(live.finished).toLocaleString("pt-BR")}.</p>
     <h4 className="font-semibold">Fontes retornadas pela Tavily</h4>
