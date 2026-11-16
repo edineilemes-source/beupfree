@@ -37,3 +37,12 @@ Rodar script da porta 5005, verificar métricas/falhas de acesso, inspecionar fi
 - Relatório salvo em `/tmp/uppulse-evo-sl-real-research.json`, com links efetivamente retornados, contagem de requisições, campos, status, conflitos e avisos. Sem credenciais, texto integral das respostas ou dados sensíveis. API `GET /api/product-knowledge/pilot/live-evo-sl` somente em desenvolvimento permite leitura desse relatório na ficha, sem novas cobranças; botão `Ver resultado da IA real`.
 - O adaptador já existente Tavily+OpenAI é reutilizado. **Não foi executado neste chat**, pois as chaves estão no Codespaces e não podem ser acessadas via conector GitHub. Resultado concreto da pesquisa real, quantidade de fontes alcançadas e eventual cobrança devem ser confirmados pela execução no Codespaces. O HTTP 403 dos três varejistas na coleta Node direta não significa, por si, que a Tavily também será bloqueada.
 - Não escreve em `product_intelligence_cache`, não altera catálogo comercial, master, preço ou oferta. Não faz deploy, não ativa `RESEARCH_PAID_ENABLED` globalmente e não introduz pesquisa pública irrestrita.
+
+
+## Resultado confirmado da primeira chamada Tavily/OpenAI real — 2026-11-16
+- Usuário executou com fonte `f20d557`; `npm run check` passou.
+- Chamadas reais reservadas: Tavily **1** e OpenAI **3**. Resultado `ENRICHED`, **3 domínios candidatos**, **1 fonte com evidências utilizáveis**, **4 atributos preenchidos**, **0 VERIFIED**, **0 conflitos**, **0 warnings**.
+- O script exigia pelo menos duas fontes úteis e terminou com código não zero após salvar `/tmp/uppulse-evo-sl-real-research.json`; por isso a seção de preview 5006 não foi executada. Isso é falha do critério de qualidade, **não erro de credenciais nem demonstração de bloqueio pela Tavily**.
+- Adicionado `scripts/mission11-3-view-existing-live-report.sh` para reutilizar o relatório já pago, imprimir URLs e atributos sem chaves e iniciar preview isolado 5006. Nenhuma nova chamada Tavily/OpenAI.
+- Interface de desenvolvimento informa claramente que `ENRICHED` significa dados extraídos, **não aprovação da ficha**. Gate de qualidade não atingido: uma única fonte aproveitada.
+- Ainda é necessário inspecionar o relatório para saber por que dois domínios não forneceram campos (ausência de informação técnica nos trechos, trecho referente a outra versão, ou resposta vazia da extração). Não repetir pesquisa paga antes disso.
