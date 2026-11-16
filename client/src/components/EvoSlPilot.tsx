@@ -60,15 +60,15 @@ export default function EvoSlPilot(){
     {live.perSource&&<ul className="text-xs list-disc list-inside">{live.perSource.map(s=><li key={s.url}>{new URL(s.url).hostname}: {s.extracted} campos extraídos</li>)}</ul>}
     {live.sourceCount<2&&<p role="status" className="font-medium">Ficha ainda não aprovada: é necessário obter evidências técnicas de pelo menos duas fontes independentes. O status ENRICHED indica extração realizada, não validação de qualidade.</p>}
     <p className="text-xs">Chamadas: Tavily {live.requestsReserved.tavily}; OpenAI {live.requestsReserved.openai}. Pesquisa realizada em {new Date(live.finished).toLocaleString("pt-BR")}.</p>
-    {live.reconciled&&<section className="space-y-2 rounded border p-3" data-testid="evo-sl-reconciled">
-      <h4 className="font-semibold">Conciliação técnica — sem novas chamadas pagas</h4>
+    {live.reconciled&&<details className="space-y-2 rounded border p-3" data-testid="evo-sl-reconciled">
+      <summary className="cursor-pointer font-semibold">Conciliação técnica — detalhes de laboratório</summary>
       <p className="text-xs">Padronização conservadora de medidas. Valores de fontes diferentes continuam separados quando há divergência; uma maioria não é tratada como verdade definitiva.</p>
       <p className="text-xs">{live.reconciled.metrics.verified} campos concordantes integralmente · {live.reconciled.metrics.conflicts} conflitos restantes · {live.reconciled.metrics.conflictsWithMajority} conflitos com maioria parcial.</p>
       {live.reconciled.fields.map(field=><article key={field.field} className="space-y-1 rounded border p-2 text-xs">
        <strong>{field.field.replace(/_/g," ")} — {field.status==="VERIFIED"?"Concordância":"SINGLE_SOURCE"===field.status?"Uma fonte":"Divergência preservada"}</strong>
        {(field.agreements??[]).map(group=><p key={group.value}>• {group.value} — {group.count} fonte(s)</p>)}
       </article>)}
-     </section>}
+     </details>}
     <details className="rounded border p-2" data-testid="live-research-technical-diagnostics"><summary className="cursor-pointer font-semibold">Detalhes da pesquisa e extração original</summary>
     <h4 className="font-semibold">Fontes retornadas pela Tavily</h4>
     <ul className="list-inside list-disc text-xs">{live.searchedSources.map(s=><li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer" className="underline break-words">{s.title||s.url}</a></li>)}</ul>
