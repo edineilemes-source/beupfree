@@ -22,7 +22,7 @@ const evidence:TechnicalEvidence[]=[
 ].map(([field,value,sourceIndex])=>{
  const s=EVO_SL_PILOT_SOURCES[Number(sourceIndex)];
  return {field:String(field),value:String(value),sourceUrl:s.url,sourceType:s.type,observedAt,
-  ...(s.modelCode?{modelCode:s.modelCode}:{})};
+  ...("modelCode" in s?{modelCode:s.modelCode}:{})};
 });
 const card=createSuperCatalogCard(identity,evidence);
 const reported=card.fields.filter(field=>field.status!=="UNAVAILABLE");
