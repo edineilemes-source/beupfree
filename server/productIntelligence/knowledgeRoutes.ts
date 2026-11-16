@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { readFile } from "node:fs/promises";
 import { evoSlPilotResult } from "./evoSlPilot";
 import pg from "pg";
 import { PgCatalogSearchProjectionRepository } from "../catalogSearchProjection/repository";
@@ -10,6 +11,15 @@ import { resolvePublicCatalogSource } from "../publicCatalog/policy";
 export function createProductKnowledgeRouter() {
   const router = Router();
   let db: pg.Pool | undefined;
+  router.get("/pilot/live-evo-sl", async (_req,res)=>{
+    if(process.env.NODE_ENV==="production")return res.status(404).json({code:"PILOT_NOT_AVAILABLE"});
+    res.setHeader("Cache-Control","no-store");
+    try {
+      const data=JSON.parse(await readFile("/tmp/uppulse-evo-sl-real-research.json","utf8")) as Record<string,unknown>;
+      if(data.pilot!=="EVO_SL_LIVE_RESEARCH_V1"||data.live!==true)return res.status(422).json({code:"PILOT_REPORT_INVALID"});
+      return res.json(data);
+    } catch {return res.status(404).json({code:"LIVE_RESEARCH_NOT_EXECUTED"});}
+  });
   router.get("/pilot/evo-sl", async (_req,res)=>{
     if(process.env.NODE_ENV==="production")return res.status(404).json({code:"PILOT_NOT_AVAILABLE"});
     res.setHeader("Cache-Control","no-store");
