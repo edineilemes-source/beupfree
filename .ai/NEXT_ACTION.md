@@ -81,3 +81,11 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Exclui YouTube e site institucional da Tavily, prioriza evidência técnica, exige modelo e marca no trecho, não duplica adidas.com/adidas.com.br como fabricantes independentes.
 - Relatório separado `/tmp/uppulse-evo-sl-real-research-v2.json`, preview **5007**, botão `Ver IA real — rodada 2`. V1 e previews 5005/5006 preservados. Não alterar PostgreSQL.
 - Critério: evidência de dois domínios e pelo menos um campo com concordância verificável. Se não passar, usar resultado para decidir pesquisa mais rica (ex.: extração de conteúdo pelas APIs), **não ativar lote**.
+
+
+## Missão 11.6 — Ficha narrativa com fontes (2026-11-16)
+- Usuário aprovou **síntese curta + citações azuis pequenas por característica + todas as evidências recolhidas na auditoria**, sem votar por maioria nem atribuir correção automática à fabricante.
+- Implementação publicada: `server/productIntelligence/customerKnowledge.ts`, `client/src/components/IntelligentProductCard.tsx`; ligada a `ProductKnowledge.tsx` e ao relatório real do Evo SL V2 em `EvoSlPilot.tsx`. `reportReconciliation.ts` preserva tipos das fontes. Sem APIs pagas, sem escrita no catálogo.
+- Testes adicionados em `customerKnowledge.test.ts` e `tests/e2e/ai/consultor-ficha.spec.ts`. **Ainda aguardam execução no Codespaces.**
+- Comando único: `git fetch origin feat/uppulse-missao10-supercatalogo && git show origin/feat/uppulse-missao10-supercatalogo:scripts/mission11-6-intelligent-card-preview.sh | bash` a partir de `/workspaces/uppulse-homologacao/missao9/codigo`. Valida tipos/testes, inicia porta **5009**, executa Playwright e deixa botão `Ver IA real — rodada 2` para inspeção.
+- A ficha atual produz síntese **determinística** de evidências auditáveis, não texto gerado novamente por LLM; futura evolução poderá sintetizar por OpenAI com verificação de claims, sem esconder fonte única/conflitos. Alinhar `masterId` operacional com Master confirmado antes da publicação em escala.
