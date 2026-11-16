@@ -5,7 +5,7 @@ import type {KnowledgeCard} from "../../../server/productIntelligence/superCatal
 type Pilot={pilot:true;pilotVersion:string;status:string;identity:{brand:string;model:string};card:KnowledgeCard;
  sources:Array<{name:string;url:string;type:string}>;metrics:{sourcePages:number;fields:number;verifiedFields:number;singleSourceFields:number;conflictingFields:number};
  narrative:string;warnings:string[]};
-type LiveReport={live:true;qualityGate?:boolean;metrics?:{fields:number;verified:number;conflicts:number;domainsWithEvidence:number};perSource?:Array<{url:string;extracted:number;fields:string[]}>;started:string;finished:string;status:string;searchProvider:string;extractionProvider:string;requestsReserved:{tavily:number;openai:number};sourceCount:number;distinctDomains:number;searchedSources:Array<{url:string;title:string}>;fields:Array<{field:string;value:string|null;status:"VERIFIED"|"SINGLE_SOURCE"|"CONFLICT";sources:Array<{url:string;value:string}>}>;warnings:string[];limitations:string[]};
+type LiveReport={live:true;reconciled?:{metrics:{fields:number;verified:number;conflicts:number;conflictsWithMajority:number};fields:Array<{field:string;status:string;value:string|null;agreements:Array<{value:string;count:number;sourceUrls:string[]}>}>};qualityGate?:boolean;metrics?:{fields:number;verified:number;conflicts:number;domainsWithEvidence:number};perSource?:Array<{url:string;extracted:number;fields:string[]}>;started:string;finished:string;status:string;searchProvider:string;extractionProvider:string;requestsReserved:{tavily:number;openai:number};sourceCount:number;distinctDomains:number;searchedSources:Array<{url:string;title:string}>;fields:Array<{field:string;value:string|null;status:"VERIFIED"|"SINGLE_SOURCE"|"CONFLICT";sources:Array<{url:string;value:string}>}>;warnings:string[];limitations:string[]};
 const statusLabel={VERIFIED:"Fontes concordam",SINGLE_SOURCE:"Uma fonte",CONFLICT:"Divergência entre fontes",UNAVAILABLE:"Não encontrado"} as const;
 export default function EvoSlPilot(){
  const [data,setData]=useState<Pilot|null>(null);
@@ -58,6 +58,15 @@ export default function EvoSlPilot(){
     {live.perSource&&<ul className="text-xs list-disc list-inside">{live.perSource.map(s=><li key={s.url}>{new URL(s.url).hostname}: {s.extracted} campos extraídos</li>)}</ul>}
     {live.sourceCount<2&&<p role="status" className="font-medium">Ficha ainda não aprovada: é necessário obter evidências técnicas de pelo menos duas fontes independentes. O status ENRICHED indica extração realizada, não validação de qualidade.</p>}
     <p className="text-xs">Chamadas: Tavily {live.requestsReserved.tavily}; OpenAI {live.requestsReserved.openai}. Pesquisa realizada em {new Date(live.finished).toLocaleString("pt-BR")}.</p>
+    {live.reconciled&&<section className="space-y-2 rounded border p-3" data-testid="evo-sl-reconciled">
+      <h4 className="font-semibold">Conciliação técnica — sem novas chamadas pagas</h4>
+      <p className="text-xs">Padronização conservadora de medidas. Valores de fontes diferentes continuam separados quando há divergência; uma maioria não é tratada como verdade definitiva.</p>
+      <p className="text-xs">{live.reconciled.metrics.verified} campos concordantes integralmente · {live.reconciled.metrics.conflicts} conflitos restantes · {live.reconciled.metrics.conflictsWithMajority} conflitos com maioria parcial.</p>
+      {live.reconciled.fields.map(field=><article key={field.field} className="space-y-1 rounded border p-2 text-xs">
+       <strong>{field.field.replace(/_/g," ")} — {field.status==="VERIFIED"?"Concordância":"SINGLE_SOURCE"===field.status?"Uma fonte":"Divergência preservada"}</strong>
+       {field.agreements.map(group=><p key={group.value}>• {group.value} — {group.count} fonte(s)</p>)}
+      </article>)}
+     </section>}
     <h4 className="font-semibold">Fontes retornadas pela Tavily</h4>
     <ul className="list-inside list-disc text-xs">{live.searchedSources.map(s=><li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer" className="underline break-words">{s.title||s.url}</a></li>)}</ul>
     <h4 className="font-semibold">Informações extraídas pela OpenAI</h4>
