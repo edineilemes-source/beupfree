@@ -1,4 +1,4 @@
-import {writeFile,mkdir,readFile} from "node:fs/promises";
+import {writeFile,mkdir} from "node:fs/promises";
 import {dirname} from "node:path";
 import {createLiveResearchProvider} from "../server/productIntelligence/liveProvider";
 import {enrichProduct,type ResearchProvider,type ResearchHit} from "../server/productIntelligence/research";
@@ -38,9 +38,11 @@ const modelMatches=(hit:ResearchHit)=>{
  return /adizero/.test(match)&&/\bevo\s*-?\s*sl\b/.test(match);
 };
 const searched:ResearchHit[]=[];
+const candidates:{url:string;title:string;eligible:boolean}[]=[];
 const adapted:ResearchProvider={
  async search(query,limit,signal){
   const hits=await provider.search(query,5,signal);
+  for(const hit of hits)candidates.push({url:hit.url,title:hit.title,eligible:modelMatches(hit)});
   const filtered=pickIndependentSources(hits.filter(modelMatches),Math.min(3,limit));
   searched.push(...filtered);
   return filtered;
@@ -61,6 +63,7 @@ const report={
  distinctDomains:new Set(searched.map(hit=>new URL(hit.url).hostname.replace(/^www\./,""))).size,
  targetSources:3,
  searchedSources:searched.map(hit=>({url:hit.url,title:hit.title,sourceType:hit.sourceType})),
+ candidateSources:candidates,
  fields:evaluated.map(field=>({
   field:field.field,value:field.value,status:field.status,
   sources:field.sources.map(s=>({url:s.sourceUrl,value:s.value,type:s.sourceType,observedAt:s.observedAt}))
