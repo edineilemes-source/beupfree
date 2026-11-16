@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { evoSlPilotResult } from "./evoSlPilot";
 import pg from "pg";
 import { PgCatalogSearchProjectionRepository } from "../catalogSearchProjection/repository";
 import { createSuperCatalogCard } from "./superCatalog";
@@ -9,6 +10,11 @@ import { resolvePublicCatalogSource } from "../publicCatalog/policy";
 export function createProductKnowledgeRouter() {
   const router = Router();
   let db: pg.Pool | undefined;
+  router.get("/pilot/evo-sl", (_req,res)=>{
+    if(process.env.NODE_ENV==="production")return res.status(404).json({code:"PILOT_NOT_AVAILABLE"});
+    res.setHeader("Cache-Control","no-store");
+    return res.json(evoSlPilotResult());
+  });
   router.get("/:productId", async (req, res) => {
     const id = req.params.productId;
     if (!/^[a-zA-Z0-9_-]{1,64}$/.test(id)) return res.status(400).json({ code: "INVALID_PRODUCT_ID" });
