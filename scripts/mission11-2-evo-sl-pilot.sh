@@ -6,14 +6,35 @@ ref=origin/feat/uppulse-missao10-supercatalogo
 container=beupfree-catalog-pg17
 port=5005
 if curl -fsS --max-time 3 "http://127.0.0.1:$port/" >/dev/null 2>&1; then echo "PORT_5005_IN_USE"; exit 1; fi
-docker start "$container" >/dev/null
-docker exec "$container" sh -c 'pg_isready -U "${POSTGRES_USER:-postgres}" -d uppulse_catalog'
-dbport=$(docker port "$container" 5432 | head -1 | sed -E 's/.*:([0-9]+)$/\1/')
-[[ "$dbport" =~ ^[0-9]+$ ]] || exit 1
 sandbox=$(mktemp -d /tmp/uppulse-evo-sl-pilot-XXXXXX)
 git archive "$ref" | tar -x -C "$sandbox"
 ln -s /workspaces/uppulse-homologacao/missao9/codigo/node_modules "$sandbox/node_modules"
 echo "Source: $(git rev-parse --short "$ref"); isolated at $sandbox"
+cd "$sandbox"
+echo "=== OFFLINE TESTS (DOCKER NOT REQUIRED) ==="
+npm run check
+node --import tsx --test server/productIntelligence/evoSlPilot.test.ts
+echo "=== POSTGRESQL DOCKER PRECHECK ==="
+status=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null || true)
+echo "Catalog container status: ${status:-not-found}"
+if [[ "$status" != "running" ]]; then
+  echo "Attempting to start existing catalog container once, without recreating it"
+  if ! docker start "$container" >/dev/null; then
+    echo "DOCKER_RUNTIME_BLOCKED: catalog container could not start"
+    docker inspect -f 'state={{.State.Status}} exit={{.State.ExitCode}} error={{.State.Error}} image={{.Config.Image}}' "$container" || true
+    docker ps -a --filter "name=beupfree-catalog-pg17" --format 'name={{.Names}} state={{.Status}}' || true
+    echo "Offline TypeScript and pilot unit tests already executed. Browser preview requires Docker recovery."
+    echo "Do NOT docker rm, docker compose down -v, prune or delete volumes."
+    exit 2
+  fi
+fi
+if ! docker exec "$container" sh -c 'pg_isready -U "${POSTGRES_USER:-postgres}" -d uppulse_catalog'; then
+  echo "CATALOG_POSTGRES_NOT_READY: do not alter or recreate volume"
+  exit 2
+fi
+dbport=$(docker port "$container" 5432 | head -1 | sed -E 's/.*:([0-9]+)$/\1/')
+[[ "$dbport" =~ ^[0-9]+$ ]] || { echo "CATALOG_PORT_UNAVAILABLE"; exit 2; }
+
 docker_env=$(docker inspect --format '{{json .Config.Env}}' "$container")
 export DATABASE_URL=$(DOCKER_ENV="$docker_env" PG_HOST_PORT="$dbport" node - <<'NODE'
 const env=Object.fromEntries(JSON.parse(process.env.DOCKER_ENV).map(x=>{const p=x.indexOf("=");return[x.slice(0,p),x.slice(p+1)]}));
@@ -29,9 +50,6 @@ export PUBLIC_DEMO_MODE=false UPPULSE_DISABLE_EXTERNAL_JOBS=true
 export RESEARCH_PAID_ENABLED=false RESEARCH_POSTGRES_HOMOLOGATED=false
 export NODE_ENV=development PORT="$port"
 cd "$sandbox"
-echo "=== TYPECHECK + UNIT ==="
-npm run check
-node --import tsx --test server/productIntelligence/evoSlPilot.test.ts
 echo "=== START ISOLATED PREVIEW ==="
 nohup npm run dev > "$sandbox/server.log" 2>&1 </dev/null &
 echo "$!" > "$sandbox/server.pid"
