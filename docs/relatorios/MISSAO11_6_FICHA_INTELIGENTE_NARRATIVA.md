@@ -34,3 +34,9 @@ git fetch origin feat/uppulse-missao10-supercatalogo &&
 git show origin/feat/uppulse-missao10-supercatalogo:scripts/mission11-6-intelligent-card-preview.sh | bash
 ```
 Acesse PORTS 5009 → Ficha inteligente e fornecedores → Ver IA real — rodada 2.
+
+## Correção após primeira validação Codespaces (2026-11-16)
+- O usuário executou `scripts/mission11-6-intelligent-card-preview.sh` na fonte `abb031e`; `npm run check` identificou `TS18048`: propriedade opcional `field.agreements` acessada diretamente em `EvoSlPilot.tsx` linha 68.
+- Corrigido em `aa2ccd8` com fallback `(field.agreements ?? [])`, sem alterar dados, fontes ou cálculos.
+- Revisados também dois testes Playwright preexistentes que procuravam SuperHash visível. Como a nova ficha recolhe os identificadores internos, os testes agora expandem a seção antes de verificá-los; a mensagem de ficha sem evidências foi atualizada.
+- A primeira execução **não chegou aos testes nem ao preview**; a correção publicada **ainda precisa ser validada novamente no Codespaces**. Nenhuma chamada Tavily/OpenAI foi iniciada.
