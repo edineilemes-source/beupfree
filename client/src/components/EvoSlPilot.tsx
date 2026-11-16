@@ -65,7 +65,7 @@ export default function EvoSlPilot(){
       <p className="text-xs">{live.reconciled.metrics.verified} campos concordantes integralmente · {live.reconciled.metrics.conflicts} conflitos restantes · {live.reconciled.metrics.conflictsWithMajority} conflitos com maioria parcial.</p>
       {live.reconciled.fields.map(field=><article key={field.field} className="space-y-1 rounded border p-2 text-xs">
        <strong>{field.field.replace(/_/g," ")} — {field.status==="VERIFIED"?"Concordância":"SINGLE_SOURCE"===field.status?"Uma fonte":"Divergência preservada"}</strong>
-       {field.agreements.map(group=><p key={group.value}>• {group.value} — {group.count} fonte(s)</p>)}
+       {(field.agreements??[]).map(group=><p key={group.value}>• {group.value} — {group.count} fonte(s)</p>)}
       </article>)}
      </section>}
     {liveVersion==="v2"&&live.reconciled&&<IntelligentProductCard brand="Adidas" model="Adizero Evo SL" fields={live.reconciled.fields} experimental/>}
