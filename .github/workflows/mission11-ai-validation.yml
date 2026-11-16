@@ -12,6 +12,8 @@ on:
       - 'client/src/lib/catalogAssistant*'
       - 'server/productIntelligence/knowledgeRoutes.ts'
       - 'server/productIntelligence/technicalRoutes*'
+      - 'server/productIntelligence/liveProvider*'
+      - 'scripts/mission11-3-*'
       - 'server/routes.ts'
       - '.github/workflows/mission11-ai-validation.yml'
       - 'playwright.mission11-ai.config.ts'
@@ -34,7 +36,7 @@ jobs:
       - name: TypeScript
         run: npm run check
       - name: Teste do consultor local sem APIs externas
-        run: node --import tsx --test client/src/lib/catalogAssistant.test.ts server/productIntelligence/technicalRoutes.test.ts server/productIntelligence/evoSlPilot.test.ts
+        run: node --import tsx --test client/src/lib/catalogAssistant.test.ts server/productIntelligence/technicalRoutes.test.ts server/productIntelligence/evoSlPilot.test.ts server/productIntelligence/liveProvider.test.ts
         env:
           RESEARCH_PAID_ENABLED: 'false'
           RESEARCH_POSTGRES_HOMOLOGATED: 'false'
