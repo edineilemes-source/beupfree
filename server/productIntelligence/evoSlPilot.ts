@@ -1,3 +1,5 @@
+import {enrichProduct, type ResearchProvider} from "./research";
+import {pickIndependentSources} from "./sourceSelection";
 import { createSuperCatalogCard, type IdentityDescriptor, type TechnicalEvidence } from "./superCatalog";
 
 /** Controlled golden-data pilot. Manually transcribed excerpts from three public
@@ -24,14 +26,21 @@ const evidence:TechnicalEvidence[]=[
  return {field:String(field),value:String(value),sourceUrl:s.url,sourceType:s.type,observedAt,
   ...("modelCode" in s?{modelCode:s.modelCode}:{})};
 });
-const card=createSuperCatalogCard(identity,evidence);
-const reported=card.fields.filter(field=>field.status!=="UNAVAILABLE");
-const stable=reported.filter(field=>field.status==="VERIFIED");
-const single=reported.filter(field=>field.status==="SINGLE_SOURCE");
-const conflicts=reported.filter(field=>field.status==="CONFLICT");
-export function evoSlPilotResult(){
+const hits=EVO_SL_PILOT_SOURCES.map(s=>({url:s.url,title:s.name,snippet:"Conjunto pré-extraído manualmente de fonte pública",sourceType:s.type}));
+export const pilotProvider:ResearchProvider={
+ async search(){return pickIndependentSources(hits,3);},
+ async extract(_identity,hit){return evidence.filter(item=>item.sourceUrl===hit.url);},
+};
+export async function evoSlPilotResult(){
+ const result=await enrichProduct(identity,pilotProvider,{get:async()=>null,set:async()=>{}},{maxSources:3});
+ const card=result.card;
+ const reported=card.fields.filter(field=>field.status!=="UNAVAILABLE");
+ const stable=reported.filter(field=>field.status==="VERIFIED");
+ const single=reported.filter(field=>field.status==="SINGLE_SOURCE");
+ const conflicts=reported.filter(field=>field.status==="CONFLICT");
  return {
-  pilot:true,pilotVersion:"11.2-golden-data-1",status:"PRE_EXTRACTED_NOT_LIVE",catalogSource:"pilot",
+  pilot:true,pilotVersion:"11.2-golden-data-2",status:"PRE_EXTRACTED_NOT_LIVE",catalogSource:"pilot",
+  pipelineState:result.state,pipelineQueried:result.queried,
   identity,card,sources:EVO_SL_PILOT_SOURCES,
   metrics:{sourcePages:EVO_SL_PILOT_SOURCES.length,fields:reported.length,
    verifiedFields:stable.length,singleSourceFields:single.length,conflictingFields:conflicts.length},
@@ -41,7 +50,7 @@ export function evoSlPilotResult(){
    "Os varejistas mencionam cabedal de malha/sintético, uso em asfalto/esteira e pisada neutra. As descrições sobre amortecimento e tecnologias nem sempre coincidem literalmente.",
   ].join(" "),
   warnings:[
-   "Piloto com trechos selecionados manualmente de três páginas reais: ainda não valida busca/extracão automática.",
+   "Piloto executado pelo orquestrador real com busca/extração SIMULADAS a partir de trechos pré-extraídos; não houve coleta automática.",
    "Fonte independente significa domínio distinto, não prova independência editorial entre varejistas.",
    "Peso e drop podem variar por versão, código e numeração; não transferir para outros SKUs.",
    "Não gravado no PostgreSQL e não associado ao Master do catálogo comercial.",
