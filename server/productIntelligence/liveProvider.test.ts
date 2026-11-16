@@ -51,3 +51,29 @@ test("each outbound operation reserves before fetch, and 429 is never retried or
   await assert.rejects(provider.extract({ masterId: "1", brand: "Mock", model: "Mock" }, hit), /HTTP_429_INSUFFICIENT_QUOTA/);
   assert.deepEqual(operations, ["tavily", "openai"]);
 });
+
+test("one-shot pilot: real adapter uses injected strict budget with mocked network", async () => {
+ const calls:{tavily:number;openai:number}={tavily:0,openai:0};
+ const max={tavily:1,openai:3};
+ let outbound=0;
+ const provider=createLiveResearchProvider({
+  tavilyApiKey:"sample",openaiApiKey:"sample",
+  oneShotPilotBudget:{async reserve(operation){
+   if(calls[operation]>=max[operation])throw Error("RESEARCH_BUDGET_EXHAUSTED");
+   calls[operation]++;
+  }},
+  fetcher:async input=>{
+   outbound++;
+   return String(input).includes("tavily")
+    ? Response.json({results:[{url:"https://vendor.example/evo-sl",title:"Adidas Adizero Evo SL",content:"Adidas Adizero Evo SL Lightstrike Pro."}]})
+    : Response.json({choices:[{message:{content:JSON.stringify({fields:[{field:"entressola",value:"Lightstrike Pro"}]})}}]});
+  },
+ });
+ const hits=await provider.search("Adidas Adizero Evo SL",3);
+ assert.equal(hits.length,1);
+ for(let i=0;i<3;i++)assert.equal((await provider.extract({masterId:"pilot",brand:"Adidas",model:"Adizero Evo SL"},hits[0])).length,1);
+ await assert.rejects(provider.extract({masterId:"pilot",brand:"Adidas",model:"Adizero Evo SL"},hits[0]),/RESEARCH_BUDGET_EXHAUSTED/);
+ await assert.rejects(provider.search("Adidas",3),/RESEARCH_BUDGET_EXHAUSTED/);
+ assert.deepEqual(calls,{tavily:1,openai:3});
+ assert.equal(outbound,4);
+});
