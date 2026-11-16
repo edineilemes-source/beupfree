@@ -55,7 +55,7 @@ export function createTechnicalCatalogRouter(){
      "WHERE "+built.sql+" AND (cache.expires_at IS NULL OR cache.expires_at>NOW()) "+
      "AND cache.result->>'state'='ENRICHED' AND cache.result->'card'->>'masterId'=c.product_id::text "+
      "AND "+conditions.join(" AND ")+" ORDER BY c.discount_percent DESC,c.product_id,c.merchant_id LIMIT "+limit;
-   const {rows}=await pool.query({text:sql,values:args,query_timeout:8000});
+   const {rows}=await pool.query(sql,args);
    const products=rows.map(row=>({
     id:row.product_id,mainName:row.product_name,mainImageUrl:row.primary_image_url,
     brand:{name:row.brand_raw},activities:row.activities,normalizedSizes:row.normalized_sizes,
