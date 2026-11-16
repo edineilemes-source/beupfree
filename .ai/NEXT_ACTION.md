@@ -60,3 +60,10 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Playwright no navegador real, com fixtures simuladas: **3 testes aprovados em 18,6 s**: filtros/recomendação/link, bloqueio de DEMO e ficha inteligente/SuperHash. Não confundir estes testes UI simulados com navegação completa no catálogo real.
 - Não houve migração nem chamada paga; checkout local divergente preservado. Preview na aba PORTS → `5002` → Open in Browser.
 - Próximo gate: conferir manualmente a experiência no preview com produtos reais, validar filtros e fluxo de oferta; auditar configuração de runtime e registrar eventuais erros. Pesquisa externa paga permanece desativada.
+
+
+## Piloto 11.2 — Evo SL (2026-11-16)
+- O laboratório de enriquecimento da ficha foi implementado na branch remota: botão `Testar ficha Evo SL — 3 fontes` no painel existente, visível apenas em desenvolvimento. Endpoint `/api/product-knowledge/pilot/evo-sl` desativado em produção.
+- Três fontes públicas reais (adidas Brasil KJ1363, Centauro masculino, Netshoes masculino) deram origem a um **conjunto pré-extraído de evidências**, que é processado pelo orquestrador `enrichProduct` com provedor simulado. Mostra síntese, atributos, URLs, concordância e conflito. Não coleta automaticamente páginas, não faz inferência LLM ao clicar, não grava no PostgreSQL nem chama APIs pagas.
+- O script `scripts/mission11-2-evo-sl-pilot.sh` prepara snapshot isolado, executa TypeScript, unitário e Playwright, verifica endpoint e realiza um único GET de teste por fonte para medir acessibilidade HTTP; preview porta 5005, preservando 5000–5004. **Execução e homologação pendentes** da saída do Codespaces. Relatório `docs/relatorios/MISSAO11_2_PILOTO_FICHA_EVO_SL.md`.
+- Próximo gate após testes: protótipo de extração automática limitado a um único Master confirmado e três fontes, sob autorização explícita se houver APIs pagas; critérios de identidade, fontes, conflitos, custo e persistência.
