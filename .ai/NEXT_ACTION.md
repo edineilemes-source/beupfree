@@ -89,3 +89,12 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Testes adicionados em `customerKnowledge.test.ts` e `tests/e2e/ai/consultor-ficha.spec.ts`. **Ainda aguardam execução no Codespaces.**
 - Comando único: `git fetch origin feat/uppulse-missao10-supercatalogo && git show origin/feat/uppulse-missao10-supercatalogo:scripts/mission11-6-intelligent-card-preview.sh | bash` a partir de `/workspaces/uppulse-homologacao/missao9/codigo`. Valida tipos/testes, inicia porta **5009**, executa Playwright e deixa botão `Ver IA real — rodada 2` para inspeção.
 - A ficha atual produz síntese **determinística** de evidências auditáveis, não texto gerado novamente por LLM; futura evolução poderá sintetizar por OpenAI com verificação de claims, sem esconder fonte única/conflitos. Alinhar `masterId` operacional com Master confirmado antes da publicação em escala.
+
+
+## Missão 11.7 — Ficha em página inteira, tradução pt-BR e unidades métricas
+- Mudanças publicadas; **validação pendente no Codespaces**. Abrir `Características do produto · Ficha inteligente` agora ocupa `100dvh x 100vw`, com conteúdo largo e rolagem.
+- A apresentação V2 do Evo SL aparece antes dos diagnósticos. Tradução determinística dos trechos do relatório V2, com drop/alturas em milímetros, pesos em gramas e numeração dos calçados explicitamente marcada como US. Originais e fontes continuam acessíveis na auditoria; dados comerciais intocados.
+- Testes adicionados em `server/productIntelligence/technicalPresentation.test.ts`; Playwright existente verifica tela cheia, entressola traduzida e peso em gramas.
+- Preview novo e isolado na porta **5010**, sem chamadas externas: `cd /workspaces/uppulse-homologacao/missao9/codigo && git fetch origin feat/uppulse-missao10-supercatalogo && git show origin/feat/uppulse-missao10-supercatalogo:scripts/mission11-7-ficha-fullscreen-ptbr.sh | bash`.
+- Não usar a porta antiga 5009 para verificar o novo código. No sucesso, esperar `FICHA_TELA_CHEIA_PTBR_OK`.
+- Tradução coberta para as expressões já coletadas; **não é tradução universal de texto futuro**. Não pesquisar novos produtos antes da aprovação visual.
