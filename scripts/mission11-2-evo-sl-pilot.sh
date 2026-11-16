@@ -105,7 +105,7 @@ curl -fsS --max-time 15 "http://127.0.0.1:$port/api/product-knowledge/pilot/evo-
 echo "=== PLAYWRIGHT PILOT ==="
 export PLAYWRIGHT_BASE_URL="http://127.0.0.1:$port" PLAYWRIGHT_EXTERNAL_SERVER=true
 npx playwright install chromium
-npx playwright test --config=playwright.mission11-ai.config.ts --grep "laboratório de 3 fontes"
+npx playwright test --config=playwright.mission11-ai.config.ts --grep "ficha inteligente abre piloto de tres fontes"
 echo "EVO_SL_PILOT_UI_OK"
 echo "Preview PORTS -> 5005 -> Open in Browser"
 echo "No commercial writes, paid calls, or automatic live extraction."
