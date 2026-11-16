@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import EvoSlPilot from "./EvoSlPilot";
 import type { KnowledgeCard } from "../../../server/productIntelligence/superCatalog";
 
 type Payload = {
@@ -34,6 +35,7 @@ export default function ProductKnowledge({ productId }: { productId: string }) {
       {([["Master ID",card.masterId],["SuperHash",card.superHash],["Family Key",card.familyKey],["Model Key",card.modelKey],["Variant Key",card.variantKey ?? "Não definida"]] as const).map(([name,value]) =>
         <div key={name} className="min-w-0"><dt className="font-semibold">{name}</dt><dd className="break-all font-mono text-xs" data-testid={name === "SuperHash" ? "product-superhash" : undefined}>{value}</dd></div>)}
     </dl>
+    {import.meta.env.DEV&&<EvoSlPilot/>}
     <h4 className="font-semibold">Especificações e evidências ({fields.length})</h4>
     {!fields.length && <p>Sem evidências externas validadas. A pesquisa paga permanece desativada; nenhuma característica será inventada.</p>}
     {fields.map(field => <article key={field.field} className="rounded border p-2">
