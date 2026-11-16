@@ -7,6 +7,10 @@ on:
       - 'client/src/components/CatalogAssistant.tsx'
       - 'client/src/components/ProductKnowledge.tsx'
       - 'client/src/components/EvoSlPilot.tsx'
+      - 'client/src/components/IntelligentProductCard.tsx'
+      - 'server/productIntelligence/customerKnowledge*'
+      - 'server/productIntelligence/reportReconciliation*'
+      - 'server/productIntelligence/technicalNormalization*'
       - 'client/src/components/Header.tsx'
       - 'client/src/components/MasterOffers.tsx'
       - 'client/src/lib/catalogAssistant*'
@@ -36,7 +40,7 @@ jobs:
       - name: TypeScript
         run: npm run check
       - name: Teste do consultor local sem APIs externas
-        run: node --import tsx --test client/src/lib/catalogAssistant.test.ts server/productIntelligence/technicalRoutes.test.ts server/productIntelligence/evoSlPilot.test.ts server/productIntelligence/liveProvider.test.ts server/productIntelligence/sourceSelection.test.ts server/productIntelligence/technicalNormalization.test.ts server/productIntelligence/reportReconciliation.test.ts
+        run: node --import tsx --test client/src/lib/catalogAssistant.test.ts server/productIntelligence/technicalRoutes.test.ts server/productIntelligence/evoSlPilot.test.ts server/productIntelligence/liveProvider.test.ts server/productIntelligence/sourceSelection.test.ts server/productIntelligence/technicalNormalization.test.ts server/productIntelligence/reportReconciliation.test.ts server/productIntelligence/customerKnowledge.test.ts
         env:
           RESEARCH_PAID_ENABLED: 'false'
           RESEARCH_POSTGRES_HOMOLOGATED: 'false'
