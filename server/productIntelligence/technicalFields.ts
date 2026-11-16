@@ -9,4 +9,4 @@ export const TECHNICAL_FIELDS = [
   "numeracao","conforto","durabilidade","flexibilidade",
 ] as const;
 export type TechnicalField = typeof TECHNICAL_FIELDS[number];
-export const TECHNICAL_FIELD_SET:ReadOnlySet<string> = new Set(TECHNICAL_FIELDS);
+export const TECHNICAL_FIELD_SET:ReadonlySet<string> = new Set(TECHNICAL_FIELDS);
