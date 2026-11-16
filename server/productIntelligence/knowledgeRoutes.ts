@@ -18,7 +18,7 @@ export function createProductKnowledgeRouter() {
     try {
       const data=JSON.parse(await readFile("/tmp/uppulse-evo-sl-real-research-v2.json","utf8")) as Record<string,unknown>;
       if(data.pilot!=="EVO_SL_LIVE_RESEARCH_V2"||data.live!==true)return res.status(422).json({code:"PILOT_REPORT_INVALID"});
-      const reconciled=reconcileLiveReport(data as Parameters<typeof reconcileLiveReport>[0]);
+      const reconciled=reconcileLiveReport(data as unknown as Parameters<typeof reconcileLiveReport>[0]);
       return res.json({...data,reconciled});
     } catch {return res.status(404).json({code:"LIVE_RESEARCH_V2_NOT_EXECUTED"});}
   });
