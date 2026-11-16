@@ -78,8 +78,9 @@ export function createLiveResearchProvider(config: ProviderConfig): ResearchProv
   const excerpts = new WeakMap<ResearchHit, string>();
   return {
     async search(query,limit,signal) {
+      const maxResults=Math.min(10,Math.max(1,Math.floor(limit)));
       const result = object(await jsonRequest(fetcher,budget,"tavily","https://api.tavily.com/search",{},{
-        api_key:config.tavilyApiKey,query:query.slice(0,1000),search_depth:"basic",auto_parameters:false,max_results:5,include_answer:false
+        api_key:config.tavilyApiKey,query:query.slice(0,1000),search_depth:"basic",auto_parameters:false,max_results:maxResults,include_answer:false
       },signal));
       const rows = Array.isArray(result?.results) ? result.results : [];
       const hits: ResearchHit[] = [];
@@ -91,7 +92,7 @@ export function createLiveResearchProvider(config: ProviderConfig): ResearchProv
         excerpts.set(hit,snippet);
         hits.push(hit);
       }
-      return hits.slice(0,5);
+      return hits.slice(0,maxResults);
     },
     async extract(identity: IdentityDescriptor,hit: ResearchHit, signal?: AbortSignal): Promise<TechnicalEvidence[]> {
       const excerpt = excerpts.get(hit);
