@@ -32,3 +32,18 @@ test("ranking rejects malformed URLs, other brands and model lookalikes",()=>{
  ],{brand:"Adidas",model:"Adizero Evo SL"},3);
  assert.deepEqual(result.selected.map(x=>x.url),["https://real.example/evo"]);
 });
+
+
+test("adidas.com and adidas.com.br count as same manufacturer, not two independent sources",()=>{
+ const list=[
+  hit("https://www.adidas.com/us/evo","Adidas Adizero Evo SL specifications","drop 6mm weight 224 g"),
+  hit("https://www.adidas.com.br/br/evo","Adidas Adizero Evo SL details","drop 6mm outsole rubber"),
+  hit("https://shop.example/evo","Adidas Adizero Evo SL ficha tecnica","drop 6mm mesh outsole rubber"),
+  hit("https://review.example/evo","Adidas Adizero Evo SL running review","drop 6mm midsole and weight"),
+ ];
+ const selected=rankTechnicalSources(list,{brand:"Adidas",model:"Adizero Evo SL"},3).selected;
+ assert.equal(selected.length,3);
+ assert.equal(selected.filter(s=>new URL(s.url).hostname.includes("adidas")).length,1);
+ assert.ok(selected.some(s=>s.url.includes("shop.example")));
+ assert.ok(selected.some(s=>s.url.includes("review.example")));
+});
