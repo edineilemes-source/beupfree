@@ -74,7 +74,7 @@ const report={
  searchProvider:"Tavily",extractionProvider:"OpenAI",searchQueries,
  searchedSources:selected.map(s=>({url:s.url,title:s.title,sourceType:s.sourceType})),
  candidateSources:trace,perSource,
- sourceCount:result.card.sourcesConsulted,sourceDomainsWithEvidence:sourcesWithEvidence.size,
+ sourceCount:result.card.sourcesConsulted,distinctDomains:new Set(selected.map(s=>new URL(s.url).hostname.replace(/^www\./,""))).size,sourceDomainsWithEvidence:sourcesWithEvidence.size,
  fields:fields.map(f=>({field:f.field,value:f.value,status:f.status,
   sources:f.sources.map(s=>({url:s.sourceUrl,value:s.value,sourceType:s.sourceType,observedAt:s.observedAt}))})),
  metrics:{candidateResults:trace.length,selectedPages:selected.length,fields:fields.length,verified:verifiedFields.length,
