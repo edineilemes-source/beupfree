@@ -1,5 +1,6 @@
 import type {FieldAssessment} from "../../../server/productIntelligence/superCatalog";
 import {createCustomerKnowledge} from "../../../server/productIntelligence/customerKnowledge";
+import {brazilianTechnicalText} from "../../../server/productIntelligence/technicalPresentation";
 
 type Props={brand:string;model:string;fields:readonly FieldAssessment[];experimental?:boolean};
 const domain=(url:string)=>{try{return new URL(url).hostname.replace(/^www\./,"");}catch{return "Fonte";}};
@@ -38,12 +39,14 @@ export default function IntelligentProductCard({brand,model,fields,experimental=
   </div>
   <details className="rounded-md border p-3" data-testid="intelligent-evidence-audit">
    <summary className="cursor-pointer font-semibold">Ver todas as fontes e detalhes técnicos</summary>
-   <p className="mt-2 text-xs text-muted-foreground">Registro de auditoria: textos extraídos, datas, divergências e links individuais. A quantidade de fontes não determina automaticamente qual informação é correta.</p>
+   <p className="mt-2 text-xs text-muted-foreground">Registro de auditoria: tradução de apresentação, texto original da fonte, datas, divergências e links individuais. A quantidade de fontes não determina automaticamente qual informação é correta.</p>
    <div className="mt-3 space-y-3">
     {visible.map(field=><article key={field.field} className="rounded border p-2">
      <strong>{field.field.replace(/_/g," ")} — {field.status==="CONFLICT"?"Divergências":"VERIFIED"===field.status?"Concordância":"Fonte única"}</strong>
      <ul className="mt-1 space-y-1 text-xs">{field.sources.map((s,i)=><li key={s.sourceUrl+s.value+i}>
-      <span className="break-words">{s.value}</span>{" · "}
+      <span className="break-words">{brazilianTechnicalText(field.field,s.value)}</span>
+      {brazilianTechnicalText(field.field,s.value)!==s.value&&<span className="block text-muted-foreground">Original: {s.value}</span>}
+      {" · "}
       <a className="text-blue-600 hover:underline dark:text-blue-400" href={s.sourceUrl} target="_blank" rel="noopener noreferrer">{domain(s.sourceUrl)}</a>
       {Number.isFinite(Date.parse(s.observedAt))&&<span className="text-muted-foreground"> · {new Date(s.observedAt).toLocaleDateString("pt-BR")}</span>}
      </li>)}</ul>
