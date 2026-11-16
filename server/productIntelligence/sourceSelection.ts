@@ -67,5 +67,18 @@ export function rankTechnicalSources(hits:readonly ResearchHit[], identity:{bran
    Math.min(hit.snippet.length,500)/250;
   return {hit,score,reason:manufacturer?"MANUFACTURER_CANDIDATE":"TECHNICAL_CANDIDATE"};
  }).sort((a,b)=>b.score-a.score||a.hit.url.localeCompare(b.hit.url));
- return {selected:pickIndependentSources(candidates.filter(c=>c.score>=0).map(c=>c.hit),limit),candidates};
+ const selected:ResearchHit[]=[];
+ const groups=new Set<string>();
+ for(const candidate of candidates) {
+  if(candidate.score<0)continue;
+  const host=new URL(candidate.hit.url).hostname.toLowerCase().replace(/^www\./,"");
+  // adidas.com and adidas.com.br belong to the same manufacturer: one source group.
+  const manufacturer=host.includes(brand.replace(/\s+/g,""));
+  const group=manufacturer?"manufacturer:"+brand:"host:"+host;
+  if(groups.has(group))continue;
+  groups.add(group);
+  selected.push(candidate.hit);
+  if(selected.length>=limit)break;
+ }
+ return {selected,candidates};
 }
