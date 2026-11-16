@@ -11,6 +11,7 @@ on:
       - 'server/productIntelligence/customerKnowledge*'
       - 'server/productIntelligence/reportReconciliation*'
       - 'server/productIntelligence/technicalNormalization*'
+      - 'server/productIntelligence/technicalPresentation*'
       - 'client/src/components/Header.tsx'
       - 'client/src/components/MasterOffers.tsx'
       - 'client/src/lib/catalogAssistant*'
@@ -40,7 +41,7 @@ jobs:
       - name: TypeScript
         run: npm run check
       - name: Teste do consultor local sem APIs externas
-        run: node --import tsx --test client/src/lib/catalogAssistant.test.ts server/productIntelligence/technicalRoutes.test.ts server/productIntelligence/evoSlPilot.test.ts server/productIntelligence/liveProvider.test.ts server/productIntelligence/sourceSelection.test.ts server/productIntelligence/technicalNormalization.test.ts server/productIntelligence/reportReconciliation.test.ts server/productIntelligence/customerKnowledge.test.ts
+        run: node --import tsx --test client/src/lib/catalogAssistant.test.ts server/productIntelligence/technicalRoutes.test.ts server/productIntelligence/evoSlPilot.test.ts server/productIntelligence/liveProvider.test.ts server/productIntelligence/sourceSelection.test.ts server/productIntelligence/technicalNormalization.test.ts server/productIntelligence/reportReconciliation.test.ts server/productIntelligence/customerKnowledge.test.ts server/productIntelligence/technicalPresentation.test.ts
         env:
           RESEARCH_PAID_ENABLED: 'false'
           RESEARCH_POSTGRES_HOMOLOGATED: 'false'
