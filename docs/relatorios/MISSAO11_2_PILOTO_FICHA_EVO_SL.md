@@ -20,3 +20,12 @@ Avaliar a utilidade de consolidar informações técnicas de três páginas reai
 
 ## Próximo gate
 Rodar script da porta 5005, verificar métricas/falhas de acesso, inspecionar ficha no browser. Com a evidência, decidir pequeno piloto automático de pesquisa paga de 1 produto sob orçamento aprovado, com proteção e auditoria, antes de qualquer escala.
+
+
+## Resultado real do piloto informado pelo operador — 2026-11-16
+- O operador rodou o script `scripts/mission11-2-evo-sl-pilot.sh` com fonte `70b2a8a`: `npm run check` aprovado; **2/2 testes unitários aprovados**.
+- PostgreSQL `beupfree-catalog-pg17`: `CATALOG_POSTGRES_READY after attempt 1`. Preview isolado iniciou na porta 5005, sem publicação em produção.
+- Acesso HTTP direto às três páginas: `www.adidas.com.br`, `www.centauro.com.br` e `www.netshoes.com.br` responderam **403**. Isto bloqueia a coleta direta por esse método; não indica que a consolidação deixou de funcionar.
+- API `/api/product-knowledge/pilot/evo-sl`: `PILOT_3_SOURCES_OK`, **11 campos identificados, 4 com concordância, 4 de fonte única e 3 com divergência textual**.
+- Na primeira execução o Playwright não selecionou testes devido ao `--grep` incorreto; corrigido em `805f322`. O operador executou `scripts/mission11-2-pilot-ui-recheck.sh` na fonte `1eb22bc` e obteve **`1 passed (14.9s)` / `EVO_SL_PILOT_UI_OK`**.
+- **Estado comprovado**: piloto de consolidação com evidências pré-extraídas e interface de laboratório homologado na porta 5005; coleta/extracão automática real, chamada Tavily/OpenAI, escrita da ficha enriquecida no PostgreSQL e validação de relevância de três fontes continuam pendentes. O Playwright usa interceptação/mocks da API de laboratório; smoke HTTP da API real foi executado separadamente.
