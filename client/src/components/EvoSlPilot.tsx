@@ -1,11 +1,12 @@
 import {useState} from "react";
 import {Button} from "@/components/ui/button";
 import {Badge} from "@/components/ui/badge";
+import IntelligentProductCard from "./IntelligentProductCard";
 import type {KnowledgeCard} from "../../../server/productIntelligence/superCatalog";
 type Pilot={pilot:true;pilotVersion:string;status:string;identity:{brand:string;model:string};card:KnowledgeCard;
  sources:Array<{name:string;url:string;type:string}>;metrics:{sourcePages:number;fields:number;verifiedFields:number;singleSourceFields:number;conflictingFields:number};
  narrative:string;warnings:string[]};
-type LiveReport={live:true;reconciled?:{metrics:{fields:number;verified:number;conflicts:number;conflictsWithMajority:number};fields:Array<{field:string;status:string;value:string|null;agreements:Array<{value:string;count:number;sourceUrls:string[]}>}>};qualityGate?:boolean;metrics?:{fields:number;verified:number;conflicts:number;domainsWithEvidence:number};perSource?:Array<{url:string;extracted:number;fields:string[]}>;started:string;finished:string;status:string;searchProvider:string;extractionProvider:string;requestsReserved:{tavily:number;openai:number};sourceCount:number;distinctDomains:number;searchedSources:Array<{url:string;title:string}>;fields:Array<{field:string;value:string|null;status:"VERIFIED"|"SINGLE_SOURCE"|"CONFLICT";sources:Array<{url:string;value:string}>}>;warnings:string[];limitations:string[]};
+type LiveReport={live:true;reconciled?:{metrics:{fields:number;verified:number;conflicts:number;conflictsWithMajority:number};fields:KnowledgeCard["fields"]};qualityGate?:boolean;metrics?:{fields:number;verified:number;conflicts:number;domainsWithEvidence:number};perSource?:Array<{url:string;extracted:number;fields:string[]}>;started:string;finished:string;status:string;searchProvider:string;extractionProvider:string;requestsReserved:{tavily:number;openai:number};sourceCount:number;distinctDomains:number;searchedSources:Array<{url:string;title:string}>;fields:Array<{field:string;value:string|null;status:"VERIFIED"|"SINGLE_SOURCE"|"CONFLICT";sources:Array<{url:string;value:string}>}>;warnings:string[];limitations:string[]};
 const statusLabel={VERIFIED:"Fontes concordam",SINGLE_SOURCE:"Uma fonte",CONFLICT:"Divergência entre fontes",UNAVAILABLE:"Não encontrado"} as const;
 export default function EvoSlPilot(){
  const [data,setData]=useState<Pilot|null>(null);
@@ -67,6 +68,8 @@ export default function EvoSlPilot(){
        {field.agreements.map(group=><p key={group.value}>• {group.value} — {group.count} fonte(s)</p>)}
       </article>)}
      </section>}
+    {liveVersion==="v2"&&live.reconciled&&<IntelligentProductCard brand="Adidas" model="Adizero Evo SL" fields={live.reconciled.fields} experimental/>}
+    <details className="rounded border p-2" data-testid="live-research-technical-diagnostics"><summary className="cursor-pointer font-semibold">Detalhes da pesquisa e extração original</summary>
     <h4 className="font-semibold">Fontes retornadas pela Tavily</h4>
     <ul className="list-inside list-disc text-xs">{live.searchedSources.map(s=><li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer" className="underline break-words">{s.title||s.url}</a></li>)}</ul>
     <h4 className="font-semibold">Informações extraídas pela OpenAI</h4>
@@ -76,6 +79,7 @@ export default function EvoSlPilot(){
       <p className="text-xs">{statusLabel[field.status]}</p>
       {field.sources.map(source=><p key={source.url+source.value} className="text-xs break-words">{source.value} — <a href={source.url} className="underline" target="_blank" rel="noopener noreferrer">{new URL(source.url).hostname}</a></p>)}
     </article>)}
+    </details>
     {live.warnings.map((warning,i)=><p key={i} className="text-xs">Aviso: {warning}</p>)}
     {live.limitations.map((limitation,i)=><p key={i} className="text-xs text-muted-foreground">{limitation}</p>)}
    </div>}
