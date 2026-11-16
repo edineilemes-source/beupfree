@@ -199,3 +199,36 @@ test("frase exata Nike corrida nao herda Adidas preco ou numeracao em conversa a
  expect(q.has("priceMax")).toBe(false);
  expect(q.has("tamanho")).toBe(false);
 });
+
+test("ficha inteligente abre piloto de tres fontes e mostra divergencias sem alterar produto",async({page})=>{
+ await page.route("**/api/product-knowledge/pilot/evo-sl",route=>route.fulfill({
+  status:200,contentType:"application/json",
+  body:JSON.stringify({
+   pilot:true,pilotVersion:"11.2-golden-data-1",status:"PRE_EXTRACTED_NOT_LIVE",
+   identity:{brand:"Adidas",model:"Adizero Evo SL"},
+   card:{masterId:"pilot-evo-sl-not-a-commercial-master",familyKey:"a".repeat(64),
+    modelKey:"b".repeat(64),variantKey:null,superHash:"d".repeat(64),sourcesConsulted:3,
+    fields:[{field:"drop",value:"6 mm",status:"VERIFIED",sources:[
+     {field:"drop",value:"6 mm",sourceUrl:"https://www.adidas.com.br/adizero_evo_sl",sourceType:"MANUFACTURER",observedAt:"2026-11-16"},
+     {field:"drop",value:"6 mm",sourceUrl:"https://www.netshoes.com.br",sourceType:"RETAILER",observedAt:"2026-11-16"}]},
+     {field:"cabedal",value:null,status:"CONFLICT",sources:[
+      {field:"cabedal",value:"Têxtil",sourceUrl:"https://www.adidas.com.br",sourceType:"MANUFACTURER",observedAt:"2026-11-16"},
+      {field:"cabedal",value:"Mesh",sourceUrl:"https://www.centauro.com.br",sourceType:"RETAILER",observedAt:"2026-11-16"}]}]},
+   sources:[{name:"adidas",url:"https://www.adidas.com.br/adizero_evo_sl",type:"MANUFACTURER"},
+    {name:"Centauro",url:"https://www.centauro.com.br",type:"RETAILER"},
+    {name:"Netshoes",url:"https://www.netshoes.com.br",type:"RETAILER"}],
+   metrics:{sourcePages:3,fields:2,verifiedFields:1,singleSourceFields:0,conflictingFields:1},
+   narrative:"Descrição técnica experimental do Adizero Evo SL.",warnings:["Sem pesquisa externa automática."]
+  })
+ }));
+ await page.goto("/catalogo");
+ const card=page.getByTestId("card-product-"+item.id);
+ await expect(card).toBeVisible();
+ await card.getByTestId("master-offers-"+item.id).click();
+ await expect(page.getByTestId("evo-sl-pilot")).toBeVisible();
+ await page.getByTestId("run-evo-sl-pilot").click();
+ await expect(page.getByTestId("evo-sl-pilot-results")).toContainText("Adizero Evo SL");
+ await expect(page.getByTestId("evo-sl-pilot-results")).toContainText("Divergência entre fontes");
+ await expect(page.getByTestId("evo-sl-pilot-results")).toContainText("3 páginas de referência");
+ await expect(page.getByTestId("product-superhash")).toHaveText("c".repeat(64));
+});
