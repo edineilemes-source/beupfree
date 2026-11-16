@@ -42,6 +42,27 @@ for i in $(seq 1 90); do
  sleep 1
 done
 if ((ready==0));then echo "PREVIEW_FAILED";tail -60 "$sandbox/server.log";exit 1;fi
+echo "=== CAN SITES BE READ DIRECTLY? ONE REQUEST PER SOURCE (NO PAID APIS) ==="
+node --input-type=module - <<'NODE'
+const urls=[
+"https://www.adidas.com.br/tenis-adizero-evo-sl/KJ1363.html",
+"https://www.centauro.com.br/tenis-masculino-adidas-adizero-evo-sl-996133.html",
+"https://www.netshoes.com.br/p/tenis-adidas-adizero-evo-sl-masculino-preto%2Bbranco-FBA-83DK-026?promoted=true&sellerId=0",
+];
+for(const uri of urls){
+ const host=new URL(uri).hostname;
+ try{
+  const res=await fetch(uri,{signal:AbortSignal.timeout(12000),redirect:"follow",headers:{"accept":"text/html"}});
+  const type=res.headers.get("content-type")||"";
+  if(!res.ok||!type.includes("html")){console.log("DIRECT_SOURCE",host,"HTTP",res.status,"HTML",false);continue;}
+  const html=(await res.text()).slice(0,200000);
+  const normalized=html.toLowerCase();
+  const nameMatch=normalized.includes("adizero")&&normalized.includes("evo");
+  console.log("DIRECT_SOURCE",host,"HTTP",res.status,"HTML",true,"MODEL_VISIBLE",nameMatch,"BYTES_SAMPLED",html.length);
+ }catch(error){console.log("DIRECT_SOURCE",host,"UNAVAILABLE",error instanceof Error?error.name:"error");}
+}
+console.log("DIRECT_SOURCE_CHECK_COMPLETE; site accessibility may change; this did not extract or store attributes.");
+NODE
 echo "=== THREE-SOURCE PILOT RESPONSE ==="
 curl -fsS --max-time 15 "http://127.0.0.1:$port/api/product-knowledge/pilot/evo-sl" |
  node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const x=JSON.parse(s);if(!x.pilot||x.status!=="PRE_EXTRACTED_NOT_LIVE"||x.metrics.sourcePages!==3||x.metrics.conflictingFields<1)process.exit(1);console.log("PILOT_3_SOURCES_OK",x.metrics)})'
