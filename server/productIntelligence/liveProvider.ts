@@ -22,6 +22,8 @@ export type ProviderConfig = {
   openaiModel?: string;
   fetcher?: Fetcher;
   mockBudget?: ResearchBudget;
+  /** Local CLI-only paid pilot: external calls still real, capped by injected one-shot budget. */
+  oneShotPilotBudget?: ResearchBudget;
 };
 function assertConfig(config: ProviderConfig) {
   if (!config.tavilyApiKey?.trim() || !config.openaiApiKey?.trim()) throw new Error("RESEARCH_CREDENTIALS_MISSING");
@@ -72,7 +74,7 @@ const allowedFields = TECHNICAL_FIELD_SET;
 export function createLiveResearchProvider(config: ProviderConfig): ResearchProvider {
   assertConfig(config);
   const fetcher = config.fetcher ?? fetch;
-  const budget = config.fetcher && config.fetcher !== fetch && config.mockBudget ? config.mockBudget : paidBudget;
+  const budget = config.oneShotPilotBudget ?? (config.fetcher && config.fetcher !== fetch && config.mockBudget ? config.mockBudget : paidBudget);
   const excerpts = new WeakMap<ResearchHit, string>();
   return {
     async search(query,limit,signal) {
