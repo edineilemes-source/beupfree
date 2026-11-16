@@ -48,9 +48,8 @@ function summarize(field:FieldAssessment):CustomerField|null {
  if(groups.length===1) summary=compact(groups[0].value,220);
  else if(isMeasurement&&groups.length<=5)summary=groups.map(g=>g.value).join(" ou ");
  else summary=groups.slice(0,2).map(g=>compact(g.value,110)).join(" ou ")+(groups.length>2?" (mais "+(groups.length-2)+" versões nas fontes)":"");
- const relevant=field.sources.filter(s=>groups.slice(0,2).some(g=>g.sourceUrls.includes(s.sourceUrl)));
  return {field:field.field,label:readable(field.field),summary,status:field.status,
-  citations:citations(relevant.length?relevant:field.sources),alternatives:groups.length,evidenceCount:field.sources.length};
+  citations:citations(field.sources),alternatives:groups.length,evidenceCount:field.sources.length};
 }
 export function createCustomerKnowledge(fields:readonly FieldAssessment[]):CustomerKnowledge{
  const visible=fields.map(summarize).filter((x):x is CustomerField=>x!==null);
