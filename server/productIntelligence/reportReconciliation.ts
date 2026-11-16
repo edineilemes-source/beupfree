@@ -10,7 +10,7 @@ export function reconcileLiveReport(report:Report){
   for(const source of field.sources){
    if(typeof source.value!=="string"||typeof source.url!=="string")continue;
    evidence.push({field:field.field,value:source.value,sourceUrl:source.url,
-     sourceType:"INDEPENDENT_TEST",observedAt:source.observedAt??"2026-11-16T00:00:00Z"});
+     sourceType:(["MANUFACTURER","RETAILER","INDEPENDENT_TEST","FEED"].includes(source.sourceType??"")?source.sourceType:"RETAILER") as TechnicalEvidence["sourceType"],observedAt:source.observedAt??"2026-11-16T00:00:00Z"});
   }
  }
  const card=createSuperCatalogCard({masterId:"pilot-evo-sl-reconciled-v2",brand:"Adidas",model:"Adizero Evo SL"},evidence);
