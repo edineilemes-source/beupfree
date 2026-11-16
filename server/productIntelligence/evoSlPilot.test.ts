@@ -1,9 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {evoSlPilotResult,EVO_SL_PILOT_SOURCES} from "./evoSlPilot";
-test("piloto tem três domínios e não se apresenta como extração automática",()=>{
- const result=evoSlPilotResult();
+test("piloto tem três domínios e não se apresenta como extração automática",async()=>{
+ const result=await evoSlPilotResult();
  assert.equal(result.pilot,true);
+ assert.equal(result.pipelineState,"ENRICHED");
+ assert.equal(result.pipelineQueried,true);
  assert.equal(result.status,"PRE_EXTRACTED_NOT_LIVE");
  assert.equal(result.metrics.sourcePages,3);
  assert.equal(new Set(EVO_SL_PILOT_SOURCES.map(x=>new URL(x.url).hostname)).size,3);
