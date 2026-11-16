@@ -1,4 +1,5 @@
 import { TECHNICAL_FIELD_SET, TECHNICAL_FIELDS } from "./technicalFields";
+import { evidenceAgreements, type AgreementGroup } from "./technicalNormalization";
 import { createHash } from "node:crypto";
 
 /** Mission 10: auditable knowledge attached to an existing Product Identity Master.
@@ -27,6 +28,7 @@ export type FieldAssessment = {
   value: string | null;
   status: "VERIFIED" | "SINGLE_SOURCE" | "CONFLICT" | "UNAVAILABLE";
   sources: TechnicalEvidence[];
+  agreements?: AgreementGroup[];
 };
 export type KnowledgeCard = {
   masterId: string;
@@ -68,9 +70,9 @@ export function createSuperCatalogCard(identity: IdentityDescriptor, evidence: T
   }
   const fields = [...TECHNICAL_FIELDS].sort().map(field => {
     const sources = (grouped.get(field) ?? []).sort((a,b) => a.sourceUrl.localeCompare(b.sourceUrl) || a.value.localeCompare(b.value));
-    const values = [...new Set(sources.map(item => normalize(item.value)))];
-    const status: FieldAssessment["status"] = !values.length ? "UNAVAILABLE" : values.length > 1 ? "CONFLICT" : new Set(sources.map(s => new URL(s.sourceUrl).hostname)).size > 1 ? "VERIFIED" : "SINGLE_SOURCE";
-    return { field, value: values.length === 1 ? sources[0].value : null, status, sources };
+    const agreements=evidenceAgreements(field,sources);
+    const status: FieldAssessment["status"] = !agreements.length ? "UNAVAILABLE" : agreements.length > 1 ? "CONFLICT" : new Set(sources.map(s => new URL(s.sourceUrl).hostname)).size > 1 ? "VERIFIED" : "SINGLE_SOURCE";
+    return { field, value: agreements.length === 1 ? agreements[0].value : null, status, sources, agreements };
   });
   return { masterId: identity.masterId, familyKey, modelKey, variantKey, superHash, fields, sourcesConsulted: new Set(fields.flatMap(f => f.sources.map(s => s.sourceUrl))).size };
 }
