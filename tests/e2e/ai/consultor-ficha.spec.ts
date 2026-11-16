@@ -232,3 +232,40 @@ test("ficha inteligente abre piloto de tres fontes e mostra divergencias sem alt
  await expect(page.getByTestId("evo-sl-pilot-results")).toContainText("3 páginas de referência");
  await expect(page.getByTestId("product-superhash")).toHaveText("c".repeat(64));
 });
+
+
+test("ficha narrativa da IA real exibe citacoes discretas e auditoria expansivel",async({page})=>{
+ const sources=[
+  ["https://believeintherun.com/shoe-reviews/adidas-adizero-evo-sl-review","6 mm"],
+  ["https://www.alastairrunning.com/adidas-adizero-evo-sl-review","6mm"],
+  ["https://www.doctorsofrunning.com/adidas-adizero-evo-sl-review-2024","6.5 mm"],
+ ];
+ const evidence=sources.map(([sourceUrl,value])=>({field:"drop",sourceUrl,value,sourceType:"INDEPENDENT_TEST",observedAt:"2026-11-16"}));
+ await page.route("**/api/product-knowledge/pilot/live-evo-sl-v2",route=>route.fulfill({
+  status:200,contentType:"application/json",body:JSON.stringify({
+   live:true,status:"ENRICHED",finished:"2026-11-16T18:00:00Z",
+   started:"2026-11-16T17:00:00Z",searchProvider:"Tavily",extractionProvider:"OpenAI",
+   requestsReserved:{tavily:2,openai:3},sourceCount:3,distinctDomains:3,
+   searchedSources:sources.map(([url])=>({url,title:"Adizero Evo SL"})),
+   fields:[{field:"drop",value:null,status:"CONFLICT",sources:sources.map(([url,value])=>({url,value}))}],
+   warnings:[],limitations:[],qualityGate:false,metrics:{fields:1,verified:0,conflicts:1,domainsWithEvidence:3},
+   reconciled:{metrics:{fields:1,verified:0,conflicts:1,conflictsWithMajority:1},
+    fields:[{field:"drop",value:null,status:"CONFLICT",sources:evidence,
+     agreements:[{value:"6 mm",count:2,sourceUrls:sources.slice(0,2).map(x=>x[0])},
+       {value:"6,5 mm",count:1,sourceUrls:[sources[2][0]]}]}]}
+  })
+ }));
+ await page.goto("/catalogo");
+ const card=page.getByTestId("card-product-"+item.id);
+ await expect(card).toBeVisible();
+ await card.getByTestId("master-offers-"+item.id).click();
+ await page.getByTestId("read-evo-sl-live-v2").click();
+ const narrative=page.getByTestId("intelligent-product-card").last();
+ await expect(narrative).toContainText("6 mm ou 6,5 mm");
+ await expect(narrative.getByRole("link",{name:/Fonte/})).toHaveCount(2);
+ const audit=narrative.getByTestId("intelligent-evidence-audit");
+ await expect(audit).toBeVisible();
+ await audit.locator("summary").click();
+ await expect(audit).toContainText("6.5 mm");
+ await expect(audit.getByRole("link",{name:"doctorsofrunning.com"})).toHaveCount(2);
+});
