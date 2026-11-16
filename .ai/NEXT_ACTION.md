@@ -74,3 +74,10 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - O executor `scripts/mission11-3-evo-sl-live-research.ts --execute` limita a **1 pesquisa Tavily e 3 extrações OpenAI**, registra URL dos candidatos, URLs selecionadas, atributos com evidências e erros em `/tmp/uppulse-evo-sl-real-research.json`. Não altera banco; lock evita repetir cobrança sem revisão.
 - Após pesquisar, o script tenta abrir novo preview **5006**, sem interromper 5005, e a ficha inclui `Ver resultado da IA real`. O ambiente de preview roda com pesquisas pagas desativadas e sem variáveis de chave de API.
 - **PENDENTE:** execução real, avaliação do acesso via Tavily (403 no Node direto não prova bloqueio na Tavily), revisão de qualidade das fontes e custo efetivo; se falhar, não promover a pesquisa em escala. A implementação por GitHub não significa execução/homologação.
+
+## Atualização — Missão 11.4: fontes técnicas reais V2
+- Código publicado, **ainda não executado/homologado no Codespaces**. Roteiro `scripts/mission11-4-run-v2-once.sh`, branch `feat/uppulse-missao10-supercatalogo`.
+- Duas pesquisas Tavily de até 10 candidatos cada, três extrações OpenAI no máximo, unicamente para Adidas Adizero Evo SL, com bloqueio de repetição e tests/TypeScript antes de cobrar.
+- Exclui YouTube e site institucional da Tavily, prioriza evidência técnica, exige modelo e marca no trecho, não duplica adidas.com/adidas.com.br como fabricantes independentes.
+- Relatório separado `/tmp/uppulse-evo-sl-real-research-v2.json`, preview **5007**, botão `Ver IA real — rodada 2`. V1 e previews 5005/5006 preservados. Não alterar PostgreSQL.
+- Critério: evidência de dois domínios e pelo menos um campo com concordância verificável. Se não passar, usar resultado para decidir pesquisa mais rica (ex.: extração de conteúdo pelas APIs), **não ativar lote**.
