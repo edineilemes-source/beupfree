@@ -28,10 +28,28 @@ if [[ "$status" != "running" ]]; then
     exit 2
   fi
 fi
-if ! docker exec "$container" sh -c 'pg_isready -U "${POSTGRES_USER:-postgres}" -d uppulse_catalog'; then
-  echo "CATALOG_POSTGRES_NOT_READY: do not alter or recreate volume"
+echo "=== WAITING FOR POSTGRESQL READINESS (MAX 90s) ==="
+ready=0
+for attempt in $(seq 1 45); do
+  if docker exec "$container" sh -c 'pg_isready -q -U "${POSTGRES_USER:-postgres}" -d uppulse_catalog' >/dev/null 2>&1; then
+    ready=1
+    break
+  fi
+  state=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null || true)
+  if [[ "$state" != "running" ]]; then
+    echo "POSTGRES_EXITED_EARLY: state=$state attempt=$attempt"
+    break
+  fi
+  sleep 2
+done
+if ((ready==0)); then
+  echo "CATALOG_POSTGRES_NOT_READY: preserve existing container and volume"
+  docker inspect -f 'state={{.State.Status}} exit={{.State.ExitCode}} error={{.State.Error}} image={{.Config.Image}} started={{.State.StartedAt}}' "$container" || true
+  docker logs --tail 45 "$container" 2>&1 | sed -E 's#(postgres(ql)?://)[^[:space:]]+#\1[REDACTED]#g' || true
+  echo "Read-only troubleshooting only; no docker rm, prune, compose down -v, or volume changes."
   exit 2
 fi
+echo "CATALOG_POSTGRES_READY after attempt $attempt"
 dbport=$(docker port "$container" 5432 | head -1 | sed -E 's/.*:([0-9]+)$/\1/')
 [[ "$dbport" =~ ^[0-9]+$ ]] || { echo "CATALOG_PORT_UNAVAILABLE"; exit 2; }
 
