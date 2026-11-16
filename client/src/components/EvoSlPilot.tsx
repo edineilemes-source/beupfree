@@ -50,7 +50,8 @@ export default function EvoSlPilot(){
    {liveState==="not-run"&&<p role="status">Ainda não foi encontrada uma pesquisa real nesta instância. Execute o piloto Tavily/OpenAI no Codespaces.</p>}
    {liveState==="error"&&<p role="alert">Falha ao consultar o relatório da pesquisa real.</p>}
    {live&&<div className="space-y-2" data-testid="evo-sl-live-results">
-    <p><strong>Resultado real:</strong> {live.status} · {live.sourceCount} páginas com evidências · {live.distinctDomains} domínios</p>
+    <p><strong>Resultado da pesquisa real:</strong> {live.status} · {live.sourceCount} fonte(s) com evidências · {live.distinctDomains} domínio(s) pesquisados</p>
+    {live.sourceCount<2&&<p role="status" className="font-medium">Ficha ainda não aprovada: é necessário obter evidências técnicas de pelo menos duas fontes independentes. O status ENRICHED indica extração realizada, não validação de qualidade.</p>}
     <p className="text-xs">Chamadas: Tavily {live.requestsReserved.tavily}; OpenAI {live.requestsReserved.openai}. Pesquisa realizada em {new Date(live.finished).toLocaleString("pt-BR")}.</p>
     <h4 className="font-semibold">Fontes retornadas pela Tavily</h4>
     <ul className="list-inside list-disc text-xs">{live.searchedSources.map(s=><li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer" className="underline break-words">{s.title||s.url}</a></li>)}</ul>
