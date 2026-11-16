@@ -49,9 +49,10 @@ test("ficha exibe identidade superhash e informa que nao pesquisou APIs pagas",a
  await expect(card).toBeVisible();
  await card.getByTestId("master-offers-"+item.id).click();
  await expect(page.getByTestId("product-knowledge")).toBeVisible();
+ await page.getByText("Identificadores internos do produto").click();
  await expect(page.getByTestId("product-superhash")).toContainText("c".repeat(64));
  await expect(page.getByTestId("product-knowledge")).toContainText("Sem chamadas pagas");
- await expect(page.getByTestId("product-knowledge")).toContainText("Sem evidências externas validadas");
+ await expect(page.getByTestId("product-knowledge")).toContainText("As fontes disponíveis ainda não fornecem especificações técnicas verificáveis");
 });
 
 test("mudar de marca renova filtros, produtos e contagem consultada",async({page})=>{
@@ -230,6 +231,7 @@ test("ficha inteligente abre piloto de tres fontes e mostra divergencias sem alt
  await expect(page.getByTestId("evo-sl-pilot-results")).toContainText("Adizero Evo SL");
  await expect(page.getByTestId("evo-sl-pilot-results")).toContainText("Divergência entre fontes");
  await expect(page.getByTestId("evo-sl-pilot-results")).toContainText("3 páginas de referência");
+ await page.getByText("Identificadores internos do produto").click();
  await expect(page.getByTestId("product-superhash")).toHaveText("c".repeat(64));
 });
 
