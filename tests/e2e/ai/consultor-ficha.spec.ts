@@ -254,16 +254,26 @@ test("ficha narrativa da IA real exibe citacoes discretas e auditoria expansivel
    reconciled:{metrics:{fields:1,verified:0,conflicts:1,conflictsWithMajority:1},
     fields:[{field:"drop",value:null,status:"CONFLICT",sources:evidence,
      agreements:[{value:"6 mm",count:2,sourceUrls:sources.slice(0,2).map(x=>x[0])},
-       {value:"6,5 mm",count:1,sourceUrls:[sources[2][0]]}]}]}
+       {value:"6,5 mm",count:1,sourceUrls:[sources[2][0]]}]},
+     {field:"entressola",value:"Full-length Lightstrike Pro superfoam with a stiff composite/nylon midfoot shank",status:"SINGLE_SOURCE",sources:[{field:"entressola",sourceUrl:sources[1][0],value:"Full-length Lightstrike Pro superfoam with a stiff composite/nylon midfoot shank",sourceType:"INDEPENDENT_TEST",observedAt:"2026-11-16"}]},
+     {field:"peso",value:"8.3oz / 235g",status:"SINGLE_SOURCE",sources:[{field:"peso",sourceUrl:sources[1][0],value:"8.3oz / 235g",sourceType:"INDEPENDENT_TEST",observedAt:"2026-11-16"}]}]}
   })
  }));
  await page.goto("/catalogo");
  const card=page.getByTestId("card-product-"+item.id);
  await expect(card).toBeVisible();
  await card.getByTestId("master-offers-"+item.id).click();
+ const windowBox=await page.getByTestId("master-dialog").boundingBox();
+ const viewport=page.viewportSize();
+ expect(windowBox).not.toBeNull();
+ expect(viewport).not.toBeNull();
+ expect(windowBox!.width).toBeGreaterThanOrEqual(viewport!.width-2);
+ expect(windowBox!.height).toBeGreaterThanOrEqual(viewport!.height-2);
  await page.getByTestId("read-evo-sl-live-v2").click();
  const narrative=page.getByTestId("intelligent-product-card").last();
  await expect(narrative).toContainText("6 mm ou 6,5 mm");
+ await expect(narrative.getByTestId("customer-field-entressola")).toContainText("Espuma Lightstrike Pro em toda a entressola");
+ await expect(narrative.getByTestId("customer-field-peso")).toContainText("235 g");
  await expect(narrative.getByRole("link",{name:/Fonte/})).toHaveCount(2);
  const audit=narrative.getByTestId("intelligent-evidence-audit");
  await expect(audit).toBeVisible();
