@@ -54,6 +54,7 @@ export default function EvoSlPilot(){
    {liveState==="not-run"&&<p role="status">Ainda não há relatório da rodada {liveVersion==="v1"?"1":"2"} nesta instância. O botão não faz chamadas pagas.</p>}
    {liveState==="error"&&<p role="alert">Falha ao consultar o relatório da pesquisa real.</p>}
    {live&&<div className="space-y-2" data-testid="evo-sl-live-results">
+    {liveVersion==="v2"&&live.reconciled&&<IntelligentProductCard brand="Adidas" model="Adizero Evo SL" fields={live.reconciled.fields} experimental/>}
     <p><strong>Resultado da pesquisa real:</strong> {live.status} · {live.sourceCount} fonte(s) com evidências · {live.distinctDomains} domínio(s) pesquisados</p>
     {live.metrics&&<p className="text-xs">Qualidade: {live.metrics.verified} campos com concordância · {live.metrics.conflicts} conflitos · {live.metrics.domainsWithEvidence} domínios úteis. Critério mínimo: {live.qualityGate?"atingido":"não atingido"}.</p>}
     {live.perSource&&<ul className="text-xs list-disc list-inside">{live.perSource.map(s=><li key={s.url}>{new URL(s.url).hostname}: {s.extracted} campos extraídos</li>)}</ul>}
@@ -68,7 +69,6 @@ export default function EvoSlPilot(){
        {(field.agreements??[]).map(group=><p key={group.value}>• {group.value} — {group.count} fonte(s)</p>)}
       </article>)}
      </section>}
-    {liveVersion==="v2"&&live.reconciled&&<IntelligentProductCard brand="Adidas" model="Adizero Evo SL" fields={live.reconciled.fields} experimental/>}
     <details className="rounded border p-2" data-testid="live-research-technical-diagnostics"><summary className="cursor-pointer font-semibold">Detalhes da pesquisa e extração original</summary>
     <h4 className="font-semibold">Fontes retornadas pela Tavily</h4>
     <ul className="list-inside list-disc text-xs">{live.searchedSources.map(s=><li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer" className="underline break-words">{s.title||s.url}</a></li>)}</ul>
