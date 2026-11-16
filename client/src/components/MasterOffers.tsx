@@ -11,9 +11,9 @@ export default function MasterOffers({productId}:{productId:string}){
   queryFn:async()=>{const response=await fetch(`/api/master-identities/${encodeURIComponent(productId)}`);if(!response.ok)throw Error('IDENTITY_UNAVAILABLE');return response.json();}});
  const data=query.data,master=data?.master;
  return <>
-  <Button type="button" variant="outline" className="mt-2 w-full" onClick={()=>setOpen(true)} data-testid={`master-offers-${productId}`}>Ficha inteligente e fornecedores</Button>
-  <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl" data-testid="master-dialog">
-   <DialogHeader><DialogTitle>Identidade e ofertas do modelo</DialogTitle><DialogDescription>O mesmo modelo pode ter cores e tamanhos diferentes. Confira a variante na loja.</DialogDescription></DialogHeader>
+  <Button type="button" variant="outline" className="mt-2 w-full" onClick={()=>setOpen(true)} data-testid={`master-offers-${productId}`}>Características do produto · Ficha inteligente</Button>
+  <Dialog open={open} onOpenChange={setOpen}><DialogContent className="!fixed !inset-0 !left-0 !top-0 !h-[100dvh] !w-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none overflow-y-auto p-4 pt-12 sm:p-8" data-testid="master-dialog"><div className="mx-auto w-full max-w-6xl space-y-6" data-testid="master-fullpage">
+   <DialogHeader><DialogTitle className="text-2xl sm:text-3xl">Características e informações do produto</DialogTitle><DialogDescription>Ficha em tamanho de página, com descrição em português, referências e ofertas. Confirme a variante na loja.</DialogDescription></DialogHeader>
    <ProductKnowledge productId={productId}/>
    {query.isPending&&<p role="status">Carregando identidade comercial…</p>}
    {query.isError&&<div role="alert">Identidade temporariamente indisponível. As ofertas do catálogo continuam disponíveis.<Button variant="outline" onClick={()=>query.refetch()}>Tentar novamente</Button></div>}
@@ -45,6 +45,6 @@ export default function MasterOffers({productId}:{productId:string}){
      </details>)}
     </section>
    </div>}
-  </DialogContent></Dialog>
+  </div></DialogContent></Dialog>
  </>;
 }
