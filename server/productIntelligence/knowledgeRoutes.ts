@@ -10,10 +10,11 @@ import { resolvePublicCatalogSource } from "../publicCatalog/policy";
 export function createProductKnowledgeRouter() {
   const router = Router();
   let db: pg.Pool | undefined;
-  router.get("/pilot/evo-sl", (_req,res)=>{
+  router.get("/pilot/evo-sl", async (_req,res)=>{
     if(process.env.NODE_ENV==="production")return res.status(404).json({code:"PILOT_NOT_AVAILABLE"});
     res.setHeader("Cache-Control","no-store");
-    return res.json(evoSlPilotResult());
+    try { return res.json(await evoSlPilotResult()); }
+    catch { return res.status(503).json({code:"PILOT_UNAVAILABLE"}); }
   });
   router.get("/:productId", async (req, res) => {
     const id = req.params.productId;
