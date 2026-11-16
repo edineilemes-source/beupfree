@@ -1,5 +1,6 @@
 import type {FieldAssessment, TechnicalEvidence} from "./superCatalog";
 import {evidenceAgreements} from "./technicalNormalization";
+import {brazilianTechnicalText} from "./technicalPresentation";
 
 /** Deterministic consumer view: no generated claims, no majority-as-truth.
  * A short card is a display projection of auditable claims, not an AI rewrite.
@@ -45,9 +46,9 @@ function summarize(field:FieldAssessment):CustomerField|null {
  // for prose show at most two differing claims, with the rest in the audit.
  const isMeasurement=field.field==="drop"||field.field==="altura_do_solado";
  let summary:string;
- if(groups.length===1) summary=compact(groups[0].value,220);
- else if(isMeasurement&&groups.length<=5)summary=groups.map(g=>g.value).join(" ou ");
- else summary=groups.slice(0,2).map(g=>compact(g.value,110)).join(" ou ")+(groups.length>2?" (mais "+(groups.length-2)+" versões nas fontes)":"");
+ if(groups.length===1) summary=compact(brazilianTechnicalText(field.field,groups[0].value),220);
+ else if(isMeasurement&&groups.length<=5)summary=groups.map(g=>brazilianTechnicalText(field.field,g.value)).join(" ou ");
+ else summary=groups.slice(0,2).map(g=>compact(brazilianTechnicalText(field.field,g.value),110)).join(" ou ")+(groups.length>2?" (mais "+(groups.length-2)+" versões nas fontes)":"");
  return {field:field.field,label:readable(field.field),summary,status:field.status,
   citations:citations(field.sources),alternatives:groups.length,evidenceCount:field.sources.length};
 }
