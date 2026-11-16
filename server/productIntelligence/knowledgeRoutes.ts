@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { readFile } from "node:fs/promises";
 import { evoSlPilotResult } from "./evoSlPilot";
+import { reconcileLiveReport } from "./reportReconciliation";
 import pg from "pg";
 import { PgCatalogSearchProjectionRepository } from "../catalogSearchProjection/repository";
 import { createSuperCatalogCard } from "./superCatalog";
@@ -17,7 +18,8 @@ export function createProductKnowledgeRouter() {
     try {
       const data=JSON.parse(await readFile("/tmp/uppulse-evo-sl-real-research-v2.json","utf8")) as Record<string,unknown>;
       if(data.pilot!=="EVO_SL_LIVE_RESEARCH_V2"||data.live!==true)return res.status(422).json({code:"PILOT_REPORT_INVALID"});
-      return res.json(data);
+      const reconciled=reconcileLiveReport(data as Parameters<typeof reconcileLiveReport>[0]);
+      return res.json({...data,reconciled});
     } catch {return res.status(404).json({code:"LIVE_RESEARCH_V2_NOT_EXECUTED"});}
   });
   router.get("/pilot/live-evo-sl", async (_req,res)=>{
