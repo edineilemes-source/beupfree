@@ -98,3 +98,11 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Preview novo e isolado na porta **5010**, sem chamadas externas: `cd /workspaces/uppulse-homologacao/missao9/codigo && git fetch origin feat/uppulse-missao10-supercatalogo && git show origin/feat/uppulse-missao10-supercatalogo:scripts/mission11-7-ficha-fullscreen-ptbr.sh | bash`.
 - Não usar a porta antiga 5009 para verificar o novo código. No sucesso, esperar `FICHA_TELA_CHEIA_PTBR_OK`.
 - Tradução coberta para as expressões já coletadas; **não é tradução universal de texto futuro**. Não pesquisar novos produtos antes da aprovação visual.
+
+
+## Ponte ChatGPT → GitHub → Codespaces (fase 1, 2026-11-17)
+- Implementada **no GitHub**, ainda aguardando instalação inicial e validação no Codespaces: `scripts/uppulse_codespace_agent.py`, `scripts/uppulse_bridge_install.sh`, testes e workflow de segurança. Relatório: `docs/relatorios/UPPULSE_PONTE_GITHUB_CODESPACES_FASE1.md`.
+- Issue de diagnóstico inicial criada: https://github.com/edineilemes-source/beupfree/issues/20 (título `[UPPULSE-AGENT] STATUS`). Será processada apenas após o agente estar ativo no Codespaces.
+- Comando único para bootstrap: `cd /workspaces/uppulse-homologacao/missao9/codigo && git fetch origin feat/uppulse-missao10-supercatalogo && git show origin/feat/uppulse-missao10-supercatalogo:scripts/uppulse_bridge_install.sh | bash`.
+- Agent V1: STATUS / VALIDAR / PREVIEW (portas 5011–5015) / PARAR PREVIEW. Não aplica patches locais nem inicia Codespace desligado. Persistência após rebuild ainda não configurada.
+- **Ficha Inteligente permanece congelada**, inclusive Mission 11.7 pendente de validação. Não executar novas pesquisas Tavily/OpenAI.
