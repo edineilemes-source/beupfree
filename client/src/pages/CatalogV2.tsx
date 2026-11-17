@@ -6,7 +6,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import ProductCard from "@/components/ProductCard";
+import ProductCard, { SHOW_INTELLIGENT_CARD } from "@/components/ProductCard";
 import CatalogFilterSidebar from "@/components/CatalogFilterSidebarV2";
 import { Button } from "@/components/ui/button";
 import { Search, Tag, X } from "lucide-react";
@@ -194,7 +194,7 @@ function PromoTile({ product }: { product: CatalogProduct }) {
             </Badge>
           </div>
         )}
-        {!demonstrative && <MasterOffers productId={product.id} />}
+        {!demonstrative && SHOW_INTELLIGENT_CARD && <MasterOffers productId={product.id} />}
         <ProductBadges badges={badges} productId={product.id} className="mb-2" />
         <p className="text-sm font-extrabold uppercase text-foreground">
           {brandNameOf(product)}
