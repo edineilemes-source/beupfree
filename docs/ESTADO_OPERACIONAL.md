@@ -132,3 +132,12 @@ Foi publicado um agente restrito e um instalador para o Codespace de homologaç�
 - GitHub Issue #20 aguarda resposta real do agente. Portas exclusivas da ponte 5011–5015; não modificar serviços antigos.
 - Node recomendado 24 LTS após avaliação de compatibilidade, Node 22+ aceito no primeiro preflight; Node 20 EOL. `gh codespace` e Codex CLI não são dependências para consumir a fila de Issues já dentro do Codespaces.
 - **Enriquecimento da Ficha Inteligente segue congelado**, sem novas pesquisas pagas ou divulgação comercial.
+
+
+## Plataforma operacional e lançamento UpPulse — execução de 2026-11-17
+- **CÓDIGO oficial = GitHub remoto**, Codespaces só executor de commits em snapshots isolados; regra `docs/PROTOCOLO_GITHUB_CODESPACES_FONTE_UNICA.md`.
+- Ponte comprovada: Issue #20 STATUS respondeu e fechou; Issue #21 testes básicos passaram no SHA cda8173c. Falhas reais: Issue #22 PREVIEW 5011 (BLOCKED), Issue #23 validação build (BLOCKED) sem causa específica no agente V1.
+- Corrigidos no GitHub: diagnóstico seguro de falhas, ações DIAGNOSTICO e CATALOGO read-only, script de recuperação do agente ao abrir terminal (`scripts/uppulse_bridge_ensure.sh`), upgrade idempotente do instalador, CI `.github/workflows/uppulse-release-gate.yml`. Essas melhorias **não foram ativadas no Codespaces ainda**, pois versão anterior do agente continua na memória; requer uma atualização de instalador executada pelo operador, uma única vez.
+- Etapa após atualizar agente: ChatGPT aciona DIAGNOSTICO + CATALOGO, resolve bloqueio concreto de PREVIEW/BUILD, homologa porta e gate de release. Não declarar servidor no ar antes de HTTP verificado. Reinício após abertura de terminal tem hook preparado, reconstrução completa do devcontainer segue não homologada.
+- Relatório detalhado: `docs/relatorios/UPPULSE_PREPARACAO_LANCAMENTO_2026-11-17.md`. Banco histórico `uppulse_catalog` não é base pública de produção. Publicação Hostinger pendente de acesso/ambiente autorizados e validação de dados/compras; nenhuma publicação ou migração executada.
+- **Ficha Inteligente segue congelada; sem novas pesquisas IA pagas.**
