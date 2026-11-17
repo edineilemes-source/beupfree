@@ -3,7 +3,7 @@
 import fcntl,json,os,pathlib,re,shutil,signal,subprocess,tempfile,time
 from urllib.parse import quote
 R=pathlib.Path("/workspaces/uppulse-homologacao/missao9/codigo")
-S=pathlib.Path.home()/".local/state/uppulse-bridge"
+S=R/".git/uppulse-bridge"
 S.mkdir(parents=True,exist_ok=True)
 REPO="edineilemes-source/beupfree"
 BRANCH="feat/uppulse-missao10-supercatalogo"
