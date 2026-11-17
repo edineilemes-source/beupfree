@@ -14,7 +14,10 @@ PROFILES={"basic","unit","build","ui"}
 # Only named profiles; never accept an executable command from an issue.
 def cmd(args,cwd=R,timeout=150,check=True,**kw):
  p=subprocess.run(args,cwd=cwd,capture_output=True,text=True,timeout=timeout,**kw)
- if check and p.returncode: raise RuntimeError("COMMAND_FAILED_"+str(p.returncode))
+ if check and p.returncode:
+  operation="_".join(str(x).upper().replace("-","_") for x in args[:3])
+  operation=re.sub(r"[^A-Z0-9_]","",operation)[:65]
+  raise RuntimeError("COMMAND_FAILED_"+operation+"_"+str(p.returncode))
  return p.stdout.strip()
 def gh(*args):return cmd(["gh",*args],timeout=45)
 def report(n,msg):gh("issue","comment",str(n),"--repo",REPO,"--body",msg[:3000])
@@ -110,15 +113,17 @@ def serve(sha,port,profile="basic"):
   if proc.poll() is not None:raise RuntimeError("PREVIEW_EXITED")
   try:
    status=cmd(["curl","-fsS","--max-time","2","-o","/dev/null","-w","%{http_code}","http://127.0.0.1:"+str(port)+"/"],timeout=4)
-   if profile=="ui":
-    browser_env=dict(env)
-    browser_env["PLAYWRIGHT_BASE_URL"]="http://127.0.0.1:"+str(port)
-    browser_env["PLAYWRIGHT_EXTERNAL_SERVER"]="true"
-    cmd(["npx","playwright","test","--config=playwright.mission11-ai.config.ts"],
-     cwd=path,timeout=600,env=browser_env)
-   return "Preview OK HTTP "+status+"; profile "+profile+" passed. Codespaces PORTS -> "+str(port)+" -> Open in Browser"
+   break
   except RuntimeError:time.sleep(1)
- raise RuntimeError("PREVIEW_TIMEOUT")
+ else:
+  raise RuntimeError("PREVIEW_HTTP_TIMEOUT")
+ if profile=="ui":
+  browser_env=dict(env)
+  browser_env["PLAYWRIGHT_BASE_URL"]="http://127.0.0.1:"+str(port)
+  browser_env["PLAYWRIGHT_EXTERNAL_SERVER"]="true"
+  cmd(["npx","playwright","test","--config=playwright.mission11-ai.config.ts"],
+   cwd=path,timeout=600,env=browser_env)
+ return "Preview OK HTTP "+status+"; profile "+profile+" passed. Codespaces PORTS -> "+str(port)+" -> Open in Browser"
 def stop(port):
  d=own(port)
  if not d:return "No managed process to stop; other ports untouched"
