@@ -1,0 +1,27 @@
+name: UpPulse Codespace Bridge Security
+
+on:
+  push:
+    branches:
+      - feat/uppulse-missao10-supercatalogo
+    paths:
+      - 'scripts/uppulse_codespace_agent.py'
+      - 'scripts/uppulse_codespace_agent.test.py'
+      - 'scripts/uppulse_bridge_install.sh'
+      - '.github/workflows/uppulse-bridge-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar sintaxe e restricoes do agente
+        run: |
+          python3 -m py_compile scripts/uppulse_codespace_agent.py
+          python3 scripts/uppulse_codespace_agent.test.py
+          bash -n scripts/uppulse_bridge_install.sh
