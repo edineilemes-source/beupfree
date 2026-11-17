@@ -122,3 +122,13 @@ Antes de propor execução: ler `AGENTS.md`, este arquivo, `.ai/PROJECT_STATE.md
 
 ## Integração operacional Codespaces via GitHub Issues — 2026-11-17
 Foi publicado um agente restrito e um instalador para o Codespace de homologação, no repositório e branch indicados em AGENTS.md; **não foram instalados no Codespaces nesta etapa**. O agente cria snapshots isolados para validação e preview, usa somente portas 5011–5015, sem tocar servidores antigos nem banco de dados por alterações administrativas. A primeira tarefa de status é a Issue #20 no GitHub, aguardando instalação. A recuperação automática após Codespace reiniciado/reconstruído ainda precisa ser homologada, sem presumir devcontainer ativo. Relatório: `docs/relatorios/UPPULSE_PONTE_GITHUB_CODESPACES_FASE1.md`.
+
+
+## Padronização GitHub ↔ Codespaces — 2026-11-17
+**CÓDIGO CANÔNICO = commit na branch do GitHub. CODESPACES = EXECUTOR em snapshot isolado por SHA.**
+- Regra principal em `docs/PROTOCOLO_GITHUB_CODESPACES_FONTE_UNICA.md`, registrada também em `AGENTS.md`. Diferenças entre SHA local e remoto são esperadas; não executar pull/reset automático.
+- Publicação de código autorizada pelo conector GitHub, com revisão por missão. A homologação do Codespaces não altera checkout nem aplica patch. Logs e resultados são ligados ao SHA, devolvidos por GitHub Issues.
+- Implementado no GitHub mas **não instalado/validado no Codespaces**: agente `scripts/uppulse_codespace_agent.py`, Doctor `scripts/uppulse_bridge_doctor.py`, instalador `scripts/uppulse_bridge_install.sh`, teste de contrato e GitHub Actions. Estado local do agente guardado em `.git/uppulse-bridge`; inicialização automática após rebuild pendente do devcontainer efetivo.
+- GitHub Issue #20 aguarda resposta real do agente. Portas exclusivas da ponte 5011–5015; não modificar serviços antigos.
+- Node recomendado 24 LTS após avaliação de compatibilidade, Node 22+ aceito no primeiro preflight; Node 20 EOL. `gh codespace` e Codex CLI não são dependências para consumir a fila de Issues já dentro do Codespaces.
+- **Enriquecimento da Ficha Inteligente segue congelado**, sem novas pesquisas pagas ou divulgação comercial.
