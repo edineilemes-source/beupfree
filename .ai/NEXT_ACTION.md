@@ -106,3 +106,9 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Comando único para bootstrap: `cd /workspaces/uppulse-homologacao/missao9/codigo && git fetch origin feat/uppulse-missao10-supercatalogo && git show origin/feat/uppulse-missao10-supercatalogo:scripts/uppulse_bridge_install.sh | bash`.
 - Agent V1: STATUS / VALIDAR / PREVIEW (portas 5011–5015) / PARAR PREVIEW. Não aplica patches locais nem inicia Codespace desligado. Persistência após rebuild ainda não configurada.
 - **Ficha Inteligente permanece congelada**, inclusive Mission 11.7 pendente de validação. Não executar novas pesquisas Tavily/OpenAI.
+
+## Revisão do coordenador e fonte única (2026-11-17)
+- Protocolo obrigatório: `docs/PROTOCOLO_GITHUB_CODESPACES_FONTE_UNICA.md` (GitHub remoto canônico; Codespaces apenas executor de snapshot por SHA). `AGENTS.md` atualizado.
+- Doctor de dependências: `scripts/uppulse_bridge_doctor.py`; instalador `scripts/uppulse_bridge_install.sh` chama o Doctor. Requisitos Python 3.9+, Node 22+ (preferência Node 24 LTS testada), GH CLI, git, npm, tar, curl, ss; Docker para preview. `gh codespace` e Codex CLI não são requisitos da ponte em execução.
+- Perfis do agente: basic, unit, build, ui. Estado persistente em `.git/uppulse-bridge`; autostart após rebuild ainda **não** preparado porque falta confirmar configuração real do devcontainer.
+- **Não declarar agente funcionando antes de receber resposta da Issue #20**, nem considerar resolução de persistência. Consulta/instalação manual inicial pendente.
