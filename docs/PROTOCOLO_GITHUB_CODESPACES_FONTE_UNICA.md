@@ -22,7 +22,7 @@
 - **Validação antiga:** não constitui validação de commit novo. Cada relatório deve trazer o SHA exato.
 
 ### Componentes e dependências
-- Um coordenador persistente em Python 3, `gh` CLI autenticado com acesso a Issues, Git, Node.js 20+, npm, tar, curl e inspeção de portas. Docker é obrigatório **apenas para preview com catálogo PostgreSQL**; testes sem DB podem prosseguir sem Docker. `tsx` e demais dependências são as do `package-lock.json` da aplicação.
+- Um coordenador persistente em Python 3, `gh` CLI autenticado com acesso a Issues, Git, Node.js 22+ (preferencialmente 24 LTS após testes de compatibilidade), npm, tar, curl e inspeção de portas. Docker é obrigatório **apenas para preview com catálogo PostgreSQL**; testes sem DB podem prosseguir sem Docker. `tsx` e demais dependências são as do `package-lock.json` da aplicação.
 - GitHub Actions executa verificações independentes do Codespace, usando código do GitHub. Não basta estar verde no Codespace se o SHA difere.
 - `gh codespace` é subcomando útil para acesso remoto pelo CLI quando aplicável, mas não é dependência do agente que já roda **dentro** do Codespace. Codex CLI é opcional, não é requisito da ponte.
 - Executar `scripts/uppulse_bridge_doctor.py` **antes** de instalar/atualizar o agente. O diagnóstico não usa segredos nem altera o ambiente.
@@ -42,3 +42,8 @@
 A ponte V1 existente (STATUS, VALIDAR, PREVIEW e PARAR PREVIEW) é um **primeiro subconjunto** desses requisitos. Até a validação de integração real, não declarar que o usuário pode executar qualquer missão pelo chat. Particularmente, os testes permitidos V1 são direcionados à Ficha Inteligente; o seletor de testes por tipo de missão e o autostart pós-rebuild **ainda exigem implementação**.
 
 **Importante:** a frente de Enriquecimento da Ficha Inteligente está congelada. A ponte é infraestrutura; não implica novas pesquisas ou aprovação comercial da ficha.
+
+## Operação e perfis de teste V1
+A Issue `VALIDAR` aceita corpo `{"commit":"<SHA40>","profile":"basic"}`; perfis reconhecidos `basic`, `unit`, `build`, `ui`. `PREVIEW` usa corpo `{"commit":"<SHA40>","port":5011,"profile":"ui"}`. O perfil `ui` inclui testes de navegador após disponibilidade HTTP. Se `profile` não for informado, adota `basic` por compatibilidade com a fase anterior.
+
+**NÃO fazer upgrade automático de versões com cada Issue.** Versões de infraestrutura precisam de atualização controlada; Doctor reporta requisitos antes da instalação inicial. A imagem devcontainer (quando aprovada) instalará ferramentas no bootstrap. O processo não declara conclusão até execução comprovada no Codespaces.
