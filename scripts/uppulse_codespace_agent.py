@@ -25,7 +25,7 @@ def mark(n):
  state=seen();state.add(n)
  tmp=S/"done.tmp";tmp.write_text(json.dumps(sorted(state)));tmp.replace(S/"done.json")
 def parse(action,body):
- if action in {"STATUS","DIAGNOSTICO"}:
+ if action in {"STATUS","DIAGNOSTICO","CATALOGO"}:
   if body.strip() not in ("","{}"):raise ValueError("STATUS_DOES_NOT_TAKE_ARGUMENTS")
   return {}
  try:d=json.loads(body)
@@ -126,6 +126,16 @@ def stop(port):
  (S/("preview-"+str(port)+".json")).unlink(missing_ok=True)
  return "Managed preview on "+str(port)+" stopped; no other processes touched"
 def execute(action,args):
+ if action=="CATALOGO":
+  sql=("SELECT 'products',count(*) FROM public.products UNION ALL "
+   "SELECT 'offers',count(*) FROM public.offers UNION ALL "
+   "SELECT 'catalog_search_products',count(*) FROM public.catalog_search_products")
+  try:
+   out=cmd(["docker","exec","beupfree-catalog-pg17","sh","-c",
+    "exec psql -U \"\u0024{POSTGRES_USER:-postgres}\" -d uppulse_catalog -X -A -t -F '=' -v ON_ERROR_STOP=1 -c \""+sql+"\""],timeout=35)
+  except Exception:
+   raise RuntimeError("CATALOG_READ_ONLY_QUERY_UNAVAILABLE")
+  return "Catalog read-only counts (not freshness/production proof): "+out.replace("\n","; ")[:500]
  if action=="DIAGNOSTICO":
   checks=[]
   for name,argv in [
@@ -165,7 +175,7 @@ def cycle():
   if n in done or item.get("author",{}).get("login","").lower()!="edineilemes-source":continue
   if not title.startswith("[UPPULSE-AGENT] "):continue
   action=title.removeprefix("[UPPULSE-AGENT] ")
-  if action not in {"STATUS","DIAGNOSTICO","VALIDAR","PREVIEW","PARAR PREVIEW"}:continue
+  if action not in {"STATUS","DIAGNOSTICO","CATALOGO","VALIDAR","PREVIEW","PARAR PREVIEW"}:continue
   mark(n)
   try:
    args=parse(action,item.get("body") or "")
