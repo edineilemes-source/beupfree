@@ -8,6 +8,7 @@ on:
       - 'scripts/uppulse_codespace_agent.py'
       - 'scripts/uppulse_codespace_agent.test.py'
       - 'scripts/uppulse_bridge_install.sh'
+      - 'scripts/uppulse_bridge_doctor.py'
       - '.github/workflows/uppulse-bridge-check.yml'
   workflow_dispatch:
 
@@ -22,6 +23,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verificar sintaxe e restricoes do agente
         run: |
-          python3 -m py_compile scripts/uppulse_codespace_agent.py
+          python3 -m py_compile scripts/uppulse_codespace_agent.py scripts/uppulse_bridge_doctor.py
           python3 scripts/uppulse_codespace_agent.test.py
           bash -n scripts/uppulse_bridge_install.sh
