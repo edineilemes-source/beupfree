@@ -36,6 +36,11 @@ class BridgeContract(unittest.TestCase):
   for invalid in ("npm run db:push","shell","other"):
    with self.assertRaises(ValueError):
     bridge.parse("VALIDAR",json.dumps({"commit":sha,"profile":invalid}))
+ def test_readonly_actions_allow_no_parameters(self):
+  for action in ("STATUS","DIAGNOSTICO","CATALOGO"):
+   self.assertEqual(bridge.parse(action,"{}"),{})
+   with self.assertRaises(ValueError):
+    bridge.parse(action,'{"shell":"exit 0"}')
  def test_explicit_fixed_branch_and_allowed_ports(self):
   self.assertEqual(bridge.BRANCH,"feat/uppulse-missao10-supercatalogo")
   self.assertEqual(bridge.PORTS,{5011,5012,5013,5014,5015})
