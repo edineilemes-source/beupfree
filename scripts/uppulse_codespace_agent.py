@@ -105,7 +105,16 @@ def stop(port):
  return "Managed preview on "+str(port)+" stopped; no other processes touched"
 def execute(action,args):
  if action=="STATUS":
-  return "Bridge online. Local branch: "+cmd(["git","branch","--show-current"])+". Managed ports: "+str([p for p in sorted(PORTS) if own(p)])
+  local=cmd(["git","rev-parse","HEAD"])
+  remote=cmd(["git","ls-remote","origin","refs/heads/"+BRANCH]).split()[0]
+  dirty=bool(cmd(["git","status","--porcelain","--untracked-files=no"]))
+  managed=[p for p in sorted(PORTS) if own(p)]
+  return ("Bridge V1 online. GitHub canonical branch: "+BRANCH+
+   "; local SHA: "+local[:12]+"; GitHub SHA: "+remote[:12]+
+   "; same SHA: "+str(local==remote)+
+   "; local tracked changes: "+str(dirty)+
+   "; managed preview ports: "+str(managed)+
+   ". Agent validates immutable GitHub commits in isolated snapshots; does not modify local checkout.")
  if action=="VALIDAR":
   path=snapshot(args["commit"])
   try:return validate(path)+"; snapshot "+args["commit"][:12]
