@@ -36,11 +36,11 @@ chmod u+x "$target/uppulse_bridge_ensure.sh"
 # Recovery on next terminal attach. Does not claim to wake a stopped Codespace.
 hook='[[ -f "$HOME/.local/share/uppulse-bridge/uppulse_bridge_ensure.sh" ]] && bash "$HOME/.local/share/uppulse-bridge/uppulse_bridge_ensure.sh" >/dev/null 2>&1 || true'
 if ! grep -Fqx "$hook" "$HOME/.bashrc" 2>/dev/null; then
- printf '\\n# UpPulse Codespaces bridge: restore on interactive terminal attach\\n%s\\n' "$hook" >> "$HOME/.bashrc"
+ printf '\n# UpPulse Codespaces bridge: restore on interactive terminal attach\n%s\n' "$hook" >> "$HOME/.bashrc"
 fi
 if [[ -f "$state/agent.pid" ]] && kill -0 "$(cat "$state/agent.pid")" 2>/dev/null; then
  pid="$(cat "$state/agent.pid")"
- if ! [[ "$pid" =~ ^[0-9]+$ ]] || ! tr '\\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null | grep -Fq "$target/uppulse_codespace_agent.py"; then
+ if ! [[ "$pid" =~ ^[0-9]+$ ]] || ! grep -azFq "$target/uppulse_codespace_agent.py" "/proc/$pid/cmdline" 2>/dev/null; then
   echo "UPPULSE_BRIDGE_PROCESS_NOT_OWNED: refusing to stop unknown process";exit 2
  fi
  if [[ "$old_checksum" == "$new_checksum" ]]; then
