@@ -23,13 +23,39 @@ fi
 git show "$ref:scripts/uppulse_bridge_doctor.py" > "$target/uppulse_bridge_doctor.py"
 echo "=== AGENT DEPENDENCY AND VERSION PREFLIGHT ==="
 python3 "$target/uppulse_bridge_doctor.py"
-git show "$ref:scripts/uppulse_codespace_agent.py" > "$target/uppulse_codespace_agent.py"
-python3 -m py_compile "$target/uppulse_codespace_agent.py"
+old_checksum=""
+if [[ -f "$target/uppulse_codespace_agent.py" ]]; then
+ old_checksum="$(sha256sum "$target/uppulse_codespace_agent.py" | cut -d' ' -f1)"
+fi
+git show "$ref:scripts/uppulse_codespace_agent.py" > "$target/uppulse_codespace_agent.py.new"
+python3 -m py_compile "$target/uppulse_codespace_agent.py.new"
+new_checksum="$(sha256sum "$target/uppulse_codespace_agent.py.new" | cut -d' ' -f1)"
+mv "$target/uppulse_codespace_agent.py.new" "$target/uppulse_codespace_agent.py"
+git show "$ref:scripts/uppulse_bridge_ensure.sh" > "$target/uppulse_bridge_ensure.sh"
+chmod u+x "$target/uppulse_bridge_ensure.sh"
+# Recovery on next terminal attach. Does not claim to wake a stopped Codespace.
+hook='[[ -f "$HOME/.local/share/uppulse-bridge/uppulse_bridge_ensure.sh" ]] && bash "$HOME/.local/share/uppulse-bridge/uppulse_bridge_ensure.sh" >/dev/null 2>&1 || true'
+if ! grep -Fqx "$hook" "$HOME/.bashrc" 2>/dev/null; then
+ printf '\\n# UpPulse Codespaces bridge: restore on interactive terminal attach\\n%s\\n' "$hook" >> "$HOME/.bashrc"
+fi
 if [[ -f "$state/agent.pid" ]] && kill -0 "$(cat "$state/agent.pid")" 2>/dev/null; then
- echo "UPPULSE_BRIDGE_ALREADY_RUNNING: pid $(cat "$state/agent.pid")"
- echo "Existing agent not replaced in memory. Revalidate its version before new tasks."
- echo "No running app ports were touched"
- exit 0
+ pid="$(cat "$state/agent.pid")"
+ if ! [[ "$pid" =~ ^[0-9]+$ ]] || ! tr '\\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null | grep -Fq "$target/uppulse_codespace_agent.py"; then
+  echo "UPPULSE_BRIDGE_PROCESS_NOT_OWNED: refusing to stop unknown process";exit 2
+ fi
+ if [[ "$old_checksum" == "$new_checksum" ]]; then
+  echo "UPPULSE_BRIDGE_ALREADY_RUNNING: pid $pid, installed version unchanged"
+  exit 0
+ fi
+ echo "Updating bridge process only (not application previews)..."
+ kill -TERM "$pid"
+ for attempt in {1..20};do
+  if ! kill -0 "$pid" 2>/dev/null;then break;fi
+  sleep 0.2
+ done
+ if kill -0 "$pid" 2>/dev/null;then
+  echo "UPPULSE_BRIDGE_OLD_PROCESS_STILL_RUNNING: no duplicate will be started";exit 2
+ fi
 fi
 UPPULSE_BRIDGE_STATE_DIR="$state" nohup python3 -u "$target/uppulse_codespace_agent.py" >>"$state/bridge.log" 2>&1 </dev/null &
 echo "$!" > "$state/agent.pid"
@@ -45,4 +71,4 @@ fi
 echo "UPPULSE_BRIDGE_READY: GitHub Issues queue active (after dependency preflight)"
 echo "Actions: STATUS, VALIDAR, PREVIEW (5011-5015), PARAR PREVIEW"
 echo "No catalog writes, no port shutdowns, no reset/checkout/commit/push"
-echo "This process survives terminal closure, but not a stopped/rebuilt Codespace without startup hooks"
+echo "Recovery installed on terminal attach; stopped Codespace still requires opening the workspace; postStart rebuild hook not yet verified"
