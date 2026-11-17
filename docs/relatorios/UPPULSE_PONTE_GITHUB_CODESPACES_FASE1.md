@@ -17,7 +17,7 @@ Arquivo `scripts/uppulse_codespace_agent.py`:
 - Branch remota permitida fixa `feat/uppulse-missao10-supercatalogo`; commit precisa pertencer ao histórico dessa branch.
 - Sem `git checkout`, `reset`, `merge`, `git apply`, `commit`, `push`, execução de shell fornecido por Issue, migrações ou escrita no catálogo.
 - Sem publicação de portas como públicas; abrir o navegador pela guia **PORTS → Open in Browser**. A configuração de visibilidade é responsabilidade do Codespaces.
-- O agente reserva as Issues processadas em `~/.local/state/uppulse-bridge/done.json` para não repetir execução em reinícios. Comenta o resultado e fecha a Issue somente em caso de sucesso. Em falhas, a Issue permanece aberta sem executar novamente automaticamente.
+- O agente reserva as Issues processadas em `/workspaces/uppulse-homologacao/missao9/codigo/.git/uppulse-bridge/done.json` para não repetir execução em reinícios. Comenta o resultado e fecha a Issue somente em caso de sucesso. Em falhas, a Issue permanece aberta sem executar novamente automaticamente.
 - Consulta a fila pelo `gh`; não utiliza tokens colados no chat nem armazena credenciais no Git.
 
 ### Instalação inicial — uma vez
@@ -45,3 +45,11 @@ Quando aparecer `UPPULSE_BRIDGE_READY`, o ChatGPT poderá criar uma Issue autori
 `scripts/uppulse_codespace_agent.test.py` testa lista de operações, SHA completo, portas autorizadas, bloqueio de parâmetros extras e não encerramento de processos alheios. Workflow `.github/workflows/uppulse-bridge-check.yml` roda análise de sintaxe Python, testes e `bash -n` do instalador.
 
 **Critério de aceite:** instalação ativa no Codespaces + Issue STATUS devolve branch real + Issue VALIDAR de SHA autorizado passa + PREVIEW 5011 devolve HTTP e porta utilizável, sem alterar portas anteriores. Documentar persistência do agente antes de considerar operação 100% autônoma.
+
+## Atualização de arquitetura — 2026-11-17
+- GitHub canônico; agente testa SHAs remotos em snapshot isolado. Norma: `docs/PROTOCOLO_GITHUB_CODESPACES_FONTE_UNICA.md` e `AGENTS.md`.
+- Doctor `scripts/uppulse_bridge_doctor.py` adicionado ao instalador; verifica gh/auth, git, Python 3.9+, Node 22+ (recomendação Node 24 LTS após compatibilidade), npm, tar, curl, ss, node_modules e Docker opcional.
+- Perfis fechados de validação: `basic` (TS e testes da ficha), `unit` (testes unitários), `build` (unit+build), `ui` (unit+build e Playwright após iniciar preview). Não aceitar comandos arbitrários via Issues.
+- STATUS informa SHA local, SHA remoto e presença de modificações locais; diferenças não causam pull/reset nem impedem execução de snapshot.
+- Estado do agente em `.git/uppulse-bridge` para sobreviver a rebuild do contêiner quando o workspace persiste, embora o processo **não seja automaticamente restaurado**; isso depende do devcontainer efetivo ainda não disponível na branch.
+- Nenhuma instalação/validação do agente foi observada no Codespaces nesta etapa. A Issue #20 permanece teste pendente até a ponte ser iniciada.
