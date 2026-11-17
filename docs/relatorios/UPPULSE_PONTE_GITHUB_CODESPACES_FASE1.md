@@ -53,3 +53,10 @@ Quando aparecer `UPPULSE_BRIDGE_READY`, o ChatGPT poderá criar uma Issue autori
 - STATUS informa SHA local, SHA remoto e presença de modificações locais; diferenças não causam pull/reset nem impedem execução de snapshot.
 - Estado do agente em `.git/uppulse-bridge` para sobreviver a rebuild do contêiner quando o workspace persiste, embora o processo **não seja automaticamente restaurado**; isso depende do devcontainer efetivo ainda não disponível na branch.
 - Nenhuma instalação/validação do agente foi observada no Codespaces nesta etapa. A Issue #20 permanece teste pendente até a ponte ser iniciada.
+
+## Correção após instalação inicial bloqueada (2026-11-17)
+- Saída do operador: `BRIDGE_GIT_METADATA_NOT_DIRECTORY`, depois de `BRIDGE_PREFLIGHT_READY`.
+- Causa: instalador assumia `.git` como diretório convencional. Este checkout usa metadados Git por caminho indireto (comum em `git worktree`), que podem ser representados por um arquivo `.git`.
+- Corrigido: instalador chama `git rev-parse --absolute-git-dir`, valida o diretório retornado e usa `<gitdir>/uppulse-bridge`; não altera checkout, branch ou metadados existentes além da subpasta privada do agente.
+- O instalador passa `UPPULSE_BRIDGE_STATE_DIR` ao processo; o agente compartilha esse caminho, em vez de concatenar `.git` ao diretório do projeto.
+- **Pendente:** executar novamente o instalador e confirmar `UPPULSE_BRIDGE_READY` e resposta real da Issue #20. A primeira tentativa parou antes de iniciar o agente; nenhum processo ou porta do projeto foi modificado.
