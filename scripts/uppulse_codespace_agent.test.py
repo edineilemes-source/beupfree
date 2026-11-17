@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Static contract tests; no GitHub auth, Codespaces or DB needed."""
 import importlib.util
+import json
 import pathlib
 import unittest
 from unittest.mock import patch
@@ -27,6 +28,14 @@ class BridgeContract(unittest.TestCase):
    self.assertIn("no",bridge.stop(5011).lower())
  def test_invalid_boolean_port(self):
   with self.assertRaises(ValueError):bridge.parse("PARAR PREVIEW",'{"port":true}')
+ def test_named_profiles_not_commands(self):
+  sha="a"*40
+  for profile in ("basic","unit","build","ui"):
+   result=bridge.parse("VALIDAR",json.dumps({"commit":sha,"profile":profile}))
+   self.assertEqual(result["profile"],profile)
+  for invalid in ("npm run db:push","shell","other"):
+   with self.assertRaises(ValueError):
+    bridge.parse("VALIDAR",json.dumps({"commit":sha,"profile":invalid}))
  def test_explicit_fixed_branch_and_allowed_ports(self):
   self.assertEqual(bridge.BRANCH,"feat/uppulse-missao10-supercatalogo")
   self.assertEqual(bridge.PORTS,{5011,5012,5013,5014,5015})
