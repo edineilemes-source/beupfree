@@ -141,7 +141,7 @@ export function classifyProductTaxonomy(input: ProductTaxonomyInput): ProductTax
   // A category like "Basquete" can describe a shoe's heritage rather than its
   // suitability for playing. Known lifestyle silhouettes must not inherit a
   // performance activity solely from merchant category or marketing copy.
-  const lifestyleBasketballModels = /\\b(?:air force 1|court vision|court borough|dunk low|dunk high|japan s|superstar(?: ii)?|hoops (?:classic|4\\.0)|new balance (?:480|550)|jabbar lo|gamma force|ebernon|caven 2\\.0|rebound v6|sb force 58)\\b/;
+  const lifestyleBasketballModels = /\b(?:air force 1|court vision|court borough|dunk low|dunk high|japan s|superstar(?: ii)?|hoops (?:classic|4\.0)|new balance (?:480|550)|jabbar lo|gamma force|ebernon|caven 2\.0|rebound v6|sb force 58)\b/;
   if (activities.includes("BASKETBALL") && lifestyleBasketballModels.test(name)) {
     activities = activities.filter(activity => activity !== "BASKETBALL");
     evidence.push("activity:basketball_heritage_not_performance");
