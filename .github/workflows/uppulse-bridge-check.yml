@@ -9,6 +9,7 @@ on:
       - 'scripts/uppulse_codespace_agent.test.py'
       - 'scripts/uppulse_bridge_install.sh'
       - 'scripts/uppulse_bridge_doctor.py'
+      - 'scripts/uppulse_bridge_ensure.sh'
       - '.github/workflows/uppulse-bridge-check.yml'
   workflow_dispatch:
 
@@ -25,4 +26,4 @@ jobs:
         run: |
           python3 -m py_compile scripts/uppulse_codespace_agent.py scripts/uppulse_bridge_doctor.py
           python3 scripts/uppulse_codespace_agent.test.py
-          bash -n scripts/uppulse_bridge_install.sh
+          bash -n scripts/uppulse_bridge_install.sh scripts/uppulse_bridge_ensure.sh
