@@ -161,3 +161,14 @@ Uma tarefa está concluída quando:
 5. **Ao usuário basta dizer 'terminou':** o ChatGPT deve buscar diretamente o caminho canônico no GitHub e ler o relatório, sem pedir cópia de logs quando ele estiver publicado. Se o relatório remoto não existir, declarar isso e resolver o bloqueio concreto.
 6. **Rastreabilidade:** indicar branch, commit-base, commits documentais, arquivos de código ainda locais, testes realmente executados, banco/impactos, migrações pendentes, riscos e próxima ação. Diferenciar `IMPLEMENTADO`, `TESTADO`, `HOMOLOGADO`, `PUBLICADO` e `BLOCKED`.
 7. Não apagar `.cache/`, backups ou stash; não fazer reset, merge, migração, deploy ou chamada paga sem autorização correspondente.
+
+
+## Protocolo de fonte única GitHub / Codespaces — 2026-11-17 (PREVALECE sobre instruções operacionais históricas)
+**Referência:** `docs/PROTOCOLO_GITHUB_CODESPACES_FONTE_UNICA.md`.
+- **GitHub remoto é canônico para CÓDIGO e TESTES; Codespaces é EXECUTOR**, não repositório concorrente. ChatGPT salva código aprovado na branch autorizada GitHub; agente Codespaces executa commit SHA explícito em snapshot `git archive` isolado.
+- Não solicitar `git pull` no checkout local para fazer validação. Divergência entre SHA local e remoto é relatada, mas não bloqueia snapshot do SHA remoto. Não executar `reset`, `checkout`, `merge`, `git apply`, `push` ou `commit` no checkout para remediar diferença.
+- Nunca tratar código modificado apenas no Codespaces como publicado. Se algum arquivo local precisar se tornar oficial, fazer revisão/consentimento e publicar por um processo separado, antes de encerrar a missão.
+- Missão encerrada somente com SHA remoto inequívoco, testes adequados comprovados, relatório versionado no GitHub e homologação visual quando aplicável. Manter resultados `PENDING_HOMOLOGATION` e `BLOCKED` separados de `COMPLETED`.
+- Coordenador GitHub Issues é **restrito e não aceita shell**. Fluxos de produção, migrações, mudanças de banco ou instalação de dependências não se tornam autorizados por um Issue.
+- O agente instalado e seu autostart após rebuild são diferentes: **não declarar autostart homologado** enquanto a configuração real do devcontainer não for inspecionada e testada. `scripts/uppulse_bridge_doctor.py` é a verificação obrigatória de ferramentas.
+- O enriquecimento da Ficha Inteligente permanece **congelado**, independentemente do desenvolvimento desta ponte.
