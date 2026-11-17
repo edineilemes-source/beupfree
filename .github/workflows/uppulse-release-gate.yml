@@ -1,0 +1,56 @@
+name: UpPulse Release Gate (sem deploy)
+
+on:
+  push:
+    branches:
+      - feat/uppulse-missao10-supercatalogo
+    paths:
+      - 'client/**'
+      - 'server/**'
+      - 'shared/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/uppulse-release-gate.yml'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uppulse-release-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-release-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: "true"
+      RESEARCH_PAID_ENABLED: "false"
+      RESEARCH_POSTGRES_HOMOLOGATED: "false"
+      UPPULSE_DISABLE_EXTERNAL_JOBS: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Instalar dependencias do lockfile
+        run: npm ci
+      - name: TypeScript
+        run: npm run check
+      - name: Testes unitarios
+        run: npm run test:unit
+      - name: Politica de catalogo publico
+        run: npm run test:public-catalog
+      - name: Build de distribuicao
+        run: npm run build
+      - name: Confirmar estrutura de saida do build
+        run: |
+          test -f dist/index.js
+          test -f dist/public/index.html
+      - name: Registrar commit efetivamente validado
+        run: echo "RELEASE_GATE_OFFLINE_OK SHA=${GITHUB_SHA}"
