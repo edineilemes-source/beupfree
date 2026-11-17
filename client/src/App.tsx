@@ -12,7 +12,6 @@ import CatalogV2 from "@/pages/CatalogV2";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { AuthProvider } from "@/context/AuthContext";
 import DemoProductDialogHost from "@/components/DemoProductDialog";
-import Home from "@/pages/Home";
 import HowItWorks from "@/pages/HowItWorks";
 import About from "@/pages/About";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
@@ -27,7 +26,7 @@ const CATALOG_PREVIEW_ENABLED = import.meta.env.UPPULSE_CATALOG_PREVIEW_ENABLED 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={CatalogV2} />
       <Route path="/catalogo" component={CatalogV2} />
       <Route path="/como-funciona" component={HowItWorks} />
       <Route path="/sobre" component={About} />
