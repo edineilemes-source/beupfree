@@ -5,10 +5,14 @@ set -Eeuo pipefail
 cd /workspaces/uppulse-homologacao/missao9/codigo
 ref=origin/feat/uppulse-missao10-supercatalogo
 target="$HOME/.local/share/uppulse-bridge"
-state="/workspaces/uppulse-homologacao/missao9/codigo/.git/uppulse-bridge"
-if [[ ! -d /workspaces/uppulse-homologacao/missao9/codigo/.git ]]; then
- echo "BRIDGE_GIT_METADATA_NOT_DIRECTORY: cannot ensure durable agent state";exit 2
+# Worktrees can use a .git FILE. Ask Git for the actual metadata directory.
+git_dir="$(git rev-parse --absolute-git-dir 2>/dev/null)" || {
+ echo "BRIDGE_GIT_METADATA_NOT_FOUND"; exit 2;
+}
+if [[ ! -d "$git_dir" ]]; then
+ echo "BRIDGE_GIT_METADATA_INVALID"; exit 2
 fi
+state="$git_dir/uppulse-bridge"
 mkdir -p "$target" "$state"
 if ! command -v gh >/dev/null || ! command -v python3 >/dev/null; then
  echo "BRIDGE_NEEDS_GH_AND_PYTHON3: no changes made to running services";exit 2
@@ -27,7 +31,7 @@ if [[ -f "$state/agent.pid" ]] && kill -0 "$(cat "$state/agent.pid")" 2>/dev/nul
  echo "No running app ports were touched"
  exit 0
 fi
-nohup python3 -u "$target/uppulse_codespace_agent.py" >>"$state/bridge.log" 2>&1 </dev/null &
+UPPULSE_BRIDGE_STATE_DIR="$state" nohup python3 -u "$target/uppulse_codespace_agent.py" >>"$state/bridge.log" 2>&1 </dev/null &
 echo "$!" > "$state/agent.pid"
 sleep 3
 if ! kill -0 "$(cat "$state/agent.pid")" 2>/dev/null;then
