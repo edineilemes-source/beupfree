@@ -65,8 +65,7 @@ def validate(path,profile="basic"):
   cmd(["npm","run","test:unit"],cwd=path,timeout=600,env=safe_env)
  if profile in {"build","ui"}:
   cmd(["npm","run","build"],cwd=path,timeout=600,env=safe_env)
- # The browser test is intentionally separate from the generic check:
- # it requires a running preview and installed Playwright Chromium.
+ # UI browser testing runs only after PREVIEW starts the local HTTP service.
  return "TypeScript, "+profile+" profile passed"
 def process_stamp(pid):
  try:return pathlib.Path("/proc/"+str(pid)+"/stat").read_text().split(") ")[1].split()[19]
@@ -110,7 +109,13 @@ def serve(sha,port,profile="basic"):
   if proc.poll() is not None:raise RuntimeError("PREVIEW_EXITED")
   try:
    status=cmd(["curl","-fsS","--max-time","2","-o","/dev/null","-w","%{http_code}","http://127.0.0.1:"+str(port)+"/"],timeout=4)
-   return "Preview OK HTTP "+status+". Codespaces PORTS -> "+str(port)+" -> Open in Browser"
+   if profile=="ui":
+    browser_env=dict(env)
+    browser_env["PLAYWRIGHT_BASE_URL"]="http://127.0.0.1:"+str(port)
+    browser_env["PLAYWRIGHT_EXTERNAL_SERVER"]="true"
+    cmd(["npx","playwright","test","--config=playwright.mission11-ai.config.ts"],
+     cwd=path,timeout=600,env=browser_env)
+   return "Preview OK HTTP "+status+"; profile "+profile+" passed. Codespaces PORTS -> "+str(port)+" -> Open in Browser"
   except RuntimeError:time.sleep(1)
  raise RuntimeError("PREVIEW_TIMEOUT")
 def stop(port):
