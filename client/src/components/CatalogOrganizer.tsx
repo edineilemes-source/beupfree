@@ -35,7 +35,7 @@ export function organizerFirstColumnValues(
   if (firstDimension !== "marca") return [...new Set(loaded)];
   const byNormalized = new Map<string, string>();
   for (const value of [...selectedValues, ...loaded]) {
-    const key = value.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLocaleLowerCase("pt-BR").trim();
+    const key = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").trim();
     if (!byNormalized.has(key)) byNormalized.set(key, value);
   }
   return [...byNormalized.values()].sort(collator.compare);
