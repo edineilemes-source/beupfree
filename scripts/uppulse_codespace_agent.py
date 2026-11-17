@@ -9,6 +9,8 @@ REPO="edineilemes-source/beupfree"
 BRANCH="feat/uppulse-missao10-supercatalogo"
 PORTS={5011,5012,5013,5014,5015}
 TESTS=["server/productIntelligence/customerKnowledge.test.ts","server/productIntelligence/technicalPresentation.test.ts","server/productIntelligence/technicalNormalization.test.ts","server/productIntelligence/reportReconciliation.test.ts"]
+PROFILES={"basic","unit","build","ui"}
+# Only named profiles; never accept an executable command from an issue.
 def cmd(args,cwd=R,timeout=150,check=True,**kw):
  p=subprocess.run(args,cwd=cwd,capture_output=True,text=True,timeout=timeout,**kw)
  if check and p.returncode: raise RuntimeError("COMMAND_FAILED_"+str(p.returncode))
@@ -28,7 +30,9 @@ def parse(action,body):
  try:d=json.loads(body)
  except (TypeError,ValueError):raise ValueError("BAD_JSON")
  expected={"commit"} if action=="VALIDAR" else {"commit","port"} if action=="PREVIEW" else {"port"}
- if not isinstance(d,dict) or set(d)!=expected:raise ValueError("BAD_PARAMETERS")
+ optional={"profile"} if action in {"VALIDAR","PREVIEW"} else set()
+ if not isinstance(d,dict) or not (expected<=set(d) and set(d)<=expected|optional):raise ValueError("BAD_PARAMETERS")
+ if "profile" in d and (not isinstance(d["profile"],str) or d["profile"] not in PROFILES):raise ValueError("BAD_PROFILE")
  if "commit" in d and (not isinstance(d["commit"],str) or not re.fullmatch(r"[0-9a-f]{40}",d["commit"])):raise ValueError("BAD_SHA")
  if "port" in d and (type(d["port"]) is not int or d["port"] not in PORTS):raise ValueError("BAD_PORT")
  return d
@@ -48,10 +52,22 @@ def snapshot(sha):
   return path
  except BaseException:
   shutil.rmtree(path,ignore_errors=True);raise
-def validate(path):
- cmd(["npm","run","check"],cwd=path,timeout=240)
- cmd(["node","--import","tsx","--test",*TESTS],cwd=path,timeout=240)
- return "TypeScript and focused unit tests passed"
+def validate(path,profile="basic"):
+ if profile not in PROFILES:raise ValueError("BAD_PROFILE")
+ safe_env=dict(os.environ)
+ safe_env.update({"RESEARCH_PAID_ENABLED":"false","RESEARCH_POSTGRES_HOMOLOGATED":"false",
+  "UPPULSE_DISABLE_EXTERNAL_JOBS":"true"})
+ safe_env.pop("OPENAI_API_KEY",None);safe_env.pop("TAVILY_API_KEY",None)
+ cmd(["npm","run","check"],cwd=path,timeout=240,env=safe_env)
+ if profile=="basic":
+  cmd(["node","--import","tsx","--test",*TESTS],cwd=path,timeout=240,env=safe_env)
+ elif profile in {"unit","build","ui"}:
+  cmd(["npm","run","test:unit"],cwd=path,timeout=600,env=safe_env)
+ if profile in {"build","ui"}:
+  cmd(["npm","run","build"],cwd=path,timeout=600,env=safe_env)
+ # The browser test is intentionally separate from the generic check:
+ # it requires a running preview and installed Playwright Chromium.
+ return "TypeScript, "+profile+" profile passed"
 def process_stamp(pid):
  try:return pathlib.Path("/proc/"+str(pid)+"/stat").read_text().split(") ")[1].split()[19]
  except (OSError,IndexError):return ""
@@ -69,14 +85,14 @@ def db_url():
  variables=dict(s.split("=",1) for s in entries if "=" in s)
  if not variables.get("POSTGRES_PASSWORD"):raise RuntimeError("POSTGRES_CREDENTIAL_MISSING")
  return "postgresql://"+quote(variables.get("POSTGRES_USER","postgres"),safe="")+":"+quote(variables["POSTGRES_PASSWORD"],safe="")+"@127.0.0.1:"+port+"/uppulse_catalog"
-def serve(sha,port):
+def serve(sha,port,profile="basic"):
  prior=own(port)
  if prior:
   if prior["commit"]==sha:return "Preview already running on port "+str(port)
   raise RuntimeError("PORT_MANAGED_BY_DIFFERENT_COMMIT")
  if cmd(["ss","-ltnH","sport","=",":"+str(port)],check=False):raise RuntimeError("PORT_OCCUPIED_DO_NOT_KILL")
  path=snapshot(sha)
- validate(path)
+ validate(path,profile)
  env=dict(os.environ)
  url=db_url()
  env.update({"DATABASE_URL":url,"AWIN_CURATOR_DATABASE_URL":url,
@@ -117,9 +133,9 @@ def execute(action,args):
    ". Agent validates immutable GitHub commits in isolated snapshots; does not modify local checkout.")
  if action=="VALIDAR":
   path=snapshot(args["commit"])
-  try:return validate(path)+"; snapshot "+args["commit"][:12]
+  try:return validate(path,args.get("profile","basic"))+"; snapshot "+args["commit"][:12]
   finally:shutil.rmtree(path,ignore_errors=True)
- if action=="PREVIEW":return serve(args["commit"],args["port"])
+ if action=="PREVIEW":return serve(args["commit"],args["port"],args.get("profile","basic"))
  if action=="PARAR PREVIEW":return stop(args["port"])
  raise RuntimeError("UNKNOWN_ACTION")
 def cycle():
