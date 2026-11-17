@@ -5,6 +5,7 @@ from urllib.parse import quote
 R=pathlib.Path("/workspaces/uppulse-homologacao/missao9/codigo")
 S=pathlib.Path(os.environ.get("UPPULSE_BRIDGE_STATE_DIR",str(pathlib.Path.home()/".local/state/uppulse-bridge")))
 S.mkdir(parents=True,exist_ok=True)
+VERSION="1.2.0"
 REPO="edineilemes-source/beupfree"
 BRANCH="feat/uppulse-missao10-supercatalogo"
 PORTS={5011,5012,5013,5014,5015}
@@ -24,7 +25,7 @@ def mark(n):
  state=seen();state.add(n)
  tmp=S/"done.tmp";tmp.write_text(json.dumps(sorted(state)));tmp.replace(S/"done.json")
 def parse(action,body):
- if action=="STATUS":
+ if action in {"STATUS","DIAGNOSTICO"}:
   if body.strip() not in ("","{}"):raise ValueError("STATUS_DOES_NOT_TAKE_ARGUMENTS")
   return {}
  try:d=json.loads(body)
@@ -125,12 +126,25 @@ def stop(port):
  (S/("preview-"+str(port)+".json")).unlink(missing_ok=True)
  return "Managed preview on "+str(port)+" stopped; no other processes touched"
 def execute(action,args):
+ if action=="DIAGNOSTICO":
+  checks=[]
+  for name,argv in [
+   ("docker",["docker","info","--format","{{.ServerVersion}}"]),
+   ("catalog_db_container",["docker","inspect","-f","{{.State.Status}}","beupfree-catalog-pg17"]),
+   ("port_5011",["ss","-ltnH","sport","=",":5011"]),
+   ("local_http_5011",["curl","-sS","--max-time","3","-o","/dev/null","-w","%{http_code}","http://127.0.0.1:5011/"])]:
+   try:
+    value=cmd(argv,timeout=8,check=False)
+    checks.append(name+"="+("LISTEN" if name=="port_5011" and value else "FREE" if name=="port_5011" else value[:90] or "NOT_AVAILABLE"))
+   except Exception:
+    checks.append(name+"=UNAVAILABLE")
+  return "Bridge v"+VERSION+" diagnostics (read-only): "+"; ".join(checks)
  if action=="STATUS":
   local=cmd(["git","rev-parse","HEAD"])
   remote=cmd(["git","ls-remote","origin","refs/heads/"+BRANCH]).split()[0]
   dirty=bool(cmd(["git","status","--porcelain","--untracked-files=no"]))
   managed=[p for p in sorted(PORTS) if own(p)]
-  return ("Bridge V1 online. GitHub canonical branch: "+BRANCH+
+  return ("Bridge v"+VERSION+" online. GitHub canonical branch: "+BRANCH+
    "; local SHA: "+local[:12]+"; GitHub SHA: "+remote[:12]+
    "; same SHA: "+str(local==remote)+
    "; local tracked changes: "+str(dirty)+
@@ -151,7 +165,7 @@ def cycle():
   if n in done or item.get("author",{}).get("login","").lower()!="edineilemes-source":continue
   if not title.startswith("[UPPULSE-AGENT] "):continue
   action=title.removeprefix("[UPPULSE-AGENT] ")
-  if action not in {"STATUS","VALIDAR","PREVIEW","PARAR PREVIEW"}:continue
+  if action not in {"STATUS","DIAGNOSTICO","VALIDAR","PREVIEW","PARAR PREVIEW"}:continue
   mark(n)
   try:
    args=parse(action,item.get("body") or "")
@@ -161,7 +175,7 @@ def cycle():
    gh("issue","close",str(n),"--repo",REPO)
   except Exception as exc:
    # Avoid printing secrets or arbitrary subprocess stderr in public issues.
-   report(n,"BLOCKED: "+type(exc).__name__+"; see local agent log and environment.")
+   report(n,"BLOCKED: "+(str(exc) if re.fullmatch(r"[A-Z0-9_]{3,90}",str(exc)) else type(exc).__name__)+". Agent v"+VERSION+". No service or local checkout was changed by this report.")
 def main():
  with (S/"singleton.lock").open("w") as lock:
   fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
