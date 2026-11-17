@@ -15,6 +15,7 @@ def check_version(cmd,label,minimum=None,mandatory=True):
   return {"name":label,"status":"BLOCKED" if mandatory else "OPTIONAL_MISSING","detail":cmd+" absent"}
  ret,out,err=call([cmd,"--version"])
  if ret:return {"name":label,"status":"BLOCKED" if mandatory else "OPTIONAL_MISSING","detail":"version check failed"}
+ if cmd=="python3" and sys.version_info<(3,9):return {"name":label,"status":"BLOCKED","detail":"Python 3.9+ required"}
  if minimum is not None:
   import re
   m=re.search(r"(\d+)",out)
@@ -22,7 +23,7 @@ def check_version(cmd,label,minimum=None,mandatory=True):
  return {"name":label,"status":"READY","detail":out.splitlines()[0][:90]}
 def inventory():
  checks=[check_version("python3","Python",3),check_version("git","Git"),check_version("gh","GitHub CLI"),
-   check_version("node","Node.js",20),check_version("npm","npm"),check_version("tar","tar"),
+   check_version("node","Node.js",22),check_version("npm","npm"),check_version("tar","tar"),
    check_version("curl","curl"),check_version("ss","Socket inspection"),
    check_version("docker","Docker (preview)",mandatory=False)]
  if not ROOT.is_dir():
@@ -44,6 +45,7 @@ def inventory():
    "detail":"tsx available" if (ROOT/"node_modules"/".bin"/"tsx").exists() else "dependencies not installed"})
  checks.append({"name":"Devcontainer configuration","status":"CHECK_REQUIRED",
    "detail":"no repository .devcontainer/devcontainer.json; inspect effective Codespaces config before installing postStart hook"})
+ checks.append({"name":"Recommended runtime","status":"INFO","detail":"Node.js 24 LTS preferred after project compatibility tests; Node 22 LTS acceptable; Node 20 EOL"} )
  checks.append({"name":"Codex CLI","status":"OPTIONAL","detail":"not required by bridge; GitHub connector edits code, agent validates previews"})
  checks.append({"name":"GitHub Codespaces CLI","status":"OPTIONAL","detail":"gh codespace is not required inside a running Codespace; gh is sufficient for Issues bridge"})
  return checks
