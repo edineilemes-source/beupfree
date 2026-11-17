@@ -112,3 +112,12 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Doctor de dependências: `scripts/uppulse_bridge_doctor.py`; instalador `scripts/uppulse_bridge_install.sh` chama o Doctor. Requisitos Python 3.9+, Node 22+ (preferência Node 24 LTS testada), GH CLI, git, npm, tar, curl, ss; Docker para preview. `gh codespace` e Codex CLI não são requisitos da ponte em execução.
 - Perfis do agente: basic, unit, build, ui. Estado persistente em `.git/uppulse-bridge`; autostart após rebuild ainda **não** preparado porque falta confirmar configuração real do devcontainer.
 - **Não declarar agente funcionando antes de receber resposta da Issue #20**, nem considerar resolução de persistência. Consulta/instalação manual inicial pendente.
+
+
+## Plataforma operacional e lançamento UpPulse — execução de 2026-11-17
+- **CÓDIGO oficial = GitHub remoto**, Codespaces só executor de commits em snapshots isolados; regra `docs/PROTOCOLO_GITHUB_CODESPACES_FONTE_UNICA.md`.
+- Ponte comprovada: Issue #20 STATUS respondeu e fechou; Issue #21 testes básicos passaram no SHA cda8173c. Falhas reais: Issue #22 PREVIEW 5011 (BLOCKED), Issue #23 validação build (BLOCKED) sem causa específica no agente V1.
+- Corrigidos no GitHub: diagnóstico seguro de falhas, ações DIAGNOSTICO e CATALOGO read-only, script de recuperação do agente ao abrir terminal (`scripts/uppulse_bridge_ensure.sh`), upgrade idempotente do instalador, CI `.github/workflows/uppulse-release-gate.yml`. Essas melhorias **não foram ativadas no Codespaces ainda**, pois versão anterior do agente continua na memória; requer uma atualização de instalador executada pelo operador, uma única vez.
+- Etapa após atualizar agente: ChatGPT aciona DIAGNOSTICO + CATALOGO, resolve bloqueio concreto de PREVIEW/BUILD, homologa porta e gate de release. Não declarar servidor no ar antes de HTTP verificado. Reinício após abertura de terminal tem hook preparado, reconstrução completa do devcontainer segue não homologada.
+- Relatório detalhado: `docs/relatorios/UPPULSE_PREPARACAO_LANCAMENTO_2026-11-17.md`. Banco histórico `uppulse_catalog` não é base pública de produção. Publicação Hostinger pendente de acesso/ambiente autorizados e validação de dados/compras; nenhuma publicação ou migração executada.
+- **Ficha Inteligente segue congelada; sem novas pesquisas IA pagas.**
