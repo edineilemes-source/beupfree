@@ -1,7 +1,7 @@
 import MasterOffers from "./MasterOffers";
 // A Ficha Inteligente permanece no projeto, mas fica desativada na versão comercial V1.
 // Ativação futura exige configuração explícita e homologação da funcionalidade.
-const SHOW_INTELLIGENT_CARD = import.meta.env?.VITE_UPPULSE_INTELLIGENT_CARD_ENABLED === "true";
+export const SHOW_INTELLIGENT_CARD = import.meta.env?.VITE_UPPULSE_INTELLIGENT_CARD_ENABLED === "true";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
