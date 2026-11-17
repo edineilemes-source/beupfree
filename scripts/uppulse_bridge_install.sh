@@ -5,7 +5,10 @@ set -Eeuo pipefail
 cd /workspaces/uppulse-homologacao/missao9/codigo
 ref=origin/feat/uppulse-missao10-supercatalogo
 target="$HOME/.local/share/uppulse-bridge"
-state="$HOME/.local/state/uppulse-bridge"
+state="/workspaces/uppulse-homologacao/missao9/codigo/.git/uppulse-bridge"
+if [[ ! -d /workspaces/uppulse-homologacao/missao9/codigo/.git ]]; then
+ echo "BRIDGE_GIT_METADATA_NOT_DIRECTORY: cannot ensure durable agent state";exit 2
+fi
 mkdir -p "$target" "$state"
 if ! command -v gh >/dev/null || ! command -v python3 >/dev/null; then
  echo "BRIDGE_NEEDS_GH_AND_PYTHON3: no changes made to running services";exit 2
