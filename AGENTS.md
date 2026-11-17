@@ -172,3 +172,12 @@ Uma tarefa está concluída quando:
 - Coordenador GitHub Issues é **restrito e não aceita shell**. Fluxos de produção, migrações, mudanças de banco ou instalação de dependências não se tornam autorizados por um Issue.
 - O agente instalado e seu autostart após rebuild são diferentes: **não declarar autostart homologado** enquanto a configuração real do devcontainer não for inspecionada e testada. `scripts/uppulse_bridge_doctor.py` é a verificação obrigatória de ferramentas.
 - O enriquecimento da Ficha Inteligente permanece **congelado**, independentemente do desenvolvimento desta ponte.
+
+
+## Preparação de lançamento — ponte atualizada, 2026-11-17
+- **Não confundir agente V1 instalado com código V1.2 publicado**: após novos commits, atualizar agente residente somente pelo instalador `scripts/uppulse_bridge_install.sh`, que confirma PID próprio antes de reiniciar o processo. Não reiniciar servidores da aplicação inadvertidamente.
+- `scripts/uppulse_bridge_ensure.sh` reativa o coordenador quando um terminal interativo é aberto, mediante hook instalado em `~/.bashrc`; **não** acorda Codespace parado e não comprova reconstrução do devcontainer. Evitar prometer disponibilidade contínua.
+- As operações do agente incluem `STATUS`, `DIAGNOSTICO`, `CATALOGO` (contagens SQL fixas read-only), `VALIDAR`, `PREVIEW` (portas 5011–5015) e `PARAR PREVIEW`. Testes específicos de UI e build têm perfis fechados, nunca aceitar shell arbitrário de Issue.
+- Histórico real: Issue #20 STATUS OK; #21 validação basic OK; #22 preview bloqueado; #23 build bloqueado no agente antigo sem diagnóstico suficiente. **Resolver causas concretas antes de afirmar que o UpPulse está no ar.**
+- `docs/relatorios/UPPULSE_PREPARACAO_LANCAMENTO_2026-11-17.md` e Issue #24 registram os gates de catálogo, integração e Hostinger.
+- Publicação em produção exige destino PostgreSQL permanente, credenciais provisionadas em Hostinger, verificação dos produtos/ofertas elegíveis e testes no domínio. Não utilizar PostgreSQL em Codespaces como banco de produção, nem migrar dados automaticamente.
