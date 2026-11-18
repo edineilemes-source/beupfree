@@ -5,14 +5,6 @@ set -Eeuo pipefail
 cd /workspaces/uppulse-homologacao/missao9/codigo
 ref=origin/feat/uppulse-missao10-supercatalogo
 target="$HOME/.local/share/uppulse-bridge"
-# Separate locally held administrator upload token; never check into GitHub.
-upload_token="$HOME/.local/share/uppulse/admin-upload.token"
-mkdir -p -- "$(dirname "$upload_token")"
-if [[ ! -s "$upload_token" ]];then
- umask 077
- openssl rand -hex 24 > "$upload_token"
-fi
-chmod 600 "$upload_token"
 # Worktrees can use a .git FILE. Ask Git for the actual metadata directory.
 git_dir="$(git rev-parse --absolute-git-dir 2>/dev/null)" || {
  echo "BRIDGE_GIT_METADATA_NOT_FOUND"; exit 2;
@@ -53,8 +45,6 @@ if [[ -f "$state/agent.pid" ]] && kill -0 "$(cat "$state/agent.pid")" 2>/dev/nul
  fi
  if [[ "$old_checksum" == "$new_checksum" ]]; then
   echo "UPPULSE_BRIDGE_ALREADY_RUNNING: pid $pid, installed version unchanged"
-  echo "ADMIN_UPLOAD_TOKEN (cole apenas no formulário da Curadoria):"
-  cat "$upload_token"
   exit 0
  fi
  echo "Updating bridge process only (not application previews)..."
@@ -81,15 +71,13 @@ fi
 echo "UPPULSE_BRIDGE_READY: GitHub Issues queue active (after dependency preflight)"
 echo "Actions: STATUS, VALIDAR, PREVIEW (5011-5015), PARAR PREVIEW"
 echo "No catalog writes, no port shutdowns, no reset/checkout/commit/push"
-echo "ADMIN_UPLOAD_TOKEN (cole apenas no formulário da Curadoria):"
-cat "$upload_token"
 echo
 echo "Recovery installed on terminal attach; stopped Codespace still requires opening the workspace; postStart rebuild hook not yet verified"
 # Queue the isolated Curadoria preview without altering the existing 5013 service.
 preview_sha="$(git rev-parse "$ref")"
 preview_json="{\"commit\":\"$preview_sha\",\"port\":5014,\"profile\":\"basic\"}"
 if gh issue create --repo edineilemes-source/beupfree --title "[UPPULSE-AGENT] PREVIEW" --body "$preview_json" >/dev/null;then
- echo "PREVIEW_5014_REQUESTED: Curadoria -> Feeds de parceiros (AWIN)"
+ echo "PREVIEW_5014_REQUESTED: Curadoria sem login -> Feeds de parceiros (AWIN). Mantenha a porta privada no Codespaces."
 else
  echo "PREVIEW_5014_NOT_QUEUED: bridge installed; create PREVIEW issue separately"
 fi
