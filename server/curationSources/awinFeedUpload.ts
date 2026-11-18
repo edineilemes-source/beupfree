@@ -31,6 +31,7 @@ function temporaryNoLogin(env:NodeJS.ProcessEnv){
 }
 function enabled(env:NodeJS.ProcessEnv){return temporaryNoLogin(env)||adminIds(env).length>0}
 type AdminResolver=(id:string)=>Promise<{id:string;email:string;isActive:boolean}|undefined>;
+type AuditPool={connect:()=>Promise<{query:(sql:string,params?:unknown[])=>Promise<{rows:any[]}>;release:()=>void}>};
 function adminAuthorization(resolveUser?:AdminResolver):RequestHandler{return async(req,res,next)=>{
  if(!enabled(process.env))return res.status(503).json({code:"ADMIN_ACCESS_NOT_CONFIGURED",message:"Importação desabilitada neste ambiente."});
  const origin=req.get("origin"),host=req.get("host");
@@ -51,7 +52,7 @@ function bucket(list:Record<string,number>,value:string){list[value]=(list[value
 function limiter():Transform{
  let total=0;return new Transform({transform(chunk,_enc,done){total+=chunk.length;done(total>MAX_UNCOMPRESSED?new Error("FEED_DECOMPRESSED_SIZE_LIMIT"):null,chunk)}});
 }
-export function createAwinFeedUploadRouter(resolveUser?:AdminResolver){
+export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool?:AuditPool){
  const router=Router();
  const authorize=adminAuthorization(resolveUser);
  router.get("/status",authorize,(_req,res)=>res.json({enabled:true,maxFileBytes:MAX_GZIP,mode:"HOMOLOGATION_ONLY",publication:false,staging:Boolean(process.env.DATABASE_URL),temporaryAccess:temporaryNoLogin(process.env)}));
@@ -138,7 +139,7 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver){
   const merchantId=req.params.merchantId;
   if(!/^[0-9]{2,12}$/.test(merchantId))return res.status(400).json({code:"MERCHANT_ID_INVALID"});
   try{
-   const {pool}=await import("../db");
+   const pool=auditPool??(await import("../db")).pool;
    const db=await pool.connect();
    try{
     await db.query("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY");
