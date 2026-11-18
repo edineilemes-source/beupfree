@@ -1,99 +1,111 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft, UploadCloud, FileArchive, ShieldCheck, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, UploadCloud, FileArchive, AlertTriangle, CheckCircle2, PlayCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-
-type UploadReport = {
- status:string; merchant:string;feedId:string;storedName:string;sha256:string;
+type Issue={row:number;name:string;reason:string};
+type Audit={status:string;merchant:string;feedId:string;storedName:string;sha256:string;
  stats:{rows:number;normalized:number;invalid:number;priceStates:Record<string,number>;
  taxonomy:Record<string,number>;eligibility:Record<string,number>;reasons:Record<string,number>};
- imported:number;published:number;
-};
+ issues:Issue[];issuesTruncated:boolean;accepted:number;discarded:number;review:number;imported:number;published:number;canProcess:boolean};
+type ProcessReport={status:string;imported:number;unchanged:number;accepted:number;review:number;discarded:number;invalid:number;published:number;message:string};
+const format=(n:number)=>n.toLocaleString("pt-BR");
 export default function AwinFeedUpload(){
- const [merchant,setMerchant]=useState("17698");
- const [feedId,setFeedId]=useState("51837");
  const [file,setFile]=useState<File|null>(null);
- const [adminToken,setAdminToken]=useState("");
  const [pending,setPending]=useState(false);
+ const [processing,setProcessing]=useState(false);
  const [error,setError]=useState("");
- const [report,setReport]=useState<UploadReport|null>(null);
- const {data:status}=useQuery<{enabled:boolean;maxFileBytes:number;mode:string}>({
-  queryKey:["/api/admin/awin-feeds/status"],
-  queryFn:async()=>{const response=await fetch("/api/admin/awin-feeds/status",{credentials:"same-origin"});if(!response.ok)throw Error("Status indisponível");return response.json()}
+ const [report,setReport]=useState<Audit|null>(null);
+ const [processed,setProcessed]=useState<ProcessReport|null>(null);
+ const {data:status,error:accessError}=useQuery<{enabled:boolean;maxFileBytes:number;staging:boolean}>({
+  queryKey:["/api/admin/awin-feeds/status"],retry:false,
+  queryFn:async()=>{const r=await fetch("/api/admin/awin-feeds/status",{credentials:"same-origin"});const j=await r.json();if(!r.ok)throw Error(j.message||j.code||"Acesso indisponível");return j}
  });
  async function submit(event:React.FormEvent<HTMLFormElement>){
-  event.preventDefault();setPending(true);setError("");setReport(null);
+  event.preventDefault();setPending(true);setError("");setReport(null);setProcessed(null);
   try{
    if(!file||!file.name.toLowerCase().endsWith(".csv.gz"))throw Error("Selecione um arquivo AWIN .csv.gz");
-   if(!/^\d{2,12}$/.test(merchant)||!/^\d{2,12}$/.test(feedId))throw Error("Informe IDs numéricos do anunciante e do feed.");
-   if(!status?.enabled)throw Error("Recebimento desabilitado. Falta habilitar a área administrativa no Codespaces.");
+   if(!status?.enabled)throw Error("Acesso administrativo não habilitado. Entre na conta autorizada.");
    if(file.size>status.maxFileBytes)throw Error("O arquivo supera o tamanho máximo permitido.");
    const response=await fetch("/api/admin/awin-feeds/upload",{
     method:"POST",credentials:"same-origin",
-    headers:{"Content-Type":"application/gzip","X-UpPulse-Admin-Token":adminToken,
-     "X-Awin-Merchant-Id":merchant,"X-Awin-Feed-Id":feedId},
-    body:file
+    headers:{"Content-Type":"application/gzip","X-Awin-File-Name":file.name},body:file
    });
    const data=await response.json();
-   if(!response.ok)throw Error(data.message||data.code||"Não foi possível analisar o feed.");
-   setReport(data as UploadReport);
+   if(!response.ok)throw Error(data.message||data.code||"Falha na análise");
+   setReport(data as Audit);
   }catch(e){setError(e instanceof Error?e.message:"Erro no envio")}
   finally{setPending(false)}
+ }
+ async function process(){
+  if(!report)return;setProcessing(true);setError("");
+  try{
+   const response=await fetch("/api/admin/awin-feeds/process",{
+    method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({merchant:report.merchant,feedId:report.feedId,sha256:report.sha256})
+   });
+   const data=await response.json();
+   if(!response.ok)throw Error(data.message||data.code||"Processamento não concluído");
+   setProcessed(data as ProcessReport);
+  }catch(e){setError(e instanceof Error?e.message:"Falha no processamento")}
+  finally{setProcessing(false)}
  }
  return <div className="min-h-screen bg-background pb-20">
   <header className="border-b bg-muted/30">
    <div className="container mx-auto px-4 py-5 flex items-center gap-3">
     <Link href="/admin/curadoria/listas"><Button variant="ghost" size="icon" aria-label="Voltar à curadoria"><ArrowLeft/></Button></Link>
     <div><h1 className="text-xl font-bold">Curadoria / Feeds de parceiros</h1>
-     <p className="text-sm text-muted-foreground">Recebimento e análise de arquivos AWIN no ambiente de testes</p></div>
+     <p className="text-sm text-muted-foreground">Recebimento, validação e processamento do catálogo AWIN</p></div>
    </div>
   </header>
-  <main className="container mx-auto px-4 py-7 max-w-4xl space-y-5">
+  <main className="container mx-auto px-4 py-7 max-w-5xl space-y-5">
    <Card className="p-5 space-y-2">
-    <h2 className="text-lg font-semibold flex items-center gap-2"><ShieldCheck className="h-5 w-5"/>Receber novo feed</h2>
-    <p className="text-sm text-muted-foreground">Escolha o arquivo no seu computador. Não é necessário localizar pastas do Codespaces, descompactar o GZIP ou enviar dados para o GitHub.</p>
-    <p className="text-sm">Este processo <strong>recebe, verifica e armazena</strong> o feed para homologação. Não importa produtos para o catálogo e não publica ofertas automaticamente.</p>
+    <h2 className="text-lg font-semibold">Importar feed AWIN</h2>
+    <p className="text-sm text-muted-foreground">A identificação do anunciante e do feed é lida do arquivo AWIN. Nenhum código é preenchido antecipadamente.</p>
+    <p className="text-sm">Acesso vinculado à sessão administrativa autorizada, sem digitação de chave técnica nesta tela.</p>
    </Card>
-   <Card className="p-5">
-    <form onSubmit={submit} className="space-y-4">
-     <div className="grid md:grid-cols-2 gap-4">
-      <div className="space-y-1.5"><Label htmlFor="awin-merchant">ID do anunciante AWIN</Label>
-       <Input id="awin-merchant" value={merchant} onChange={e=>setMerchant(e.target.value)} required inputMode="numeric"/></div>
-      <div className="space-y-1.5"><Label htmlFor="awin-feed">ID do feed AWIN</Label>
-       <Input id="awin-feed" value={feedId} onChange={e=>setFeedId(e.target.value)} required inputMode="numeric"/></div>
-     </div>
-     <div className="space-y-1.5"><Label htmlFor="awin-file">Arquivo do parceiro (.csv.gz)</Label>
-      <Input id="awin-file" type="file" accept=".gz,.csv.gz,application/gzip" onChange={e=>setFile(e.target.files?.[0]??null)} required/>
-      {file&&<p className="text-sm text-muted-foreground flex items-center gap-2"><FileArchive className="h-4 w-4"/>{file.name} — {(file.size/1024).toFixed(0)} KB</p>}
-     </div>
-     <div className="space-y-1.5"><Label htmlFor="awin-token">Chave administrativa do ambiente de testes</Label>
-      <Input id="awin-token" type="password" autoComplete="off" value={adminToken} onChange={e=>setAdminToken(e.target.value)} placeholder="Chave configurada no Codespaces" required/>
-      <p className="text-xs text-muted-foreground">A chave fica somente nesta tela durante a sessão. Não é enviada ao GitHub nem gravada no catálogo.</p></div>
-     {status&&!status.enabled&&<p className="text-sm rounded-md border border-amber-500/30 bg-amber-500/10 p-3 flex gap-2"><AlertTriangle className="h-5 w-5 shrink-0"/>O módulo está instalado, mas o recebimento ainda não foi habilitado com uma chave administrativa neste ambiente.</p>}
-     {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
-     <Button type="submit" disabled={pending||!file||!status?.enabled} className="gap-2">
-      <UploadCloud className="h-4 w-4"/>{pending?"Analisando arquivo…":"Enviar e analisar feed"}
-     </Button>
-    </form>
-   </Card>
-   {report&&<Card className="p-5 space-y-4" data-testid="awin-upload-result">
-    <div className="flex items-center gap-2 text-emerald-700 font-semibold"><CheckCircle2 className="h-5 w-5"/>Arquivo recebido e auditado</div>
+   <Card className="p-5"><form onSubmit={submit} className="space-y-4">
+    <div className="space-y-1.5"><Label htmlFor="awin-file">Arquivo do parceiro (.csv.gz)</Label>
+     <Input id="awin-file" type="file" accept=".gz,.csv.gz,application/gzip" onChange={e=>setFile(e.target.files?.[0]??null)} required/>
+     {file&&<p className="text-sm text-muted-foreground flex items-center gap-2"><FileArchive className="h-4 w-4"/>{file.name} — {(file.size/1024).toFixed(0)} KB</p>}
+    </div>
+    {accessError&&<p role="alert" className="text-sm text-destructive">{accessError instanceof Error?accessError.message:"Acesso administrativo indisponível"}</p>}
+    {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
+    <Button type="submit" disabled={pending||!file||!status?.enabled} className="gap-2"><UploadCloud className="h-4 w-4"/>{pending?"Validando arquivo…":"Enviar e validar produtos"}</Button>
+   </form></Card>
+   {report&&<Card className="p-5 space-y-5" data-testid="awin-upload-result">
+    <div className="flex items-center gap-2 font-semibold"><CheckCircle2 className="h-5 w-5 text-green-600"/>Feed validado: anunciante {report.merchant} · feed {report.feedId}</div>
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-     {[["Registros",report.stats.rows],["Válidos no parser",report.stats.normalized],["Preço regular",report.stats.priceStates.REGULAR_PRICE??0],["Promoção comprovada",report.stats.priceStates.PROMOTION_CONFIRMED??0]].map(([label,value])=>
-      <div key={label} className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="text-xl font-bold">{Number(value).toLocaleString("pt-BR")}</p></div>)}
+     {([["Registros recebidos",report.stats.rows],["Aceitos para staging",report.accepted],["Descartados (fora de escopo)",report.discarded],["Em revisão",report.review],
+      ["Linhas inválidas",report.stats.invalid],["Preço regular",report.stats.priceStates.REGULAR_PRICE??0],
+      ["Promoção comprovada",report.stats.priceStates.PROMOTION_CONFIRMED??0],["Publicados nesta etapa",report.published]] as Array<[string,number]>).map(([label,value])=>
+      <div key={label} className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="text-xl font-bold">{format(value)}</p></div>)}
     </div>
-    <div className="text-sm space-y-1">
-     <p><strong>Registros para revisão:</strong> {report.stats.eligibility.REVIEW_REQUIRED??0}</p>
-     <p><strong>Fora do escopo:</strong> {report.stats.eligibility.OUT_OF_SCOPE_CONFIRMED??0}</p>
-     <p><strong>Candidatos confirmados a tênis:</strong> {report.stats.eligibility.IN_SCOPE_CONFIRMED??0}</p>
-     <p><strong>Produtos importados:</strong> 0 — <strong>publicados:</strong> 0</p>
-     <p className="text-muted-foreground">Próxima etapa: homologar a importação e a comparação pelo Produto Mestre.</p>
+    <div><h3 className="font-semibold mb-2">Motivos de rejeição ou revisão</h3>
+     {Object.keys(report.stats.reasons).length===0?<p className="text-sm text-muted-foreground">Nenhum problema encontrado.</p>:
+     <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Motivo</th><th className="p-2 text-right">Ocorrências</th></tr></thead><tbody>
+      {Object.entries(report.stats.reasons).sort((a,b)=>b[1]-a[1]).map(([reason,total])=><tr className="border-b" key={reason}><td className="p-2">{reason}</td><td className="p-2 text-right">{format(total)}</td></tr>)}
+     </tbody></table></div>}
     </div>
+    <div><h3 className="font-semibold mb-2">Produtos com problemas — amostra de até 300 ocorrências</h3>
+     <div className="overflow-x-auto max-h-80"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Linha</th><th className="p-2">Produto</th><th className="p-2">Motivo</th></tr></thead><tbody>
+      {report.issues.map((issue,index)=><tr key={index} className="border-b"><td className="p-2">{issue.row}</td><td className="p-2">{issue.name}</td><td className="p-2">{issue.reason}</td></tr>)}
+     </tbody></table></div>
+     {report.issuesTruncated&&<p className="text-sm text-muted-foreground">Amostra limitada a 300 ocorrências. Os totais acima abrangem todo o arquivo.</p>}
+    </div>
+    {!processed?<div className="border-t pt-4 space-y-2">
+     <p className="text-sm">Os produtos aceitos podem ser incorporados ao banco agora, sem executar comandos no terminal. Eles permanecem em staging até a validação de publicação.</p>
+     <Button onClick={process} disabled={processing||report.accepted===0||!report.canProcess} className="gap-2"><PlayCircle className="h-4 w-4"/>{processing?"Gravando produtos…":`Processar ${format(report.accepted)} produtos aceitos`}</Button>
+     {!report.canProcess&&<p className="text-sm text-destructive"><AlertTriangle className="inline h-4 w-4"/> Banco de catálogo indisponível para processamento.</p>}
+    </div>:<div className="border-t pt-4 space-y-2" data-testid="awin-process-result">
+     <p className="font-semibold text-green-700"><CheckCircle2 className="inline h-5 w-5 mr-2"/>Processamento concluído no banco</p>
+     <p className="text-sm">Inseridos ou atualizados: {format(processed.imported)} · Já existentes sem alteração: {format(processed.unchanged)} · Publicados: {format(processed.published)}</p>
+     <p className="text-sm text-muted-foreground">{processed.message}</p>
+    </div>}
    </Card>}
   </main>
- </div>
+ </div>;
 }
