@@ -135,3 +135,10 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Validar preview da branch canônica e endpoint `/api/admin/awin-feeds/merchant/17698/master-preview`.
 - Próxima etapa: orquestrador persistente de novas lojas/feeds e worker que use `productIdentity/jobs.ts`, `operational.ts`, `catalogPersistence.ts` e projeção existente, SEM duplicar regras, SEM disparar mudanças no banco antes do gate e SEM publicar itens sem desconto comprovado.
 - Relatório: `docs/relatorios/CURADORIA_V3_ETAPA1_PRESERVACAO_MASTER_2026-11-18.md`.
+
+ 
+## Bloqueio operacional comprovado — Curadoria V3, 2026-11-18
+- GitHub Actions validou etapa 1 (SHA `d08f2f966956ecacf415b42acd2fb5da83e3dc16`).
+- Issue #56 tentou preview 5012 da versão com documentação; retornou `CATALOG_DATABASE_NOT_UNIQUELY_VERIFIED`.
+- Diagnóstico read-only issue #57 confirmou `catalog_db_container=exited`: o contêiner existente `beupfree-catalog-pg17` está parado. Nenhuma intervenção foi feita no volume.
+- Para homologar visualmente e consultar Master, iniciar **somente contêiner existente**, reconfirmar DB canônico e repetir `PREVIEW` de SHA remoto, sem reset/rebuild/migração. Não declarar homologado antes da confirmação.
