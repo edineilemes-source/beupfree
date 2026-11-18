@@ -3,3 +3,15 @@ test("catálogo operacional exige todos os gates e demo é default seguro",()=>{
 test("ciclo explícito preserva pausa reversível e refresh após expiração",()=>{assert.equal(transitionPublication("DRAFT","publish"),"PUBLISHED");assert.equal(transitionPublication("PUBLISHED","pause"),"PAUSED");assert.equal(transitionPublication("PAUSED","resume"),"PUBLISHED");assert.equal(transitionPublication("PUBLISHED","expire"),"EXPIRED");assert.equal(transitionPublication("EXPIRED","refresh"),"DRAFT");assert.equal(transitionPublication("EXPIRED","publish"),null)});
 test("elegibilidade exige oferta completa, disponível e recente",()=>{const now=new Date("2026-09-02T12:00:00Z"),base={catalogState:"CATALOG_ELIGIBLE",available:true,currentPrice:100,previousPrice:150,currency:"BRL",affiliateUrl:"url",productName:"Tênis",brand:"Marca",primaryImageUrl:"img",sourceUpdatedAt:new Date("2026-09-01T12:00:00Z")};assert.equal(isPublicOfferEligible(base,now),true);assert.equal(isPublicOfferEligible({...base,available:false},now),false);assert.equal(isPublicOfferEligible({...base,sourceUpdatedAt:new Date("2026-08-01T00:00:00Z")},now),false)});
 test("qualidade e completude vencem desconto isolado",()=>{const now=new Date("2026-09-02T12:00:00Z"),common={available:true,productName:"Tênis",activities:[],sourceUpdatedAt:now};assert.ok(publicRank({...common,brand:"Marca",primaryImageUrl:"img",normalizedSizes:[40],normalizedColors:["preto"],discountPercent:20},now)>publicRank({...common,brand:"",primaryImageUrl:null,normalizedSizes:[],normalizedColors:[],discountPercent:90},now))});
+
+
+test("preço regular explícito sem desconto pode ser publicado, nunca como promoção implícita",()=>{
+ const now=new Date("2026-09-02T12:00:00Z");
+ const base={catalogState:"CATALOG_ELIGIBLE",available:true,currentPrice:299,previousPrice:299,promotionStatus:"REGULAR_PRICE",currency:"BRL",affiliateUrl:"https://awin.example/offer",productName:"Tênis Olympikus",brand:"Olympikus",primaryImageUrl:"https://img.example/1",sourceUpdatedAt:new Date("2026-09-01T12:00:00Z")};
+ assert.equal(isPublicOfferEligible(base,now),true);
+ assert.equal(isPublicOfferEligible({...base,promotionStatus:undefined},now),false);
+ assert.equal(isPublicOfferEligible({...base,promotionStatus:"PROMOTION_CONFIRMED"},now),false);
+ assert.equal(isPublicOfferEligible({...base,previousPrice:0},now),false);
+ assert.equal(isPublicOfferEligible({...base,available:false},now),false);
+ assert.equal(isPublicOfferEligible({...base,sourceUpdatedAt:new Date("2026-08-01T00:00:00Z")},now),false);
+});
