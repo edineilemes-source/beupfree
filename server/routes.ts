@@ -31,6 +31,7 @@ import { userRepository } from "./auth/userRepository";
 import { createFavoritesRouter } from "./favorites/routes";
 import { favoritesRepository } from "./favorites/repository";
 import { createCurationSourcesRouter } from "./curationSources/routes";
+import { createAwinFeedUploadRouter } from "./curationSources/awinFeedUpload";
 import { curationSourcesRepository } from "./curationSources/repository";
 import { registerCollector } from "./curationSources/collectorResolver";
 import { mercadoLivreCollector } from "./curationSources/mercadoLivreCollector";
@@ -61,6 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/catalog-preview", createCatalogPreviewRouter());
   // Segue o padrão administrativo atual, que ainda não possui autorização própria.
   app.use("/api/admin/curation-sources", createCurationSourcesRouter(curationSourcesRepository));
+  app.use("/api/admin/awin-feeds", createAwinFeedUploadRouter());
 
   // ============ MERCADO LIVRE OAUTH ============
 
