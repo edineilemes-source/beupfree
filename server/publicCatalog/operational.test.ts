@@ -69,3 +69,21 @@ test("preço regular não exibe preço anterior falso nem desconto",async()=>{
   assert.equal(res.body.products[0].bestOffer.formattedOriginalPrice,null);
  }finally{disable()}
 });
+
+test("Olympikus entra automaticamente no filtro Loja quando a projeção contém ofertas elegíveis",async()=>{
+ enable();
+ try{
+  const olympikus={...row,merchant_name:"Olympikus",brand_raw:"Olympikus",brand_normalized:"olympikus"};
+  const projected:any={
+   async listProducts(filters:any){projected.applied=filters;return [olympikus]},
+   async countProducts(){return 1},
+   async getFacets(){return {merchants:[{value:"Olympikus",label:"Olympikus",count:1}]}}
+  };
+  const res=response();
+  await createOperationalPublicCatalogHandlers(()=>projected).list(request({merchant:"Olympikus"}),res,()=>assert.fail());
+  assert.deepEqual(projected.applied.merchants,["Olympikus"]);
+  assert.deepEqual(res.body.facets.merchants,[{label:"Olympikus",count:1}]);
+  assert.equal(res.body.products[0].bestOffer.marketplaceName,"Olympikus");
+  assert.equal(res.body.products[0].brand.name,"Olympikus");
+ }finally{disable()}
+});
