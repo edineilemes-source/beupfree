@@ -123,7 +123,7 @@ export default function AwinFeedUpload(){
        <p key={label} className="border rounded-md p-2 text-sm">{passed?"✓":"Pendente"} — {label}</p>)}
      </div>
      <p className="text-xs text-muted-foreground">{merchantAudit.note} {merchantAudit.storeFacetRule}</p>
-     {merchantAudit.steps.storeVisibleInFilter&&<Link href={`/catalogo?loja=${encodeURIComponent(merchantAudit.merchant.name)}`}><Button variant="outline">Ver produtos dessa loja no catálogo</Button></Link>}
+     {merchantAudit.steps.storeVisibleInFilter&&<Link href={`/catalogo?merchant=${encodeURIComponent(merchantAudit.merchant.name)}`}><Button variant="outline">Ver produtos dessa loja no catálogo</Button></Link>}
     </div>}
    </Card>
    <Card className="p-5 space-y-2">
