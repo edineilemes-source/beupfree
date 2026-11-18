@@ -8,8 +8,7 @@ import {resolve} from "node:path";
 import {openGzipFile} from "../server/integrations/awin/input";
 import {parseAwinCsv} from "../server/integrations/awin/csv";
 import {normalizeAwinItem,isInvalidAwinItem} from "../server/integrations/awin/normalize";
-import {classifyProductTaxonomy,classifyCatalogEligibility} from "../server/integrations/awin/productTaxonomy";
-import {evaluateCommercialPrice,auditAffiliateUrl} from "../server/integrations/awin/operationalCatalog";
+import {assessAwinCatalogCandidate} from "../server/integrations/awin/catalogCandidate";
 
 const args=process.argv.slice(2);
 const arg=(flag:string)=>{const found=args.find(x=>x.startsWith(flag+"="));if(found)return found.slice(flag.length+1);const i=args.indexOf(flag);return i>=0?args[i+1]:undefined};
@@ -27,31 +26,8 @@ for await(const row of parseAwinCsv(openGzipFile(resolve(file)))){
  totals.validRaw++;keys.add(item.productKey);variants.add(item.variantKey);
  if(item.variant.size)totals.sizePresent++;
  if(item.variant.validGtin)totals.gtinValid++;
- const taxonomy=classifyProductTaxonomy({
-  merchantCategory:item.product.category.merchantCategory,
-  categoryPath:item.product.category.path,secondCategory:item.product.category.second,
-  thirdCategory:item.product.category.third,productType:item.product.productType,
-  name:item.product.name,description:item.product.description,brand:item.product.brand,
-  attributes:row.raw
- });
- const price=evaluateCommercialPrice({
-  currentPrice:item.offer.currentPrice,previousPrice:item.offer.prices.old,
-  discountPercent:item.offer.prices.savingsPercent,currency:item.offer.currency
- });
+ const {taxonomy,price,eligibility:classified}=assessAwinCatalogCandidate(item);
  bump(totals.taxonomy,taxonomy.universe);bump(totals.priceStates,price.status);
- const commercial={
-  priceState:price.status,
-  promotionConfirmed:price.status==="PROMOTION_CONFIRMED",
-  validCurrentPrice:price.status!=="REVIEW_REQUIRED",
-  validOldPrice:price.status==="PROMOTION_CONFIRMED",
-  discountConsistent:price.status==="PROMOTION_CONFIRMED",
-  imageAvailable:item.images.some(url=>/^https?:\/\//.test(url)),
-  brandAvailable:Boolean(item.product.brand?.trim()),
-  affiliateAvailable:auditAffiliateUrl(item.offer.affiliateUrl).valid,
-  inStock:item.offer.availability.inStock===true,
-  identitySufficient:Boolean(item.product.identifiers.awProductId||item.product.identifiers.merchantProductId)
- };
- const classified=classifyCatalogEligibility(taxonomy,commercial);
  bump(totals.eligibility,classified.status);
  for(const reason of classified.reasons)if(reason!=="minimum_requirements_met")bump(totals.reasons,reason);
 }
