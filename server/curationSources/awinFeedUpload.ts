@@ -7,6 +7,7 @@ import {Router,raw,type RequestHandler} from "express";
 import {createHash,timingSafeEqual} from "node:crypto";
 import {createGunzip} from "node:zlib";
 import {Readable,Transform} from "node:stream";
+import {readFileSync,statSync} from "node:fs";
 import {mkdir,rename,writeFile,unlink,stat} from "node:fs/promises";
 import {homedir} from "node:os";
 import {join} from "node:path";
@@ -15,7 +16,18 @@ import {normalizeAwinItem,isInvalidAwinItem} from "../integrations/awin/normaliz
 import {assessAwinCatalogCandidate} from "../integrations/awin/catalogCandidate";
 
 const MAX_GZIP=20*1024*1024,MAX_UNCOMPRESSED=160*1024*1024,MAX_ROWS=100000;
-function enabled(env:NodeJS.ProcessEnv){return env.NODE_ENV!=="production"&&env.UPPULSE_FEED_UPLOAD_ENABLED==="true"&&(env.UPPULSE_FEED_UPLOAD_TOKEN?.length??0)>=32}
+function configuredSecret(env:NodeJS.ProcessEnv):string|null{
+ if(env.NODE_ENV==="production")return null;
+ if((env.UPPULSE_FEED_UPLOAD_TOKEN?.length??0)>=32&&env.UPPULSE_FEED_UPLOAD_ENABLED==="true")return env.UPPULSE_FEED_UPLOAD_TOKEN!;
+ try{
+  const file=join(homedir(),".local","share","uppulse","admin-upload.token");
+  const details=statSync(file);
+  if((details.mode&0o077)!==0||details.size>256)return null;
+  const secret=readFileSync(file,"utf8").trim();
+  return secret.length>=32?secret:null;
+ }catch{return null}
+}
+function enabled(env:NodeJS.ProcessEnv){return configuredSecret(env)!==null}
 function equalSafe(a:string,b:string){const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&timingSafeEqual(x,y)}
 function bucket(list:Record<string,number>,value:string){list[value]=(list[value]??0)+1}
 function limiter():Transform{
@@ -27,7 +39,8 @@ const authorize:RequestHandler=(req,res,next)=>{
  let sameOrigin=false;try{sameOrigin=Boolean(origin&&host&&new URL(origin).host===host)}catch{sameOrigin=false}
  if(!sameOrigin)return res.status(403).json({code:"SAME_ORIGIN_REQUIRED"});
  const supplied=req.get("x-uppulse-admin-token")??"";
- if(!equalSafe(supplied,process.env.UPPULSE_FEED_UPLOAD_TOKEN!))return res.status(403).json({code:"ADMIN_CREDENTIAL_REQUIRED"});
+ const secret=configuredSecret(process.env);
+ if(!secret||!equalSafe(supplied,secret))return res.status(403).json({code:"ADMIN_CREDENTIAL_REQUIRED"});
  next();
 };
 export function createAwinFeedUploadRouter(){
