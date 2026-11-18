@@ -94,6 +94,7 @@ export const DESCONTO_BUCKETS: { label: string; test: (d: number) => boolean }[]
   { label: "30% - 39%", test: (d) => d >= 30 && d < 40 },
   { label: "20% - 29%", test: (d) => d >= 20 && d < 30 },
   { label: "Até 19%", test: (d) => d > 0 && d < 20 },
+  { label: "Sem desconto", test: (d) => d === 0 },
 ];
 
 export const FRETE_OPTIONS = ["Sim", "Não"] as const;
