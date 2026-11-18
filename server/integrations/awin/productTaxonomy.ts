@@ -163,9 +163,16 @@ export type CatalogEligibility = "IN_SCOPE_CONFIRMED" | "IN_SCOPE_PROBABLE" | "O
 export type CommercialRequirements = {
   promotionConfirmed:boolean; validCurrentPrice:boolean; validOldPrice:boolean; discountConsistent:boolean;
   imageAvailable:boolean; brandAvailable:boolean; affiliateAvailable:boolean; inStock:boolean; identitySufficient:boolean;
+  // May only be set from evaluateCommercialPrice() on trusted source fields.
+  priceState?: "PROMOTION_CONFIRMED" | "REGULAR_PRICE" | "REVIEW_REQUIRED";
 };
 export function classifyCatalogEligibility(taxonomy: ProductTaxonomyResult, commercial: CommercialRequirements): { status:CatalogEligibility; reasons:string[] } {
-  const missing = Object.entries(commercial).filter(([,value]) => !value).map(([key]) => `commercial:${key}`);
+  const regular = commercial.priceState === "REGULAR_PRICE";
+  const waivedForRegular = new Set(["promotionConfirmed","validOldPrice","discountConsistent"]);
+  const missing = Object.entries(commercial)
+    .filter(([key,value]) => key !== "priceState" && !value && !(regular && waivedForRegular.has(key)))
+    .map(([key]) => `commercial:${key}`);
+  if(commercial.priceState === "REVIEW_REQUIRED")missing.push("commercial:price_unverified");
   if (taxonomy.universe === "NON_SNEAKER") return { status:"OUT_OF_SCOPE_CONFIRMED", reasons:["taxonomy:non_sneaker",...missing] };
   if (missing.length || taxonomy.universe === "UNRESOLVED" || taxonomy.reasons.includes("CONFLICTING_SIGNALS")) return { status:"REVIEW_REQUIRED", reasons:missing.length ? missing : [taxonomy.universe === "UNRESOLVED" ? "taxonomy:unresolved" : "taxonomy:conflicting_signals"] };
   return { status:taxonomy.universe === "SNEAKER_CONFIRMED" ? "IN_SCOPE_CONFIRMED" : "IN_SCOPE_PROBABLE", reasons:["minimum_requirements_met"] };
