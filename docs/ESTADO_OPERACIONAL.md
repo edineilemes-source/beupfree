@@ -148,3 +148,10 @@ Foi publicado um agente restrito e um instalador para o Codespace de homologaç�
 - API de auditoria por merchant e painel na Curadoria implementados na branch remota: coberturas de identidade Master, classificações, evidências comerciais, normalizações e projeções; execução real por merchant pendente.
 - O filtro Loja lê valores dinamicamente da projeção operacional, não de lista hardcoded. Olympikus só pode aparecer com ofertas realmente elegíveis e projetadas; nenhuma projeção foi criada por esta missão.
 - Relatório: [Olympikus / Produto Mestre / Loja](relatorios/MISSAO11_OLYMPIKUS_PRODUTO_MASTER_E_LOJA_2026-11-17.md). Status `PENDING_HOMOLOGATION` dos dados reais; migrações/publicação não executadas.
+
+ 
+## Curadoria V3 — etapa 1, preservação do Produto Mestre (2026-11-18)
+- Regra mandatória: não reescrever nem perder parser V1.5, matcher V1.2, extração do nome/modelo/cor/tamanho, retrieval e agrupamento; bibliotecas originais permanecem intactas. Inventário, testes e artefatos de regressão em `docs/relatorios/CURADORIA_V3_ETAPA1_PRESERVACAO_MASTER_2026-11-18.md`.
+- Implementadas ponte do parser histórico e esteira versionada por loja na Curadoria, com consulta read-only por amostragem de 20 identidades; não realiza matching/persistência por conta própria.
+- Release Gate do código base `d08f2f966956ecacf415b42acd2fb5da83e3dc16` aprovado (run 44330425674). Ainda exige verificação do preview e dados reais de Olympikus. Não executou migração, publicação nem API paga.
+- Próximo gate: orquestrar jobs existentes, classificação, normalização, evidência comercial, publicação, rejeições e atualização agendada, com histórico persistente sem modificar o mecanismo Master.
