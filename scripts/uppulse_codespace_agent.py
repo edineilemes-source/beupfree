@@ -96,7 +96,7 @@ def catalog_database():
    # Container address for an existing Docker bridge; never create a network or port.
    port="5432"
    address=cmd(["docker","inspect","-f","{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}",container],timeout=10,check=False)
-   if not re.fullmatch(r"(?:[0-9]{1,3}\\.){3}[0-9]{1,3}",address):continue
+   if not re.fullmatch(r"(?:[0-9]{1,3}\.){3}[0-9]{1,3}",address):continue
   else:address="127.0.0.1"
   for database in ("uppulse_catalog","postgres"):
    query="SELECT (SELECT count(*) FROM public.products)::bigint, (SELECT count(*) FROM public.offers)::bigint"
@@ -164,7 +164,7 @@ def execute(action,args):
    out=cmd(["docker","exec",container,"psql","-U",username,"-d",database,
     "-X","-A","-t","-F","=","-v","ON_ERROR_STOP=1","-c",sql],timeout=35)
   except Exception:raise RuntimeError("CATALOG_READ_ONLY_QUERY_UNAVAILABLE")
-  return "Catalog counts from verified database "+container+": "+out.replace("\\n","; ")[:500]
+  return "Catalog counts from verified database "+container+": "+out.replace("\n","; ")[:500]
  if action=="DIAGNOSTICO":
   checks=[]
   for name,argv in [
