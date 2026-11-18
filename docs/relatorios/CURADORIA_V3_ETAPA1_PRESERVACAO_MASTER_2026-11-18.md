@@ -38,3 +38,9 @@ Data: 2026-11-18. Repositório `edineilemes-source/beupfree`. Branch `feat/uppul
 ## Critério de saída
 
 **Esta etapa** entrega preservação verificável do algoritmo original e primeiras interfaces executáveis de inspeção/administração. **Não significa** que os 5.167 itens Olympikus já passaram pelo processo Master, nem que foram publicados.
+
+## Validação real do Codespaces — após emissão do relatório
+
+- Issue [#56](https://github.com/edineilemes-source/beupfree/issues/56), SHA `cb89f8453b55a8e6f30ac3db5f84c84b7040fe55`, `PREVIEW 5012` com perfil unit: `BLOCKED: CATALOG_DATABASE_NOT_UNIQUELY_VERIFIED`. Nenhum preview iniciado.
+- Issue [#57](https://github.com/edineilemes-source/beupfree/issues/57), diagnóstico read-only: `catalog_db_container=exited`, Docker disponível, porta 5011 livre. **Causa operacional comprovada: o contêiner PostgreSQL existente está parado**. O agente restrito não reinicia contêineres; não foi recriado/removido volume.
+- Após iniciar **somente o contêiner existente** `beupfree-catalog-pg17`, reconfirmar verificação de banco e repetir a validação do preview com SHA de branch. Não considerar homologação realizada antes do retorno de sucesso.
