@@ -14,7 +14,8 @@ export type FeedMasterPreviewRow={
 export function masterParserPreview(row:FeedMasterPreviewRow){
  const original=parseProductIdentity({
   name:row.productName,brand:row.brandName,
-  ...(row.sizeRaw?{size:{value:row.sizeRaw,system:"BR"}}:{}),
+  // AWIN size is raw merchant evidence; do not invent a validated BR size system.
+  // Operational size normalizer below reports its independent classification.
   ...(row.gtin?{gtin:row.gtin}:{}),
   ...(row.mpn?{mpn:row.mpn}:{})
  });
