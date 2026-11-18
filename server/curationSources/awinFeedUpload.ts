@@ -24,7 +24,8 @@ function limiter():Transform{
 const authorize:RequestHandler=(req,res,next)=>{
  if(!enabled(process.env))return res.status(503).json({code:"FEED_UPLOAD_NOT_CONFIGURED",message:"Upload administrativo desabilitado neste ambiente."});
  const origin=req.get("origin");const host=req.get("host");
- if(!origin||!host||new URL(origin).host!==host)return res.status(403).json({code:"SAME_ORIGIN_REQUIRED"});
+ let sameOrigin=false;try{sameOrigin=Boolean(origin&&host&&new URL(origin).host===host)}catch{sameOrigin=false}
+ if(!sameOrigin)return res.status(403).json({code:"SAME_ORIGIN_REQUIRED"});
  const supplied=req.get("x-uppulse-admin-token")??"";
  if(!equalSafe(supplied,process.env.UPPULSE_FEED_UPLOAD_TOKEN!))return res.status(403).json({code:"ADMIN_CREDENTIAL_REQUIRED"});
  next();
