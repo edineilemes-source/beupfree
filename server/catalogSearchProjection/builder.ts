@@ -9,7 +9,7 @@ export type ProjectionBuildReport={rows:CatalogSearchProjectionRow[];stats:{sour
 const normalizeBrand=(value:string)=>value.normalize("NFKC").replace(/\s+/g," ").trim().toLocaleLowerCase("pt-BR");
 const distinct=<T>(values:T[]):T[]=>Array.from(new Set(values));
 const increment=(target:Record<string,number>,key:string)=>target[key]=(target[key]??0)+1;
-export function chooseRepresentativeOffer(rows:ProjectionSourceRow[]){return rows.filter(r=>r.promotionStatus==="PROMOTION_CONFIRMED"&&r.inStock&&r.currentPrice>0&&r.previousPrice>r.currentPrice).slice().sort((a,b)=>b.discountPercent-a.discountPercent||a.currentPrice-b.currentPrice||a.offerId.localeCompare(b.offerId))[0]??null;}
+export function chooseRepresentativeOffer(rows:ProjectionSourceRow[]){const valid=rows.filter(r=>r.inStock&&r.currency==="BRL"&&Number.isFinite(r.currentPrice)&&r.currentPrice>0&&Number.isFinite(r.previousPrice)&&((r.promotionStatus==="PROMOTION_CONFIRMED"&&r.previousPrice>r.currentPrice&&r.discountPercent>0)||(r.promotionStatus==="REGULAR_PRICE"&&r.previousPrice===r.currentPrice&&r.discountPercent===0)));return valid.slice().sort((a,b)=>Number(b.promotionStatus==="PROMOTION_CONFIRMED")-Number(a.promotionStatus==="PROMOTION_CONFIRMED")||b.discountPercent-a.discountPercent||a.currentPrice-b.currentPrice||a.offerId.localeCompare(b.offerId))[0]??null;}
 export function buildCatalogSearchProjection(source:ProjectionSourceRow[],projectedAt=new Date().toISOString()):ProjectionBuildReport{
  const groups=new Map<string,ProjectionSourceRow[]>();
  for(const row of source)if(row.catalogState==="CATALOG_ELIGIBLE"){const key=`${row.productId}:${row.merchantId}`;groups.set(key,[...(groups.get(key)??[]),row]);}
