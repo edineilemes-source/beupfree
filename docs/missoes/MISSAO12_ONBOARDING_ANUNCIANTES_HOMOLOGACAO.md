@@ -8,10 +8,13 @@ Data de planejamento: 2026-11-17. **Não autoriza deploy de produção, importa�
 - Manter catálogo DEMO do Mercado Livre isolado; somente os feeds oficiais aprovados entram na homologação operacional.
 - Catálogo existente: Dafiti + FutFanatics, com 32.707 produtos, 96.851 ofertas e 16.945 linhas de projeção na conferência de 2026-11-17; não alterar esse baseline antes do inventário.
 
-## Novo anunciante candidato
-- Olympikus BR: programa público AWIN identificável pelo perfil de anunciante 17698, **sem inferir** que esteja aprovado na conta do proprietário, que possua feed acessível ou que tenha produtos elegíveis hoje.
-- Inventariar outros anunciantes realmente habilitados na conta AWIN do titular, obtendo identificador de anunciante, ID do feed, nome e data de atualização. Não copiar credenciais ou URL com token para documentação.
-- O cadastro de marcas como `Olympikus` não se confunde com cadastro de anunciante: um feed de um parceiro pode conter várias marcas.
+## Parceiros definidos pelo titular (captura do painel AWIN em 2026-11-17)
+- **Prioridade 1: Olympikus BR**, painel do titular sinaliza **Feed do produto: Sim** e link ativo. Confirmar efetivamente o identificador, o arquivo acessível e o tamanho antes do dry-run. Não confundir aprovação/visibilidade no painel com importação já executada.
+- **Prioridade 2: Decathlon BR**, painel do titular sinaliza **Feed do produto: Não** e link ativo. Verificar via AWIN/suporte ao anunciante se há API, catálogo, exportação autorizada ou outra fonte oficial de produtos; não inventar feed nem usar scraping não autorizado.
+- **Excluída desta missão: Clovis Calçados BR**, por decisão comercial expressa do titular. Não reimportar o histórico de testes.
+- Dafiti e FutFanatics permanecem baseline, sem importação duplicada.
+- Consultar na AWIN os IDs de anunciante/feed que constam para a conta autenticada; nunca expor token ou URL assinada em logs, Issues ou commits.
+- O cadastro da marca Olympikus não se confunde com anunciante: as ofertas também podem existir em outros parceiros.
 
 ## Etapas seguras
 1. Inspecionar status de aprovação dos programas AWIN e os feeds acessíveis na conta autenticada. Fazer a autenticação exclusivamente por segredo no ambiente; nunca exibir token, senha ou URL assinada em log, Issue, commit ou chat.
