@@ -27,8 +27,10 @@ Arquivo original analisado localmente: `17698-51837-pt_BR-Default.csv.gz`, **nã
 ## Estado técnico verificado no GitHub
 - **Implementado e testado**: `evaluateCommercialPrice` para `PROMOTION_CONFIRMED`, `REGULAR_PRICE`, `REVIEW_REQUIRED`; aceite na taxonomia sem liberar outros requisitos; projeção com status explícito; API sem exibir preço anterior fictício; filtro `Sem desconto`; tamanho AWIN `Fashion:size`; testes de três lojas para preço/desconto.
 - **Migration versionada, NÃO aplicada**: `migrations/0014_regular_price_offer_evidence.sql` flexibiliza apenas as constraints necessárias e mantém a distinção por `promotion_status`. Exige confirmação de cópia de segurança e schema real.
-- **Auditor AWIN em modo somente leitura**: `scripts/awin-commercial-audit.ts`, parametrizado para qualquer merchant/feed, sem consultas pagas, sem conexão com banco e sem imprimir links ou tokens. Deve ser executado sobre o arquivo real dentro do Codespaces para medir classificação efetiva do código.
-- **Release gate**: GitHub Actions validou TypeScript, testes, política pública e build no commit `7961fb8e4b73e704562a77f12c4dd45f1a9e0772`.
+- **Auditor AWIN em modo somente leitura**: `scripts/awin-commercial-audit.ts`, parametrizado para qualquer merchant/feed, sem consultas pagas, sem conexão com banco e sem imprimir links ou tokens. Utiliza a mesma função `assessAwinCatalogCandidate` que será reutilizada pela persistência após homologação. Deve ser executado sobre o arquivo real dentro do Codespaces para medir classificação efetiva do código.
+- **Teste automatizado do candidato**: `server/integrations/awin/catalogCandidate.test.ts` entrou no `test:unit`; cobre tênis regular, roupa excluída, promoção legítima, sem estoque/imagem, desconto não comprovado.
+- **Recurso do Produto Mestre**: teste sintético compara o mesmo modelo em Olympikus/Dafiti/FutFanatics em diferentes ordenações, mas não comprova identidade real entre feeds. Não publicar fusões sem auditoria.
+- **Release gate**: GitHub Actions validou TypeScript, testes, política pública e build no commit `c3a34e6c0443af2443ca82c3fe9f338c22e7e73e` (execução 44209139921).
 - **Não homologado em DB/navegador**: gravação de evidências regulares, processamento staging, classificação multi-merchant, regeneração real da projeção e comparação real do Produto Mestre.
 
 ## Pendências críticas antes de importar/publicar
