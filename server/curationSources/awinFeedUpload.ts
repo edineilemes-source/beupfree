@@ -15,13 +15,13 @@ import {assessAwinCatalogCandidate} from "../integrations/awin/catalogCandidate"
 
 const MAX_GZIP=20*1024*1024,MAX_UNCOMPRESSED=160*1024*1024,MAX_ROWS=100000;
 function adminIds(env:NodeJS.ProcessEnv):string[]{
- const fromEnv=(env.UPPULSE_CURATOR_ADMIN_USER_IDS??"").split(/[\\s,]+/).filter(Boolean);
+ const fromEnv=(env.UPPULSE_CURATOR_ADMIN_USER_IDS??"").split(/[\s,]+/).filter(Boolean);
  let fromFile:string[]=[];
  try{
   const file=join(homedir(),".local","share","uppulse","curator-admin-user-ids");
   const info=statSync(file);
   if((info.mode&0o077)===0&&info.size<=4096)
-   fromFile=readFileSync(file,"utf8").split(/[\\s,]+/).filter(Boolean);
+   fromFile=readFileSync(file,"utf8").split(/[\s,]+/).filter(Boolean);
  }catch{}
  return [...new Set([...fromEnv,...fromFile].filter(id=>/^[a-zA-Z0-9_-]{2,128}$/.test(id)))];
 }
