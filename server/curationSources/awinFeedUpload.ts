@@ -7,18 +7,28 @@ import {Readable,Transform} from "node:stream";
 
 import {mkdir,rename,writeFile,unlink,stat,readFile} from "node:fs/promises";
 import {homedir} from "node:os";
+import {readFileSync,statSync} from "node:fs";
 import {join} from "node:path";
 import {parseAwinCsv} from "../integrations/awin/csv";
 import {normalizeAwinItem,isInvalidAwinItem} from "../integrations/awin/normalize";
 import {assessAwinCatalogCandidate} from "../integrations/awin/catalogCandidate";
 
 const MAX_GZIP=20*1024*1024,MAX_UNCOMPRESSED=160*1024*1024,MAX_ROWS=100000;
-function enabled(env:NodeJS.ProcessEnv){
- return Boolean(env.UPPULSE_CURATOR_ADMIN_USER_IDS?.trim());
+function adminIds(env:NodeJS.ProcessEnv):string[]{
+ const fromEnv=(env.UPPULSE_CURATOR_ADMIN_USER_IDS??"").split(/[\\s,]+/).filter(Boolean);
+ let fromFile:string[]=[];
+ try{
+  const file=join(homedir(),".local","share","uppulse","curator-admin-user-ids");
+  const info=statSync(file);
+  if((info.mode&0o077)===0&&info.size<=4096)
+   fromFile=readFileSync(file,"utf8").split(/[\\s,]+/).filter(Boolean);
+ }catch{}
+ return [...new Set([...fromEnv,...fromFile].filter(id=>/^[a-zA-Z0-9_-]{2,128}$/.test(id)))];
 }
+function enabled(env:NodeJS.ProcessEnv){return adminIds(env).length>0}
 type AdminResolver=(id:string)=>Promise<{id:string;email:string;isActive:boolean}|undefined>;
 function adminAuthorization(resolveUser?:AdminResolver):RequestHandler{return async(req,res,next)=>{
- if(!enabled(process.env))return res.status(503).json({code:"ADMIN_ACCESS_NOT_CONFIGURED",message:"Configure UPPULSE_CURATOR_ADMIN_USER_IDS com os IDs das contas administrativas autorizadas."});
+ if(!enabled(process.env))return res.status(503).json({code:"ADMIN_ACCESS_NOT_CONFIGURED",message:"Configure a conta administrativa pelo script scripts/uppulse_curadoria_admin.sh no Codespaces."});
  const origin=req.get("origin"),host=req.get("host");
  let sameOrigin=false;
  try{sameOrigin=Boolean(origin&&host&&new URL(origin).host===host)}catch{}
@@ -26,7 +36,7 @@ function adminAuthorization(resolveUser?:AdminResolver):RequestHandler{return as
  if(!req.session?.userId)return res.status(401).json({code:"LOGIN_REQUIRED",message:"Entre na sua conta administrativa para importar feeds."});
  try{
   const user=await (resolveUser?resolveUser(req.session.userId):(await import("../auth/userRepository")).userRepository.findActiveById(req.session.userId));
-  const admins=(process.env.UPPULSE_CURATOR_ADMIN_USER_IDS||"").split(",").map(x=>x.trim()).filter(Boolean);
+  const admins=adminIds(process.env);
   if(!user||!user.isActive||user.id!==req.session.userId||!admins.includes(user.id))return res.status(403).json({code:"ADMIN_PERMISSION_REQUIRED",message:"Sua conta não possui permissão para administrar feeds."});
   next();
  }catch(e){next(e)}
