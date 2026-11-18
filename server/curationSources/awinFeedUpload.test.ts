@@ -43,6 +43,16 @@ test("importação AWIN reconhece a fonte automaticamente e exige sessão admini
   assert.equal(report.merchant,"17698");assert.equal(report.feedId,"51837");
   assert.equal(report.accepted+report.discarded+report.review+report.stats.invalid,report.stats.rows);
   assert.ok(Array.isArray(report.issues));
+  assert.ok(Number.isInteger(report.issuesTotal));
+  assert.equal(report.issuesTotal,report.issues.length);
+  const issuesUrl=`http://127.0.0.1:${port}/api/admin/awin-feeds/report/${report.merchant}/${report.feedId}/${report.sha256}/issues?page=1`;
+  const issuesResponse=await fetch(issuesUrl);
+  assert.equal(issuesResponse.status,200);
+  const issuesPage=await issuesResponse.json();
+  assert.equal(issuesPage.total,report.issuesTotal);
+  assert.deepEqual(issuesPage.issues,report.issues);
+  const badPage=await fetch(issuesUrl.replace("page=1","page=0"));
+  assert.equal(badPage.status,400);
   assert.match(report.storedName,/^17698-51837-[0-9a-f]{16}\.csv\.gz$/);
   assert.equal(statSync(join(dir,report.storedName)).size,data.length);
   const mismatch=await fetch(url,{method:"POST",headers:{...base,"X-Awin-File-Name":"99999-51837-x.csv.gz"},body:data});
