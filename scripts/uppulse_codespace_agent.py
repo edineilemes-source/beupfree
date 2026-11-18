@@ -80,31 +80,38 @@ def own(port):
   return d if process_stamp(d["pid"])==d["start"] and d["start"] else None
  except (OSError,ValueError,KeyError):return None
 def catalog_database():
- # Prefer the already-healthy recovery container. Never start, stop or recreate databases.
- # An ambiguous/unverified database is a hard blocker instead of a fresh empty instance.
+ # No automatic start/stop/recreate. Validate the current live catalog before selecting a DB.
  candidates=("beupfree-recovery-postgres","beupfree-catalog-pg17")
  verified=[]
  for container in candidates:
   if cmd(["docker","inspect","-f","{{.State.Status}}",container],timeout=10,check=False)!="running":continue
-  published=cmd(["docker","port",container,"5432"],timeout=10,check=False).splitlines()
-  if not published:continue
-  port=published[0].rsplit(":",1)[-1]
-  if not port.isdecimal():continue
   envlines=cmd(["docker","inspect","--format","{{json .Config.Env}}",container],timeout=10)
   vars=dict(x.split("=",1) for x in json.loads(envlines) if "=" in x)
   username=vars.get("POSTGRES_USER","postgres")
   password=vars.get("POSTGRES_PASSWORD")
   if not password:continue
-  # This is read-only and uses the DB's own local postgres admin; secrets never logged.
-  query="SELECT count(*)::bigint FROM public.products"
-  inspect=cmd(["docker","exec",container,"psql","-U",username,"-d","uppulse_catalog","-X","-At","-v","ON_ERROR_STOP=1","-c",query],timeout=20,check=False)
-  if not inspect.isdecimal() or int(inspect)<1:continue
-  verified.append((container,port,username,password,int(inspect)))
+  published=cmd(["docker","port",container,"5432"],timeout=10,check=False).splitlines()
+  port=published[0].rsplit(":",1)[-1] if published else ""
+  if not port.isdecimal():
+   # Container address for an existing Docker bridge; never create a network or port.
+   port="5432"
+   address=cmd(["docker","inspect","-f","{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}",container],timeout=10,check=False)
+   if not re.fullmatch(r"(?:[0-9]{1,3}\\.){3}[0-9]{1,3}",address):continue
+  else:address="127.0.0.1"
+  for database in ("uppulse_catalog","postgres"):
+   query="SELECT (SELECT count(*) FROM public.products)::bigint, (SELECT count(*) FROM public.offers)::bigint"
+   observed=cmd(["docker","exec",container,"psql","-U",username,"-d",database,
+    "-X","-A","-t","-F","|","-v","ON_ERROR_STOP=1","-c",query],timeout=20,check=False)
+   parts=observed.strip().split("|")
+   if len(parts)!=2 or not all(x.isdecimal() for x in parts):continue
+   products,offers=map(int,parts)
+   if products<1000 or offers<1000:continue
+   verified.append((container,address,port,database,username,password,products,offers))
  if len(verified)!=1:raise RuntimeError("CATALOG_DATABASE_NOT_UNIQUELY_VERIFIED")
  return verified[0]
 def db_url():
- container,port,username,password,_=catalog_database()
- return "postgresql://"+quote(username,safe="")+":"+quote(password,safe="")+"@127.0.0.1:"+port+"/uppulse_catalog"
+ container,address,port,database,username,password,_,_=catalog_database()
+ return "postgresql://"+quote(username,safe="")+":"+quote(password,safe="")+"@"+address+":"+port+"/"+database
 def serve(sha,port,profile="basic"):
  prior=own(port)
  if prior:
@@ -150,11 +157,11 @@ def stop(port):
 def execute(action,args):
  if action=="CATALOGO":
   try:
-   container,_,username,_,_=catalog_database()
+   container,_,_,database,username,_,_,_=catalog_database()
    sql=("SELECT 'products',count(*) FROM public.products UNION ALL "
     "SELECT 'offers',count(*) FROM public.offers UNION ALL "
     "SELECT 'catalog_search_products',count(*) FROM public.catalog_search_products")
-   out=cmd(["docker","exec",container,"psql","-U",username,"-d","uppulse_catalog",
+   out=cmd(["docker","exec",container,"psql","-U",username,"-d",database,
     "-X","-A","-t","-F","=","-v","ON_ERROR_STOP=1","-c",sql],timeout=35)
   except Exception:raise RuntimeError("CATALOG_READ_ONLY_QUERY_UNAVAILABLE")
   return "Catalog counts from verified database "+container+": "+out.replace("\\n","; ")[:500]
