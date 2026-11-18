@@ -134,6 +134,56 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver){
    return res.json({page,pageSize,total:report.issues.length,issues:report.issues.slice((page-1)*pageSize,page*pageSize)});
   }catch{return res.status(404).json({code:"AUDIT_REPORT_NOT_FOUND"})}
  });
+ router.get("/merchant/:merchantId/audit",authorize,async(req,res)=>{
+  const merchantId=req.params.merchantId;
+  if(!/^[0-9]{2,12}$/.test(merchantId))return res.status(400).json({code:"MERCHANT_ID_INVALID"});
+  try{
+   const {pool}=await import("../db");
+   const db=await pool.connect();
+   try{
+    await db.query("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY");
+    const tables=["commerce_merchants","commerce_feeds","offers","product_variants","external_product_identities",
+      "offer_promotion_evidence","product_catalog_classifications","product_variant_normalizations",
+      "catalog_search_products","product_master_memberships","product_identity_jobs"];
+    const available=(await db.query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name=ANY($1::text[])",[tables])).rows.map(r=>String(r.table_name));
+    const has=(name:string)=>available.includes(name);
+    if(!has("commerce_merchants")||!has("offers")||!has("product_variants"))
+      return res.status(409).json({code:"CATALOG_SCHEMA_INCOMPLETE",message:"Tabelas principais do catálogo não encontradas."});
+    const merchants=(await db.query("SELECT id,name,external_merchant_id FROM commerce_merchants WHERE external_merchant_id=$1",[merchantId])).rows;
+    if(merchants.length!==1)return res.status(404).json({code:"MERCHANT_NOT_FOUND"});
+    const merchant=merchants[0];
+    const run=async(sql:string)=>Number((await db.query(sql,[merchant.id])).rows[0]?.n??0);
+    const counts={
+     offers:await run("SELECT count(*)::int n FROM offers WHERE merchant_id=$1"),
+     distinctProducts:await run("SELECT count(DISTINCT product_id)::int n FROM product_variants WHERE merchant_id=$1"),
+     activeOffers:await run("SELECT count(*)::int n FROM offers WHERE merchant_id=$1 AND active=true"),
+     identities:has("external_product_identities")?await run("SELECT count(*)::int n FROM external_product_identities WHERE merchant_id=$1"):null,
+     stagedIdentities:has("external_product_identities")?await run("SELECT count(*)::int n FROM external_product_identities WHERE merchant_id=$1 AND publication_state='staging'"):null,
+     promotionEvidence:has("offer_promotion_evidence")?await run("SELECT count(DISTINCT pe.offer_id)::int n FROM offer_promotion_evidence pe JOIN offers o ON o.id=pe.offer_id WHERE o.merchant_id=$1"):null,
+     classifiedProducts:has("product_catalog_classifications")?await run("SELECT count(DISTINCT product_id)::int n FROM product_catalog_classifications WHERE merchant_id=$1"):null,
+     eligibleClassifications:has("product_catalog_classifications")?await run("SELECT count(DISTINCT product_id)::int n FROM product_catalog_classifications WHERE merchant_id=$1 AND operational_state='CATALOG_ELIGIBLE'"):null,
+     normalizedVariants:has("product_variant_normalizations")?await run("SELECT count(DISTINCT n.variant_id)::int n FROM product_variant_normalizations n JOIN product_variants v ON v.id=n.variant_id WHERE v.merchant_id=$1"):null,
+     masterMemberships:has("product_master_memberships")&&has("external_product_identities")?await run("SELECT count(DISTINCT mm.external_product_identity_id)::int n FROM product_master_memberships mm JOIN external_product_identities e ON e.id=mm.external_product_identity_id WHERE e.merchant_id=$1 AND mm.valid_to IS NULL"):null,
+     masterIdentities:has("product_master_memberships")&&has("external_product_identities")?await run("SELECT count(DISTINCT mm.master_product_id)::int n FROM product_master_memberships mm JOIN external_product_identities e ON e.id=mm.external_product_identity_id WHERE e.merchant_id=$1 AND mm.valid_to IS NULL"):null,
+     searchProducts:has("catalog_search_products")?await run("SELECT count(*)::int n FROM catalog_search_products WHERE merchant_id=$1 AND catalog_state='CATALOG_ELIGIBLE'"):null,
+     availableSearchProducts:has("catalog_search_products")?await run("SELECT count(*)::int n FROM catalog_search_products WHERE merchant_id=$1 AND catalog_state='CATALOG_ELIGIBLE' AND available=true"):null
+    };
+    await db.query("COMMIT");
+    const steps={
+      received:counts.offers>0,
+      masterCovered:counts.identities!==null&&counts.masterMemberships!==null&&counts.identities>0&&counts.masterMemberships===counts.identities,
+      catalogClassified:counts.distinctProducts>0&&counts.classifiedProducts!==null&&counts.classifiedProducts===counts.distinctProducts,
+      priceAudited:counts.offers>0&&counts.promotionEvidence!==null&&counts.promotionEvidence===counts.offers,
+      projected:counts.searchProducts!==null&&counts.searchProducts>0,
+      storeVisibleInFilter:counts.availableSearchProducts!==null&&counts.availableSearchProducts>0
+    };
+    return res.json({merchant:{name:merchant.name,id:merchant.external_merchant_id},counts,steps,
+      note:"O Produto Mestre exige evidências atuais além da existência de memberships; esta auditoria mede cobertura, não certifica equivalência entre produtos.",
+      storeFacetRule:"A loja aparece automaticamente no filtro Loja somente quando há produtos elegíveis e disponíveis na projeção."});
+   }catch(e){await db.query("ROLLBACK").catch(()=>{});throw e}
+   finally{db.release()}
+  }catch(e){return res.status(503).json({code:"MERCHANT_AUDIT_FAILED",message:"Não foi possível verificar todas as etapas do catálogo neste banco."})}
+ });
  router.post("/process",authorize,async(req,res)=>{
   const fingerprint=String(req.body?.sha256??"");
   const merchant=String(req.body?.merchant??""),feedId=String(req.body?.feedId??"");
