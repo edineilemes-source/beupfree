@@ -1,7 +1,5 @@
 /** Admin-only AWIN upload, audit and optional transactional catalog staging. */
 import {Router,raw,type RequestHandler} from "express";
-import {userRepository} from "../auth/userRepository";
-import {pool} from "../db";
 import {PostgresAwinRepository} from "../integrations/awin/repository";
 import {createHash} from "node:crypto";
 import {createGunzip} from "node:zlib";
@@ -18,7 +16,8 @@ const MAX_GZIP=20*1024*1024,MAX_UNCOMPRESSED=160*1024*1024,MAX_ROWS=100000;
 function enabled(env:NodeJS.ProcessEnv){
  return env.NODE_ENV!=="production"&&Boolean(env.UPPULSE_CURATOR_ADMIN_EMAILS?.trim());
 }
-const authorize:RequestHandler=async(req,res,next)=>{
+type AdminResolver=(id:string)=>Promise<{email:string;isActive:boolean}|undefined>;
+function adminAuthorization(resolveUser?:AdminResolver):RequestHandler{return async(req,res,next)=>{
  if(!enabled(process.env))return res.status(503).json({code:"ADMIN_ACCESS_NOT_CONFIGURED",message:"Configure UPPULSE_CURATOR_ADMIN_EMAILS com os e-mails autorizados; a existência da tela não comprova permissão."});
  const origin=req.get("origin"),host=req.get("host");
  let sameOrigin=false;
@@ -26,18 +25,20 @@ const authorize:RequestHandler=async(req,res,next)=>{
  if(!sameOrigin)return res.status(403).json({code:"SAME_ORIGIN_REQUIRED"});
  if(!req.session?.userId)return res.status(401).json({code:"LOGIN_REQUIRED",message:"Entre na sua conta administrativa para importar feeds."});
  try{
-  const user=await userRepository.findActiveById(req.session.userId);
+  const user=await (resolveUser?resolveUser(req.session.userId):(await import("../auth/userRepository")).userRepository.findActiveById(req.session.userId));
   const admins=(process.env.UPPULSE_CURATOR_ADMIN_EMAILS||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
   if(!user||!admins.includes(user.email.toLowerCase()))return res.status(403).json({code:"ADMIN_PERMISSION_REQUIRED",message:"Sua conta não possui permissão para administrar feeds."});
   next();
  }catch(e){next(e)}
-};
+}}
+
 function bucket(list:Record<string,number>,value:string){list[value]=(list[value]??0)+1}
 function limiter():Transform{
  let total=0;return new Transform({transform(chunk,_enc,done){total+=chunk.length;done(total>MAX_UNCOMPRESSED?new Error("FEED_DECOMPRESSED_SIZE_LIMIT"):null,chunk)}});
 }
-export function createAwinFeedUploadRouter(){
+export function createAwinFeedUploadRouter(resolveUser?:AdminResolver){
  const router=Router();
+ const authorize=adminAuthorization(resolveUser);
  router.get("/status",authorize,(_req,res)=>res.json({enabled:true,maxFileBytes:MAX_GZIP,mode:"HOMOLOGATION_ONLY",publication:false,staging:Boolean(process.env.DATABASE_URL)}));
  router.post("/upload",authorize,raw({type:"application/gzip",limit:MAX_GZIP}),async(req,res)=>{
   const data=req.body;
@@ -114,6 +115,7 @@ export function createAwinFeedUploadRouter(){
    const {readFile}=await import("node:fs/promises");
    const data=await readFile(join(root,filename));
    if(hash("sha256").update(data).digest("hex")!==fingerprint)return res.status(409).json({code:"FEED_FINGERPRINT_MISMATCH"});
+   const {pool}=await import("../db");
    const client=await pool.connect();
    try{
     const status=(await client.query("SELECT count(*)::int AS n FROM products")).rows[0];
