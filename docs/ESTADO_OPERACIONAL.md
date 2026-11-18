@@ -141,3 +141,10 @@ Foi publicado um agente restrito e um instalador para o Codespace de homologaç�
 - Etapa após atualizar agente: ChatGPT aciona DIAGNOSTICO + CATALOGO, resolve bloqueio concreto de PREVIEW/BUILD, homologa porta e gate de release. Não declarar servidor no ar antes de HTTP verificado. Reinício após abertura de terminal tem hook preparado, reconstrução completa do devcontainer segue não homologada.
 - Relatório detalhado: `docs/relatorios/UPPULSE_PREPARACAO_LANCAMENTO_2026-11-17.md`. Banco histórico `uppulse_catalog` não é base pública de produção. Publicação Hostinger pendente de acesso/ambiente autorizados e validação de dados/compras; nenhuma publicação ou migração executada.
 - **Ficha Inteligente segue congelada; sem novas pesquisas IA pagas.**
+
+ 
+## Auditoria Olympikus / Loja — 2026-11-17
+- GitHub Issue #54: confirmação read-only dos totais do contêiner `beupfree-catalog-pg17` após recebimento do feed AWIN 17698/51837: 33.520 produtos, 102.018 ofertas e 16.945 projeções. Baseline: 32.707/96.851/16.945. **A diferença de 5.167 ofertas não prova vínculo por anunciante nem Produto Mestre**.
+- API de auditoria por merchant e painel na Curadoria implementados na branch remota: coberturas de identidade Master, classificações, evidências comerciais, normalizações e projeções; execução real por merchant pendente.
+- O filtro Loja lê valores dinamicamente da projeção operacional, não de lista hardcoded. Olympikus só pode aparecer com ofertas realmente elegíveis e projetadas; nenhuma projeção foi criada por esta missão.
+- Relatório: [Olympikus / Produto Mestre / Loja](relatorios/MISSAO11_OLYMPIKUS_PRODUTO_MASTER_E_LOJA_2026-11-17.md). Status `PENDING_HOMOLOGATION` dos dados reais; migrações/publicação não executadas.
