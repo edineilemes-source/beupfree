@@ -53,3 +53,26 @@ test("V3 persistence binds variant raw/evidence append-only and rejects fabricat
  await assert.rejects(persistNormalizations(client,[{...row,colourTaxonomy:bad}]),/EVIDENCE_MISMATCH/);assert.equal(calls.length,2);
  await assert.rejects(persistNormalizations(client,[{...row,normalizerVersion:"legacy"}]),/NORMALIZER_VERSION_REQUIRED/);assert.equal(calls.length,2);
 });
+
+import test from "node:test";
+import assert from "node:assert/strict";
+import {evaluateCommercialPrice} from "./operationalCatalog";
+
+test("Olympikus: sem preço anterior é preço regular, nunca promoção",()=>{
+ const p=evaluateCommercialPrice({currentPrice:299.99,previousPrice:null,discountPercent:null,currency:"BRL"});
+ assert.deepEqual(p,{status:"REGULAR_PRICE",currentPrice:299.99,previousPrice:null,discountPercent:0,reasonCodes:["PREVIOUS_PRICE_NOT_PROVIDED"]});
+});
+test("promoção comprovada mantém desconto e consistência",()=>{
+ const p=evaluateCommercialPrice({currentPrice:300,previousPrice:500,discountPercent:40,currency:"BRL"});
+ assert.equal(p.status,"PROMOTION_CONFIRMED");assert.equal(p.discountPercent,40);
+ assert.equal(evaluateCommercialPrice({currentPrice:300,previousPrice:500,discountPercent:90,currency:"BRL"}).status,"REVIEW_REQUIRED");
+});
+test("preço normal idêntico é regular e porcentagem fictícia bloqueada",()=>{
+ assert.equal(evaluateCommercialPrice({currentPrice:300,previousPrice:300,discountPercent:0,currency:"BRL"}).status,"REGULAR_PRICE");
+ assert.equal(evaluateCommercialPrice({currentPrice:300,previousPrice:null,discountPercent:20,currency:"BRL"}).status,"REVIEW_REQUIRED");
+});
+test("preço inválido, moeda estrangeira e preço anterior menor são bloqueados",()=>{
+ for(const p of [{currentPrice:0,previousPrice:null,currency:"BRL"},{currentPrice:100,previousPrice:null,currency:"USD"},{currentPrice:100,previousPrice:90,currency:"BRL"}]){
+  assert.equal(evaluateCommercialPrice(p).status,"REVIEW_REQUIRED");
+ }
+});
