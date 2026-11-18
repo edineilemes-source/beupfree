@@ -5,7 +5,7 @@ from urllib.parse import quote
 R=pathlib.Path("/workspaces/uppulse-homologacao/missao9/codigo")
 S=pathlib.Path(os.environ.get("UPPULSE_BRIDGE_STATE_DIR",str(pathlib.Path.home()/".local/state/uppulse-bridge")))
 S.mkdir(parents=True,exist_ok=True)
-VERSION="1.2.0"
+VERSION="1.3.0"
 REPO="edineilemes-source/beupfree"
 BRANCH="feat/uppulse-missao10-supercatalogo"
 PORTS={5011,5012,5013,5014,5015}
@@ -79,15 +79,32 @@ def own(port):
   d=json.loads((S/("preview-"+str(port)+".json")).read_text())
   return d if process_stamp(d["pid"])==d["start"] and d["start"] else None
  except (OSError,ValueError,KeyError):return None
+def catalog_database():
+ # Prefer the already-healthy recovery container. Never start, stop or recreate databases.
+ # An ambiguous/unverified database is a hard blocker instead of a fresh empty instance.
+ candidates=("beupfree-recovery-postgres","beupfree-catalog-pg17")
+ verified=[]
+ for container in candidates:
+  if cmd(["docker","inspect","-f","{{.State.Status}}",container],timeout=10,check=False)!="running":continue
+  published=cmd(["docker","port",container,"5432"],timeout=10,check=False).splitlines()
+  if not published:continue
+  port=published[0].rsplit(":",1)[-1]
+  if not port.isdecimal():continue
+  envlines=cmd(["docker","inspect","--format","{{json .Config.Env}}",container],timeout=10)
+  vars=dict(x.split("=",1) for x in json.loads(envlines) if "=" in x)
+  username=vars.get("POSTGRES_USER","postgres")
+  password=vars.get("POSTGRES_PASSWORD")
+  if not password:continue
+  # This is read-only and uses the DB's own local postgres admin; secrets never logged.
+  query="SELECT count(*)::bigint FROM public.products"
+  inspect=cmd(["docker","exec",container,"psql","-U",username,"-d","uppulse_catalog","-X","-At","-v","ON_ERROR_STOP=1","-c",query],timeout=20,check=False)
+  if not inspect.isdecimal() or int(inspect)<1:continue
+  verified.append((container,port,username,password,int(inspect)))
+ if len(verified)!=1:raise RuntimeError("CATALOG_DATABASE_NOT_UNIQUELY_VERIFIED")
+ return verified[0]
 def db_url():
- container="beupfree-catalog-pg17"
- if cmd(["docker","inspect","-f","{{.State.Status}}",container],timeout=10)!="running":raise RuntimeError("POSTGRES_NOT_RUNNING")
- port=cmd(["docker","port",container,"5432"],timeout=10).splitlines()[0].rsplit(":",1)[-1]
- if not port.isdecimal():raise RuntimeError("POSTGRES_PORT_UNKNOWN")
- entries=json.loads(cmd(["docker","inspect","--format","{{json .Config.Env}}",container],timeout=10))
- variables=dict(s.split("=",1) for s in entries if "=" in s)
- if not variables.get("POSTGRES_PASSWORD"):raise RuntimeError("POSTGRES_CREDENTIAL_MISSING")
- return "postgresql://"+quote(variables.get("POSTGRES_USER","postgres"),safe="")+":"+quote(variables["POSTGRES_PASSWORD"],safe="")+"@127.0.0.1:"+port+"/uppulse_catalog"
+ container,port,username,password,_=catalog_database()
+ return "postgresql://"+quote(username,safe="")+":"+quote(password,safe="")+"@127.0.0.1:"+port+"/uppulse_catalog"
 def serve(sha,port,profile="basic"):
  prior=own(port)
  if prior:
@@ -132,15 +149,15 @@ def stop(port):
  return "Managed preview on "+str(port)+" stopped; no other processes touched"
 def execute(action,args):
  if action=="CATALOGO":
-  sql=("SELECT 'products',count(*) FROM public.products UNION ALL "
-   "SELECT 'offers',count(*) FROM public.offers UNION ALL "
-   "SELECT 'catalog_search_products',count(*) FROM public.catalog_search_products")
   try:
-   out=cmd(["docker","exec","beupfree-catalog-pg17","sh","-c",
-    "exec psql -U \"\u0024{POSTGRES_USER:-postgres}\" -d uppulse_catalog -X -A -t -F '=' -v ON_ERROR_STOP=1 -c \""+sql+"\""],timeout=35)
-  except Exception:
-   raise RuntimeError("CATALOG_READ_ONLY_QUERY_UNAVAILABLE")
-  return "Catalog read-only counts (not freshness/production proof): "+out.replace("\n","; ")[:500]
+   container,_,username,_,_=catalog_database()
+   sql=("SELECT 'products',count(*) FROM public.products UNION ALL "
+    "SELECT 'offers',count(*) FROM public.offers UNION ALL "
+    "SELECT 'catalog_search_products',count(*) FROM public.catalog_search_products")
+   out=cmd(["docker","exec",container,"psql","-U",username,"-d","uppulse_catalog",
+    "-X","-A","-t","-F","=","-v","ON_ERROR_STOP=1","-c",sql],timeout=35)
+  except Exception:raise RuntimeError("CATALOG_READ_ONLY_QUERY_UNAVAILABLE")
+  return "Catalog counts from verified database "+container+": "+out.replace("\\n","; ")[:500]
  if action=="DIAGNOSTICO":
   checks=[]
   for name,argv in [
