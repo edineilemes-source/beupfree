@@ -12,7 +12,7 @@ type Issue={row:number;name:string;reason:string};
 type Audit={status:string;merchant:string;feedId:string;storedName:string;sha256:string;
  stats:{rows:number;normalized:number;invalid:number;priceStates:Record<string,number>;
  taxonomy:Record<string,number>;eligibility:Record<string,number>;reasons:Record<string,number>};
- issues:Issue[];issuesTruncated:boolean;accepted:number;discarded:number;review:number;imported:number;published:number;canProcess:boolean};
+ issues:Issue[];issuesTotal:number;issuesPageSize:number;accepted:number;discarded:number;review:number;imported:number;published:number;canProcess:boolean};
 type ProcessReport={status:string;imported:number;unchanged:number;accepted:number;review:number;discarded:number;invalid:number;published:number;message:string};
 const format=(n:number)=>n.toLocaleString("pt-BR");
 export default function AwinFeedUpload(){
@@ -23,6 +23,9 @@ export default function AwinFeedUpload(){
  const [processing,setProcessing]=useState(false);
  const [error,setError]=useState("");
  const [report,setReport]=useState<Audit|null>(null);
+ const [issuesPage,setIssuesPage]=useState(1);
+ const [visibleIssues,setVisibleIssues]=useState<Issue[]>([]);
+ const [loadingIssues,setLoadingIssues]=useState(false);
  const [processed,setProcessed]=useState<ProcessReport|null>(null);
  const {data:status,error:accessError}=useQuery<{enabled:boolean;maxFileBytes:number;staging:boolean}>({
   queryKey:["/api/admin/awin-feeds/status",isAuthenticated],retry:false,enabled:isAuthenticated,
@@ -42,9 +45,23 @@ export default function AwinFeedUpload(){
    if(!response.ok)throw Error(data.message||data.code||"Falha na análise");
    const audited=data as Audit;
    setReport(audited);
+   setIssuesPage(1);setVisibleIssues(audited.issues);
    if(audited.accepted>0&&audited.canProcess)await process(audited);
   }catch(e){setError(e instanceof Error?e.message:"Erro no envio")}
   finally{setPending(false)}
+ }
+ async function goToIssuesPage(page:number){
+  if(!report||page<1||page>Math.ceil(report.issuesTotal/report.issuesPageSize))return;
+  setLoadingIssues(true);
+  try{
+   const url=`/api/admin/awin-feeds/report/${report.merchant}/${report.feedId}/${report.sha256}/issues?page=${page}`;
+   const response=await fetch(url,{credentials:"same-origin"});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.code||"Não foi possível carregar os problemas.");
+   setVisibleIssues(data.issues as Issue[]);
+   setIssuesPage(page);
+  }catch(e){setError(e instanceof Error?e.message:"Falha na consulta das ocorrências")}
+  finally{setLoadingIssues(false)}
  }
  async function process(audit:Audit|null=report){
   if(!audit)return;setProcessing(true);setError("");
@@ -97,11 +114,15 @@ export default function AwinFeedUpload(){
       {Object.entries(report.stats.reasons).sort((a,b)=>b[1]-a[1]).map(([reason,total])=><tr className="border-b" key={reason}><td className="p-2">{reason}</td><td className="p-2 text-right">{format(total)}</td></tr>)}
      </tbody></table></div>}
     </div>
-    <div><h3 className="font-semibold mb-2">Produtos com problemas — amostra de até 300 ocorrências</h3>
+    <div><h3 className="font-semibold mb-2">Produtos com problemas — {format(report.issuesTotal)} produtos com ocorrências</h3>
      <div className="overflow-x-auto max-h-80"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Linha</th><th className="p-2">Produto</th><th className="p-2">Motivo</th></tr></thead><tbody>
-      {report.issues.map((issue,index)=><tr key={index} className="border-b"><td className="p-2">{issue.row}</td><td className="p-2">{issue.name}</td><td className="p-2">{issue.reason}</td></tr>)}
+      {visibleIssues.map((issue,index)=><tr key={index} className="border-b"><td className="p-2">{issue.row}</td><td className="p-2">{issue.name}</td><td className="p-2">{issue.reason}</td></tr>)}
      </tbody></table></div>
-     {report.issuesTruncated&&<p className="text-sm text-muted-foreground">Amostra limitada a 300 ocorrências. Os totais acima abrangem todo o arquivo.</p>}
+     {report.issuesTotal>report.issuesPageSize&&<div className="flex items-center justify-between gap-3 py-3">
+      <Button variant="outline" onClick={()=>void goToIssuesPage(issuesPage-1)} disabled={loadingIssues||issuesPage<=1}>Anterior</Button>
+      <p className="text-sm">Página {issuesPage} de {Math.ceil(report.issuesTotal/report.issuesPageSize)}</p>
+      <Button variant="outline" onClick={()=>void goToIssuesPage(issuesPage+1)} disabled={loadingIssues||issuesPage>=Math.ceil(report.issuesTotal/report.issuesPageSize)}>Próxima</Button>
+     </div>}
     </div>
     {!processed?<div className="border-t pt-4 space-y-2">
      <p className="text-sm">Os produtos aprovados são processados automaticamente após a análise. Os itens gravados permanecem em staging até a homologação de publicação.</p>
