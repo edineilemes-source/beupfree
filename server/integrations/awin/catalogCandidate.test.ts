@@ -33,7 +33,7 @@ test("feed de roupa fica fora do catálogo mesmo com preço regular",()=>{
 });
 
 test("oferta promocional comprovada continua elegível",()=>{
- const x=candidate({product_price_old:"499.99",search_price:"299.99",savings_percent:"40.001"});
+ const x=candidate({product_price_old:"499.99",search_price:"299.99",savings_percent:"40.00"});
  assert.equal(x.price.status,"PROMOTION_CONFIRMED");
  assert.equal(x.eligibility.status,"IN_SCOPE_CONFIRMED");
 });
