@@ -5,7 +5,7 @@ import {createHash} from "node:crypto";
 import {createGunzip} from "node:zlib";
 import {Readable,Transform} from "node:stream";
 
-import {mkdir,rename,writeFile,unlink,stat} from "node:fs/promises";
+import {mkdir,rename,writeFile,unlink,stat,readFile} from "node:fs/promises";
 import {homedir} from "node:os";
 import {join} from "node:path";
 import {parseAwinCsv} from "../integrations/awin/csv";
@@ -49,7 +49,7 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver){
   const filename=req.get("x-awin-file-name")??"";
   const filenameIds=filename.match(/^(\d{2,12})-(\d{2,12})-/);
   const issues:Array<{row:number;reason:string;name:string}>=[];
-  const MAX_ISSUES=300;
+  const PAGE_SIZE=300;
   const hash=createHash("sha256").update(data).digest("hex");
   const stats={rows:0,normalized:0,invalid:0,merchantMismatch:0,feedMismatch:0,
    priceStates:{} as Record<string,number>,taxonomy:{} as Record<string,number>,
@@ -61,15 +61,18 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver){
     if(row.raw.merchant_id?.trim())merchants.add(row.raw.merchant_id.trim());
     if(row.raw.data_feed_id?.trim())feeds.add(row.raw.data_feed_id.trim());
     const name=row.raw.product_name??"(sem nome)";
-    const issue=(reason:string)=>{if(issues.length<MAX_ISSUES)issues.push({row:row.rowNumber,reason,name});};
+    const rowReasons:string[]=[];
+    const issue=(reason:string)=>{rowReasons.push(reason)};
+    const recordIssues=()=>{if(rowReasons.length)issues.push({row:row.rowNumber,reason:[...new Set(rowReasons)].join(" · "),name:name.slice(0,300)})};
     const item=normalizeAwinItem(row,{feedId});
-    if(isInvalidAwinItem(item)){stats.invalid++;for(const reason of item.reasons){bucket(stats.reasons,"RAW_"+reason);issue("RAW_"+reason)}continue}
+    if(isInvalidAwinItem(item)){stats.invalid++;for(const reason of item.reasons){bucket(stats.reasons,"RAW_"+reason);issue("RAW_"+reason)}recordIssues();continue}
     stats.normalized++;
     const result=assessAwinCatalogCandidate(item);
     bucket(stats.priceStates,result.price.status);
     bucket(stats.taxonomy,result.taxonomy.universe);
     bucket(stats.eligibility,result.eligibility.status);
     for(const reason of result.eligibility.reasons)if(reason!=="minimum_requirements_met"){bucket(stats.reasons,reason);if(result.eligibility.status!=="IN_SCOPE_CONFIRMED")issue(reason)}
+    recordIssues();
    }
    merchant=[...merchants][0]??"";
    feedId=[...feeds][0]??filenameIds?.[2]??"";
@@ -89,16 +92,32 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver){
     try{await stat(destination);await unlink(temporary);}
     catch(e:any){if(e?.code!=="ENOENT")throw e;await rename(temporary,destination);}
    }catch(e){await unlink(temporary).catch(()=>{});throw e;}
+   const reportFile=join(root,filename+".report.json");
+   try{await writeFile(reportFile,JSON.stringify({merchant,feedId,sha256:hash,issues}),{mode:0o600,flag:"wx"})}catch(e:any){if(e?.code!=="EEXIST")throw e}
    const accepted=stats.eligibility.IN_SCOPE_CONFIRMED??0;
    const imported=0;
    // Import is a separate explicit action from upload; the audit is retained for review.
    return res.status(201).json({status:"RECEIVED_AND_AUDITED",merchant,feedId,
-    storedName:filename,sha256:hash,stats,issues,issuesTruncated:issues.length>=MAX_ISSUES,
+    storedName:filename,sha256:hash,stats,issues:issues.slice(0,PAGE_SIZE),issuesTotal:issues.length,issuesPageSize:PAGE_SIZE,
     accepted,discarded:stats.eligibility.OUT_OF_SCOPE_CONFIRMED??0,
     review:stats.eligibility.REVIEW_REQUIRED??0,imported,published:0,
     canProcess:Boolean(process.env.DATABASE_URL),nextAction:"PROCESS_ACCEPTED"});
 
   }catch(e){return res.status(422).json({code:"FEED_ANALYSIS_FAILED",message:"Feed inválido, muito grande ou incompatível. Nenhum produto foi importado."})}
+ });
+ router.get("/report/:merchant/:feedId/:hash/issues",authorize,async(req,res)=>{
+  const {merchant,feedId,hash}=req.params;
+  if(!/^[0-9]{2,12}$/.test(merchant)||!/^[0-9]{2,12}$/.test(feedId)||!/^[a-f0-9]{64}$/.test(hash))
+   return res.status(400).json({code:"REPORT_ARGUMENTS_INVALID"});
+  const page=Number(req.query.page??1),pageSize=300;
+  if(!Number.isSafeInteger(page)||page<1||page>334)return res.status(400).json({code:"REPORT_PAGE_INVALID"});
+  const root=process.env.UPPULSE_FEED_INBOX_DIR||join(homedir(),".local","share","uppulse","awin-inbox");
+  const name=merchant+"-"+feedId+"-"+hash.slice(0,16)+".csv.gz.report.json";
+  try{
+   const report=JSON.parse(await readFile(join(root,name),"utf8"));
+   if(report.sha256!==hash||report.merchant!==merchant||report.feedId!==feedId||!Array.isArray(report.issues))return res.status(409).json({code:"REPORT_IDENTITY_MISMATCH"});
+   return res.json({page,pageSize,total:report.issues.length,issues:report.issues.slice((page-1)*pageSize,page*pageSize)});
+  }catch{return res.status(404).json({code:"AUDIT_REPORT_NOT_FOUND"})}
  });
  router.post("/process",authorize,async(req,res)=>{
   const fingerprint=String(req.body?.sha256??"");
