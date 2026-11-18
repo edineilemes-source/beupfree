@@ -29,7 +29,7 @@ async function main(){
   if(fs.length!==1)throw Error("FEED_NOT_FOUND");const dbFeed=fs[0].id;
   const raw=(await client.query("SELECT id,raw_payload FROM commerce_raw_feed_items WHERE merchant_id=$1 AND feed_id=$2 ORDER BY id",[m.id,dbFeed])).rows;
   if(raw.length!==expectedCount)throw Error("RAW_COUNT_MISMATCH");
-  const sql="SELECT r.id raw_id,v.id variant_id,v.product_id,o.id offer_id,o.current_price::float8 price,o.active offer_active,o.status offer_status,e.active identity_active,e.publication_state identity_state FROM commerce_raw_feed_items r JOIN product_variants v ON v.merchant_id=r.merchant_id AND v.merchant_product_id=r.merchant_product_id JOIN offers o ON o.variant_id=v.id AND o.merchant_id=r.merchant_id AND o.external_id=COALESCE(NULLIF(r.raw_payload->>'aw_product_id',''),NULLIF(r.raw_payload->>'merchant_product_id','')) JOIN external_product_identities e ON e.merchant_id=v.merchant_id AND e.product_id=v.product_id WHERE r.merchant_id=$1 AND r.feed_id=$2";
+  const sql="SELECT r.id raw_id,v.id variant_id,v.product_id,o.id offer_id,o.external_offer_key offer_key,v.external_variant_key variant_key,e.external_product_key product_key,o.current_price::float8 price,o.active offer_active,o.status offer_status,e.active identity_active,e.publication_state identity_state FROM commerce_raw_feed_items r JOIN product_variants v ON v.merchant_id=r.merchant_id AND v.merchant_product_id=r.merchant_product_id JOIN offers o ON o.variant_id=v.id AND o.merchant_id=r.merchant_id AND o.external_id=COALESCE(NULLIF(r.raw_payload->>'aw_product_id',''),NULLIF(r.raw_payload->>'merchant_product_id','')) JOIN external_product_identities e ON e.merchant_id=v.merchant_id AND e.product_id=v.product_id WHERE r.merchant_id=$1 AND r.feed_id=$2";
   const linked=(await client.query(sql,[m.id,dbFeed])).rows;
   const byRaw=new Map<string,any>();
   for(const r of linked){if(byRaw.has(r.raw_id))throw Error("AMBIGUOUS_JOIN");byRaw.set(r.raw_id,r);}
@@ -44,6 +44,8 @@ async function main(){
    const item=normalizeAwinItem({raw:r.raw_payload,rowNumber:index+1},{feedId});
    if(isInvalidAwinItem(item)||item.provenance.merchantId!==merchant)throw Error("INVALID_RAW_ITEM");
    if(Math.abs(item.offer.currentPrice-linked.price)>.011)throw Error("STAGED_PRICE_MISMATCH");
+   if(item.productKey!==linked.product_key||item.variantKey!==linked.variant_key||item.offerKey!==linked.offer_key)throw Error("SOURCE_IDENTITY_HASH_MISMATCH");
+   if(item.provenance.dataFeedId&&item.provenance.dataFeedId!==feedId)throw Error("RAW_FEED_ID_MISMATCH");
    if(seenVariants.has(linked.variant_id)||seenOffers.has(linked.offer_id))throw Error("DUPLICATE_JOIN");
    seenVariants.add(linked.variant_id);seenOffers.add(linked.offer_id);
    const assessment=assessAwinCatalogCandidate(item),evidence=createCatalogPriceEvidence(item);
