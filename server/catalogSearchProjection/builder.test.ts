@@ -19,3 +19,16 @@ test("V3 raw variant evidence, partial-only families, display and merchant indep
  assert.equal(a.representativeOfferId,"o1");
  assert.throws(()=>buildCatalogSearchProjection([base(),base({colorRaw:"branco"})]),/VARIANT_RAW_COLOR_CONFLICT/);
 });
+
+
+test("oferta regular com desconto zero pode compor projeção, sem criar promoção falsa",()=>{
+ const regular=base({productId:"olympikus",merchantId:"olympikus-br",offerId:"regular-a",currentPrice:299,previousPrice:299,discountPercent:0,promotionStatus:"REGULAR_PRICE"});
+ const built=buildCatalogSearchProjection([regular]);
+ assert.equal(built.rows.length,1);
+ assert.equal(built.rows[0].currentPrice,299);
+ assert.equal(built.rows[0].previousPrice,299);
+ assert.equal(built.rows[0].discountPercent,0);
+ assert.equal(chooseRepresentativeOffer([base({promotionStatus:"UNKNOWN",previousPrice:100,discountPercent:0})]),null);
+ assert.equal(chooseRepresentativeOffer([regular,base({offerId:"promo",currentPrice:100,previousPrice:200,discountPercent:50})])?.offerId,"promo");
+ assert.equal(chooseRepresentativeOffer([regular,base({offerId:"regular-cheaper",currentPrice:199,previousPrice:199,discountPercent:0,promotionStatus:"REGULAR_PRICE"})])?.offerId,"regular-cheaper");
+});
