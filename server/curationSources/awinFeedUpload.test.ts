@@ -10,7 +10,7 @@ import type {AddressInfo} from "node:net";
 import {createAwinFeedUploadRouter} from "./awinFeedUpload";
 
 test("importação AWIN reconhece a fonte automaticamente e exige sessão administrativa",async()=>{
- const previous={admins:process.env.UPPULSE_CURATOR_ADMIN_USER_IDS,dir:process.env.UPPULSE_FEED_INBOX_DIR,node:process.env.NODE_ENV};
+ const previous={admins:process.env.UPPULSE_CURATOR_ADMIN_USER_IDS,dir:process.env.UPPULSE_FEED_INBOX_DIR,node:process.env.NODE_ENV,demo:process.env.PUBLIC_DEMO_MODE,temporary:process.env.UPPULSE_CURATOR_TEST_NO_AUTH};
  const dir=await mkdtemp(join(tmpdir(),"uppulse-feed-upload-test-"));
  process.env.NODE_ENV="test";
  process.env.UPPULSE_CURATOR_ADMIN_USER_IDS="test-user";
@@ -32,6 +32,16 @@ test("importação AWIN reconhece a fonte automaticamente e exige sessão admini
   const base={"Content-Type":"application/gzip","X-Awin-File-Name":"17698-51837-pt_BR-Default.csv.gz",Origin:"http://127.0.0.1:"+port};
   const unauthorized=await fetch(url,{method:"POST",headers:base,body:data});
   assert.equal(unauthorized.status,401);
+  process.env.NODE_ENV="development";
+  process.env.PUBLIC_DEMO_MODE="false";
+  process.env.UPPULSE_CURATOR_TEST_NO_AUTH="true";
+  const noLogin=await fetch(url,{method:"POST",headers:base,body:data});
+  assert.equal(noLogin.status,201);
+  process.env.NODE_ENV="production";
+  const inProduction=await fetch(url,{method:"POST",headers:base,body:data});
+  assert.equal(inProduction.status,401);
+  process.env.NODE_ENV="test";
+  process.env.UPPULSE_CURATOR_TEST_NO_AUTH="false";
   authenticated=true;
   const badOrigin=await fetch(url,{method:"POST",headers:{...base,Origin:"https://hostile.test"},body:data});
   assert.equal(badOrigin.status,403);
@@ -61,7 +71,7 @@ test("importação AWIN reconhece a fonte automaticamente e exige sessão admini
   await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));
   await rm(dir,{recursive:true,force:true});
   for(const [name,value] of Object.entries(previous)){
-   const key=({admins:"UPPULSE_CURATOR_ADMIN_USER_IDS",dir:"UPPULSE_FEED_INBOX_DIR",node:"NODE_ENV"} as Record<string,string>)[name];
+   const key=({admins:"UPPULSE_CURATOR_ADMIN_USER_IDS",dir:"UPPULSE_FEED_INBOX_DIR",node:"NODE_ENV",demo:"PUBLIC_DEMO_MODE",temporary:"UPPULSE_CURATOR_TEST_NO_AUTH"} as Record<string,string>)[name];
    if(value===undefined)delete process.env[key];else process.env[key]=value;
   }
  }
