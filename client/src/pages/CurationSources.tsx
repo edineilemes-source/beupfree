@@ -102,7 +102,7 @@ export default function CurationSources() {
           <Link href="/admin/triagem"><Button variant="ghost" size="icon" aria-label="Voltar à triagem"><ArrowLeft /></Button></Link>
           <div><h1 className="text-xl font-bold" data-testid="text-page-title">Fontes de Curadoria</h1><p className="text-sm text-muted-foreground">Fontes configuradas para alimentar o UpPulse</p></div>
         </div>
-        <Button onClick={startNew} data-testid="button-new-source"><ListPlus className="w-4 h-4 mr-2" />Nova lista</Button>
+        <div className="flex items-center gap-2"><Link href="/admin/curadoria/feeds"><Button variant="outline" data-testid="button-awin-feeds">Feeds de parceiros (AWIN)</Button></Link><Button onClick={startNew} data-testid="button-new-source"><ListPlus className="w-4 h-4 mr-2" />Nova lista</Button></div>
       </div>
     </header>
     <main className="container mx-auto px-4 py-6 space-y-5">
