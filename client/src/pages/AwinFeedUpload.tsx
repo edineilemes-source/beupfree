@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import AuthDialog from "@/components/AuthDialog";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ArrowLeft, UploadCloud, FileArchive, AlertTriangle, CheckCircle2, PlayCircle } from "lucide-react";
@@ -16,8 +14,6 @@ type Audit={status:string;merchant:string;feedId:string;storedName:string;sha256
 type ProcessReport={status:string;imported:number;unchanged:number;accepted:number;review:number;discarded:number;invalid:number;published:number;message:string};
 const format=(n:number)=>n.toLocaleString("pt-BR");
 export default function AwinFeedUpload(){
- const {isAuthenticated,isLoading}=useAuth();
- const [loginOpen,setLoginOpen]=useState(false);
  const [file,setFile]=useState<File|null>(null);
  const [pending,setPending]=useState(false);
  const [processing,setProcessing]=useState(false);
@@ -27,15 +23,15 @@ export default function AwinFeedUpload(){
  const [visibleIssues,setVisibleIssues]=useState<Issue[]>([]);
  const [loadingIssues,setLoadingIssues]=useState(false);
  const [processed,setProcessed]=useState<ProcessReport|null>(null);
- const {data:status,error:accessError}=useQuery<{enabled:boolean;maxFileBytes:number;staging:boolean}>({
-  queryKey:["/api/admin/awin-feeds/status",isAuthenticated],retry:false,enabled:isAuthenticated,
+ const {data:status,error:accessError}=useQuery<{enabled:boolean;maxFileBytes:number;staging:boolean;temporaryAccess:boolean}>({
+  queryKey:["/api/admin/awin-feeds/status"],retry:false,
   queryFn:async()=>{const r=await fetch("/api/admin/awin-feeds/status",{credentials:"same-origin"});const j=await r.json();if(!r.ok)throw Error(j.message||j.code||"Acesso indisponível");return j}
  });
  async function submit(event:React.FormEvent<HTMLFormElement>){
   event.preventDefault();setPending(true);setError("");setReport(null);setProcessed(null);
   try{
    if(!file||!file.name.toLowerCase().endsWith(".csv.gz"))throw Error("Selecione um arquivo AWIN .csv.gz");
-   if(!status?.enabled)throw Error("Acesso administrativo não habilitado. Entre na conta autorizada.");
+   if(!status?.enabled)throw Error("Importação desabilitada neste ambiente.");
    if(file.size>status.maxFileBytes)throw Error("O arquivo supera o tamanho máximo permitido.");
    const response=await fetch("/api/admin/awin-feeds/upload",{
     method:"POST",credentials:"same-origin",
@@ -88,15 +84,14 @@ export default function AwinFeedUpload(){
    <Card className="p-5 space-y-2">
     <h2 className="text-lg font-semibold">Importar feed AWIN</h2>
     <p className="text-sm text-muted-foreground">A identificação do anunciante e do feed é lida do arquivo AWIN. Nenhum código é preenchido antecipadamente.</p>
-    <p className="text-sm">Acesso vinculado à sessão administrativa autorizada, sem digitação de chave técnica nesta tela.</p>
+    <p className="text-sm">Homologação: envio sem usuário e senha nesta página. A importação continua restrita ao ambiente de testes, sem publicação automática na vitrine.</p>
    </Card>
    <Card className="p-5"><form onSubmit={submit} className="space-y-4">
     <div className="space-y-1.5"><Label htmlFor="awin-file">Arquivo do parceiro (.csv.gz)</Label>
      <Input id="awin-file" type="file" accept=".gz,.csv.gz,application/gzip" onChange={e=>setFile(e.target.files?.[0]??null)} required/>
      {file&&<p className="text-sm text-muted-foreground flex items-center gap-2"><FileArchive className="h-4 w-4"/>{file.name} — {(file.size/1024).toFixed(0)} KB</p>}
     </div>
-    {!isLoading&&!isAuthenticated&&<div className="space-y-2"><p className="text-sm text-amber-700">Para processar um feed, entre na conta autorizada para administrar a Curadoria.</p><Button type="button" variant="outline" onClick={()=>setLoginOpen(true)}>Entrar na conta administrativa</Button></div>}
-    {accessError&&isAuthenticated&&<p role="alert" className="text-sm text-destructive">{accessError instanceof Error?accessError.message:"Acesso administrativo indisponível"}</p>}
+    {accessError&&<p role="alert" className="text-sm text-destructive">{accessError instanceof Error?accessError.message:"Acesso administrativo indisponível"}</p>}
     {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
     <Button type="submit" disabled={pending||!file||!status?.enabled} className="gap-2"><UploadCloud className="h-4 w-4"/>{pending?"Validando arquivo…":"Enviar e validar produtos"}</Button>
    </form></Card>
@@ -135,6 +130,5 @@ export default function AwinFeedUpload(){
     </div>}
    </Card>}
   </main>
-  <AuthDialog open={loginOpen} onOpenChange={setLoginOpen} initialMode="login"/>
  </div>;
 }
