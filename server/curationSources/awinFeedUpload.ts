@@ -12,6 +12,7 @@ import {join} from "node:path";
 import {parseAwinCsv} from "../integrations/awin/csv";
 import {normalizeAwinItem,isInvalidAwinItem} from "../integrations/awin/normalize";
 import {assessAwinCatalogCandidate} from "../integrations/awin/catalogCandidate";
+import {masterPipelineCoverage} from "./masterPipeline";
 
 const MAX_GZIP=20*1024*1024,MAX_UNCOMPRESSED=160*1024*1024,MAX_ROWS=100000;
 function adminIds(env:NodeJS.ProcessEnv):string[]{
@@ -164,6 +165,7 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
      promotionEvidence:has("offer_promotion_evidence")?await run("SELECT count(DISTINCT pe.offer_id)::int n FROM offer_promotion_evidence pe JOIN offers o ON o.id=pe.offer_id WHERE o.merchant_id=$1"):null,
      classifiedProducts:has("product_catalog_classifications")?await run("SELECT count(DISTINCT product_id)::int n FROM product_catalog_classifications WHERE merchant_id=$1"):null,
      eligibleClassifications:has("product_catalog_classifications")?await run("SELECT count(DISTINCT product_id)::int n FROM product_catalog_classifications WHERE merchant_id=$1 AND operational_state='CATALOG_ELIGIBLE'"):null,
+     totalVariants:await run("SELECT count(*)::int n FROM product_variants WHERE merchant_id=$1"),
      normalizedVariants:has("product_variant_normalizations")?await run("SELECT count(DISTINCT n.variant_id)::int n FROM product_variant_normalizations n JOIN product_variants v ON v.id=n.variant_id WHERE v.merchant_id=$1"):null,
      masterMemberships:has("product_master_memberships")&&has("external_product_identities")?await run("SELECT count(DISTINCT mm.external_product_identity_id)::int n FROM product_master_memberships mm JOIN external_product_identities e ON e.id=mm.external_product_identity_id WHERE e.merchant_id=$1 AND mm.valid_to IS NULL"):null,
      masterIdentities:has("product_master_memberships")&&has("external_product_identities")?await run("SELECT count(DISTINCT mm.master_product_id)::int n FROM product_master_memberships mm JOIN external_product_identities e ON e.id=mm.external_product_identity_id WHERE e.merchant_id=$1 AND mm.valid_to IS NULL"):null,
@@ -179,7 +181,7 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
       projected:counts.searchProducts!==null&&counts.searchProducts>0,
       storeVisibleInFilter:counts.availableSearchProducts!==null&&counts.availableSearchProducts>0
     };
-    return res.json({merchant:{name:merchant.name,id:merchant.external_merchant_id},counts,steps,
+    return res.json({merchant:{name:merchant.name,id:merchant.external_merchant_id},counts,steps,pipeline:masterPipelineCoverage(counts),
       note:"O Produto Mestre exige evidências atuais além da existência de memberships; esta auditoria mede cobertura, não certifica equivalência entre produtos.",
       storeFacetRule:"A loja aparece automaticamente no filtro Loja somente quando há produtos elegíveis e disponíveis na projeção."});
    }catch(e){await db.query("ROLLBACK").catch(()=>{});throw e}
