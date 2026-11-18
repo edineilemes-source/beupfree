@@ -8,6 +8,8 @@ on:
       - 'client/**'
       - 'server/**'
       - 'shared/**'
+      - 'scripts/uppulse_codespace_agent.py'
+      - 'scripts/uppulse_bridge_install.sh'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/uppulse-release-gate.yml'
@@ -40,6 +42,8 @@ jobs:
           cache: npm
       - name: Instalar dependencias do lockfile
         run: npm ci
+      - name: Validar sintaxe do agente Codespaces
+        run: python3 -m py_compile scripts/uppulse_codespace_agent.py
       - name: TypeScript
         run: npm run check
       - name: Testes unitarios
