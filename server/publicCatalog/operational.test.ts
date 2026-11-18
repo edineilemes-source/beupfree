@@ -56,3 +56,16 @@ test("operational API returns canonical classification used by filtering and org
   assert.deepEqual(res.body.products[0].normalizedSizes,[35,41]);
  }finally{disable()}
 });
+
+
+test("preço regular não exibe preço anterior falso nem desconto",async()=>{
+ enable();try{
+  const regular={...row,previous_price:"299",current_price:"299",discount_percent:0,promotion_status:"REGULAR_PRICE"};
+  const mocked:any={...repo,listProducts:async()=>[regular]};
+  const res=response();await createOperationalPublicCatalogHandlers(()=>mocked).list(request(),res,()=>assert.fail());
+  assert.equal(res.body.products[0].bestOffer.originalPrice,null);
+  assert.equal(res.body.products[0].bestOffer.discountPercent,0);
+  assert.equal(res.body.products[0].bestOffer.priceState,"REGULAR_PRICE");
+  assert.equal(res.body.products[0].bestOffer.formattedOriginalPrice,null);
+ }finally{disable()}
+});
