@@ -11,7 +11,9 @@ type Audit={status:string;merchant:string;feedId:string;storedName:string;sha256
  stats:{rows:number;normalized:number;invalid:number;priceStates:Record<string,number>;
  taxonomy:Record<string,number>;eligibility:Record<string,number>;reasons:Record<string,number>};
  issues:Issue[];issuesTotal:number;issuesPageSize:number;accepted:number;discarded:number;review:number;imported:number;published:number;canProcess:boolean};
-type MerchantAudit={merchant:{name:string;id:string};counts:{offers:number;distinctProducts:number;activeOffers:number;identities:number|null;stagedIdentities:number|null;promotionEvidence:number|null;classifiedProducts:number|null;eligibleClassifications:number|null;normalizedVariants:number|null;masterMemberships:number|null;masterIdentities:number|null;searchProducts:number|null;availableSearchProducts:number|null};steps:{received:boolean;masterCovered:boolean;catalogClassified:boolean;priceAudited:boolean;projected:boolean;storeVisibleInFilter:boolean};note:string;storeFacetRule:string};
+type MasterPreview={merchantId:string;previewOnly:boolean;parserVersion:string;samples:Array<{externalIdentityId:string;productId:string;rawName:string;identity:{master:{brand:string|null;productType:string|null;modelTokens:string[];modelFamily:string|null;version:string|null;technicalQualifiers:string[]};variant:{colors:string[];size:{value:string;system:string}|null};ambiguities:string[]};normalization:{size:{raw:string|null;normalized:number|null;status:string};color:{raw:string|null;normalized:string[]|null;status:string}}}>};
+type PipelineStep={stage:string;status:"DONE"|"PARTIAL"|"PENDING"|"NOT_VERIFIED";done:number|null;expected:number|null;reason:string};
+type MerchantAudit={pipeline:{stages:Record<string,PipelineStep>;versions:{identity:{parser:string;matcher:string}};publicationApproved:boolean};merchant:{name:string;id:string};counts:{offers:number;distinctProducts:number;activeOffers:number;identities:number|null;stagedIdentities:number|null;promotionEvidence:number|null;classifiedProducts:number|null;eligibleClassifications:number|null;normalizedVariants:number|null;masterMemberships:number|null;masterIdentities:number|null;searchProducts:number|null;availableSearchProducts:number|null};steps:{received:boolean;masterCovered:boolean;catalogClassified:boolean;priceAudited:boolean;projected:boolean;storeVisibleInFilter:boolean};note:string;storeFacetRule:string};
 type ProcessReport={status:string;imported:number;unchanged:number;accepted:number;review:number;discarded:number;invalid:number;published:number;message:string};
 const format=(n:number)=>n.toLocaleString("pt-BR");
 export default function AwinFeedUpload(){
@@ -25,8 +27,21 @@ export default function AwinFeedUpload(){
  const [loadingIssues,setLoadingIssues]=useState(false);
  const [processed,setProcessed]=useState<ProcessReport|null>(null);
  const [merchantAudit,setMerchantAudit]=useState<MerchantAudit|null>(null);
+ const [masterPreview,setMasterPreview]=useState<MasterPreview|null>(null);
+ const [previewLoading,setPreviewLoading]=useState(false);
  const [auditLoading,setAuditLoading]=useState(false);
  const [auditMerchant,setAuditMerchant]=useState("17698");
+ async function loadMasterPreview(id:string){
+  if(!/^[0-9]{2,12}$/.test(id))return;
+  setPreviewLoading(true);
+  try{
+   const response=await fetch(`/api/admin/awin-feeds/merchant/${id}/master-preview`,{credentials:"same-origin"});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.message||data.code||"Prévia indisponível");
+   setMasterPreview(data as MasterPreview);
+  }catch(e){setError(e instanceof Error?e.message:"Não foi possível consultar o Produto Mestre")}
+  finally{setPreviewLoading(false)}
+ }
  async function refreshMerchantAudit(id:string){
   if(!/^[0-9]{2,12}$/.test(id))return;
   setAuditLoading(true);
@@ -35,6 +50,7 @@ export default function AwinFeedUpload(){
    const data=await r.json();
    if(!r.ok)throw Error(data.message||data.code||"Auditoria indisponível");
    setMerchantAudit(data as MerchantAudit);
+   setMasterPreview(null);
   }catch(e){setError(e instanceof Error?e.message:"Falha na auditoria")}
   finally{setAuditLoading(false)}
  }
@@ -121,6 +137,30 @@ export default function AwinFeedUpload(){
         ["Classificação do catálogo",merchantAudit.steps.catalogClassified],["Validação comercial",merchantAudit.steps.priceAudited],
         ["Projeção da vitrine",merchantAudit.steps.projected],["Loja disponível nos filtros",merchantAudit.steps.storeVisibleInFilter]] as Array<[string,boolean]>).map(([label,passed])=>
        <p key={label} className="border rounded-md p-2 text-sm">{passed?"✓":"Pendente"} — {label}</p>)}
+     </div>
+     <div className="space-y-2 border-t pt-3">
+      <h3 className="font-semibold">Esteira da Curadoria V3 — execução por etapa</h3>
+      <p className="text-xs text-muted-foreground">Versões históricas preservadas: parser {merchantAudit.pipeline.versions.identity.parser}; matcher {merchantAudit.pipeline.versions.identity.matcher}. A cobertura não equivale a homologação de equivalência.</p>
+      <div className="grid sm:grid-cols-2 gap-2">
+       {Object.values(merchantAudit.pipeline.stages).map(step=><div key={step.stage} className="rounded-md border p-2 text-sm">
+        <div className="font-medium">{step.stage.replaceAll("_"," ")} — {step.status==="DONE"?"Registrado":step.status==="PARTIAL"?"Parcial":step.status==="PENDING"?"Pendente":"Não verificado"}</div>
+        <p className="text-xs text-muted-foreground">{step.done===null?"—":format(step.done)} / {step.expected===null?"—":format(step.expected)} · {step.reason}</p>
+       </div>)}
+      </div>
+      <Button variant="outline" onClick={()=>void loadMasterPreview(merchantAudit.merchant.id)} disabled={previewLoading}>
+       {previewLoading?"Lendo identidades…":"Inspecionar nome, modelo, cor e tamanho pelo Produto Mestre original"}
+      </Button>
+      {masterPreview&&<div className="space-y-2" data-testid="master-preview">
+       <p className="text-xs text-muted-foreground">Amostra de até 20 identidades · parser {masterPreview.parserVersion}. Apenas leitura; nenhum produto é fundido ou publicado.</p>
+       <div className="max-h-96 overflow-auto"><table className="w-full text-xs"><thead><tr className="border-b text-left"><th className="p-2">Nome original</th><th className="p-2">Marca / modelo / geração</th><th className="p-2">Tamanho / cor</th><th className="p-2">Ambiguidades</th></tr></thead><tbody>
+       {masterPreview.samples.map(sample=><tr key={sample.externalIdentityId} className="border-b">
+        <td className="p-2">{sample.rawName}</td>
+        <td className="p-2">{sample.identity.master.brand??"Não identificado"} · {sample.identity.master.modelTokens.join(" ")||"—"} · {sample.identity.master.version??"—"}</td>
+        <td className="p-2">{sample.normalization.size.normalized??"—"} · {sample.normalization.color.normalized?.join(", ")||"—"}</td>
+        <td className="p-2">{sample.identity.ambiguities.join(", ")||"Nenhuma sinalizada"}</td>
+       </tr>)}
+       </tbody></table></div>
+      </div>}
      </div>
      <p className="text-xs text-muted-foreground">{merchantAudit.note} {merchantAudit.storeFacetRule}</p>
      {merchantAudit.steps.storeVisibleInFilter&&<Link href={`/catalogo?merchant=${encodeURIComponent(merchantAudit.merchant.name)}`}><Button variant="outline">Ver produtos dessa loja no catálogo</Button></Link>}
