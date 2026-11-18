@@ -76,3 +76,46 @@ test("importação AWIN reconhece a fonte automaticamente e exige sessão admini
   }
  }
 });
+
+test("auditoria da loja compara ofertas, Master, classificação e projeção sem modificar o banco",async()=>{
+ const previous={demo:process.env.PUBLIC_DEMO_MODE,node:process.env.NODE_ENV,temporary:process.env.UPPULSE_CURATOR_TEST_NO_AUTH};
+ process.env.NODE_ENV="development";process.env.PUBLIC_DEMO_MODE="false";process.env.UPPULSE_CURATOR_TEST_NO_AUTH="true";
+ const queries:string[]=[];let released=false;
+ const tables=["commerce_merchants","commerce_feeds","offers","product_variants","external_product_identities",
+  "offer_promotion_evidence","product_catalog_classifications","product_variant_normalizations",
+  "catalog_search_products","product_master_memberships","product_identity_jobs"];
+ const db={
+  query:async(sql:string)=>{
+   queries.push(sql);
+   if(sql.includes("information_schema.tables"))return {rows:tables.map(table_name=>({table_name}))};
+   if(sql.includes("SELECT id,name,external_merchant_id FROM commerce_merchants"))return {rows:[{id:"merchant-uuid",name:"Olympikus",external_merchant_id:"17698"}]};
+   if(sql.startsWith("SELECT count"))return {rows:[{n:sql.includes("FROM offers WHERE")?5167:sql.includes("FROM product_variants WHERE")?813:sql.includes("FROM external_product_identities WHERE")?813:sql.includes("product_master_memberships")?0:sql.includes("catalog_search_products")?0:0}]};
+   return {rows:[]};
+  },release:()=>{released=true}
+ };
+ const app=express();app.use("/api/admin/awin-feeds",createAwinFeedUploadRouter(undefined,{connect:async()=>db}));
+ const server=app.listen(0);
+ try{
+  await new Promise<void>(resolve=>server.once("listening",resolve));
+  const port=(server.address() as AddressInfo).port;
+  const response=await fetch("http://127.0.0.1:"+port+"/api/admin/awin-feeds/merchant/17698/audit");
+  const report=await response.json();
+  assert.equal(response.status,200,JSON.stringify(report));
+  assert.equal(report.merchant.name,"Olympikus");
+  assert.equal(report.counts.offers,5167);
+  assert.equal(report.counts.distinctProducts,813);
+  assert.equal(report.counts.masterMemberships,0);
+  assert.equal(report.counts.searchProducts,0);
+  assert.equal(report.steps.masterCovered,false);
+  assert.equal(report.steps.storeVisibleInFilter,false);
+  assert.ok(queries.some(query=>query.includes("READ ONLY")));
+  assert.ok(queries.includes("COMMIT"));
+  assert.equal(queries.some(query=>/^(INSERT|UPDATE|DELETE|ALTER|TRUNCATE)/.test(query)),false);
+  assert.equal(released,true);
+ }finally{
+  await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));
+  for(const [name,key] of [["demo","PUBLIC_DEMO_MODE"],["node","NODE_ENV"],["temporary","UPPULSE_CURATOR_TEST_NO_AUTH"]] as const){
+   const value=previous[name];if(value===undefined)delete process.env[key];else process.env[key]=value;
+  }
+ }
+});
