@@ -85,3 +85,11 @@ echo "ADMIN_UPLOAD_TOKEN (cole apenas no formulário da Curadoria):"
 cat "$upload_token"
 echo
 echo "Recovery installed on terminal attach; stopped Codespace still requires opening the workspace; postStart rebuild hook not yet verified"
+# Queue the isolated Curadoria preview without altering the existing 5013 service.
+preview_sha="$(git rev-parse "$ref")"
+preview_json="{\"commit\":\"$preview_sha\",\"port\":5014,\"profile\":\"basic\"}"
+if gh issue create --repo edineilemes-source/beupfree --title "[UPPULSE-AGENT] PREVIEW" --body "$preview_json" >/dev/null;then
+ echo "PREVIEW_5014_REQUESTED: Curadoria -> Feeds de parceiros (AWIN)"
+else
+ echo "PREVIEW_5014_NOT_QUEUED: bridge installed; create PREVIEW issue separately"
+fi
