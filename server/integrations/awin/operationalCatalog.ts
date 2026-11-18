@@ -35,6 +35,34 @@ export function validatePromotion(input:{currentPrice:number;previousPrice:numbe
  const calculated=input.previousPrice>0?+(((input.previousPrice-input.currentPrice)/input.previousPrice)*100).toFixed(3):null;if(calculated==null||Math.abs(calculated-input.discountPercent)>.11)reasons.push("DISCOUNT_MATH_INCONSISTENT");
  return {valid:reasons.length===0,calculatedPercent:calculated,reasonCodes:reasons};
 }
+export type CommercialPriceState = "PROMOTION_CONFIRMED" | "REGULAR_PRICE" | "REVIEW_REQUIRED";
+export type CommercialPriceEvaluation = {status:CommercialPriceState;currentPrice:number|null;previousPrice:number|null;discountPercent:number;reasonCodes:string[]};
+/**
+ * Feed-level price assessment, independent of the advertiser and publication decision.
+ * The original absent previous price remains null; only downstream legacy storage
+ * may represent a regular price as previous=current, with status REGULAR_PRICE.
+ */
+export function evaluateCommercialPrice(input:{
+ currentPrice:number|null|undefined; previousPrice?:number|null; discountPercent?:number|null; currency:string|null|undefined;
+}):CommercialPriceEvaluation{
+ const current=input.currentPrice, previous=input.previousPrice, stated=input.discountPercent;
+ const invalid={status:"REVIEW_REQUIRED" as const,currentPrice:typeof current==="number"&&Number.isFinite(current)?current:null,previousPrice:typeof previous==="number"&&Number.isFinite(previous)?previous:null,discountPercent:0,reasonCodes:["PRICE_INVALID"]};
+ if(typeof current!=="number"||!Number.isFinite(current)||current<=0)return invalid;
+ if(input.currency!=="BRL")return {...invalid,currentPrice:current,reasonCodes:["CURRENCY_NOT_BRL"]};
+ if(previous==null){
+  if(stated!=null&&( !Number.isFinite(stated)||stated!==0))return {...invalid,currentPrice:current,reasonCodes:["UNVERIFIED_DISCOUNT"]};
+  return {status:"REGULAR_PRICE",currentPrice:current,previousPrice:null,discountPercent:0,reasonCodes:["PREVIOUS_PRICE_NOT_PROVIDED"]};
+ }
+ if(!Number.isFinite(previous)||previous<=0)return {...invalid,currentPrice:current,reasonCodes:["PREVIOUS_PRICE_INVALID"]};
+ if(previous===current&&(!Number.isFinite(stated??0)||(stated??0)!==0))
+  return {...invalid,currentPrice:current,previousPrice:previous,reasonCodes:["UNVERIFIED_DISCOUNT"]};
+ if(previous===current)return {status:"REGULAR_PRICE",currentPrice:current,previousPrice:previous,discountPercent:0,reasonCodes:["PRICE_NOT_DISCOUNTED"]};
+ if(previous<current)return {...invalid,currentPrice:current,previousPrice:previous,reasonCodes:["PRICE_ORDER_INVALID"]};
+ const calculated=+(((previous-current)/previous)*100).toFixed(3);
+ if(stated!=null&&(!Number.isFinite(stated)||Math.abs(calculated-stated)>.11))return {...invalid,currentPrice:current,previousPrice:previous,reasonCodes:["DISCOUNT_MATH_INCONSISTENT"]};
+ return {status:"PROMOTION_CONFIRMED",currentPrice:current,previousPrice:previous,discountPercent:calculated,reasonCodes:[]};
+}
+
 export function auditAffiliateUrl(value:unknown):{literal:string|null;valid:boolean;host:string|null;reasonCode:string}{
  const literal=typeof value==="string"?value:null;if(!literal)return {literal:null,valid:false,host:null,reasonCode:"AFFILIATE_URL_MISSING"};try{const url=new URL(literal);return {literal,valid:/^https?:$/.test(url.protocol),host:url.hostname,reasonCode:/^https?:$/.test(url.protocol)?"AFFILIATE_URL_LITERAL_VALID":"AFFILIATE_URL_PROTOCOL_INVALID"};}catch{return {literal,valid:false,host:null,reasonCode:"AFFILIATE_URL_INVALID"};}
 }
