@@ -128,3 +128,10 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Diagnosticar ausência/cobertura da Master e da classificação/preço/projeção. A importação de 5.167 ofertas **em staging** não equivale a publicação. Não criar filtro fixo com produtos ainda não elegíveis.
 - Se a etapa de preço regular depender da migração 0014, confirmar backup/teste de restauração e autorização antes de tocar no esquema. Não executar API paga nem credenciar provisoriamente produtos sem validação.
 - Relatório: `docs/relatorios/MISSAO11_OLYMPIKUS_PRODUTO_MASTER_E_LOJA_2026-11-17.md`.
+
+ 
+## Curadoria V3 — prioridade de implementação (2026-11-18)
+- Etapa 1 codificada e validada no CI: contrato `server/curationSources/masterPipeline.ts` e bridge `masterParserPreview.ts` usam **bibliotecas históricas**; interface integrada à Curadoria e sem novas fusões.
+- Validar preview da branch canônica e endpoint `/api/admin/awin-feeds/merchant/17698/master-preview`.
+- Próxima etapa: orquestrador persistente de novas lojas/feeds e worker que use `productIdentity/jobs.ts`, `operational.ts`, `catalogPersistence.ts` e projeção existente, SEM duplicar regras, SEM disparar mudanças no banco antes do gate e SEM publicar itens sem desconto comprovado.
+- Relatório: `docs/relatorios/CURADORIA_V3_ETAPA1_PRESERVACAO_MASTER_2026-11-18.md`.
