@@ -10,10 +10,10 @@ import type {AddressInfo} from "node:net";
 import {createAwinFeedUploadRouter} from "./awinFeedUpload";
 
 test("importação AWIN reconhece a fonte automaticamente e exige sessão administrativa",async()=>{
- const previous={admins:process.env.UPPULSE_CURATOR_ADMIN_EMAILS,dir:process.env.UPPULSE_FEED_INBOX_DIR,node:process.env.NODE_ENV};
+ const previous={admins:process.env.UPPULSE_CURATOR_ADMIN_USER_IDS,dir:process.env.UPPULSE_FEED_INBOX_DIR,node:process.env.NODE_ENV};
  const dir=await mkdtemp(join(tmpdir(),"uppulse-feed-upload-test-"));
  process.env.NODE_ENV="test";
- process.env.UPPULSE_CURATOR_ADMIN_EMAILS="admin@test.local";
+ process.env.UPPULSE_CURATOR_ADMIN_USER_IDS="test-user";
  process.env.UPPULSE_FEED_INBOX_DIR=dir;
  const app=express();
  let authenticated=false;
@@ -21,7 +21,7 @@ test("importação AWIN reconhece a fonte automaticamente e exige sessão admini
   if(authenticated)(req as any).session={userId:"test-user"};
   next();
  });
- app.use("/api/admin/awin-feeds",createAwinFeedUploadRouter(async()=>({email:"admin@test.local",isActive:true})));
+ app.use("/api/admin/awin-feeds",createAwinFeedUploadRouter(async()=>({id:"test-user",email:"admin@test.local",isActive:true})));
  const server=app.listen(0);
  try{
   await new Promise<void>(resolve=>server.once("listening",resolve));
@@ -51,7 +51,7 @@ test("importação AWIN reconhece a fonte automaticamente e exige sessão admini
   await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));
   await rm(dir,{recursive:true,force:true});
   for(const [name,value] of Object.entries(previous)){
-   const key=({admins:"UPPULSE_CURATOR_ADMIN_EMAILS",dir:"UPPULSE_FEED_INBOX_DIR",node:"NODE_ENV"} as Record<string,string>)[name];
+   const key=({admins:"UPPULSE_CURATOR_ADMIN_USER_IDS",dir:"UPPULSE_FEED_INBOX_DIR",node:"NODE_ENV"} as Record<string,string>)[name];
    if(value===undefined)delete process.env[key];else process.env[key]=value;
   }
  }
