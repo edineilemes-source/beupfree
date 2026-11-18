@@ -32,3 +32,19 @@ test("oferta regular com desconto zero pode compor projeção, sem criar promoç
  assert.equal(chooseRepresentativeOffer([regular,base({offerId:"promo",currentPrice:100,previousPrice:200,discountPercent:50})])?.offerId,"promo");
  assert.equal(chooseRepresentativeOffer([regular,base({offerId:"regular-cheaper",currentPrice:199,previousPrice:199,discountPercent:0,promotionStatus:"REGULAR_PRICE"})])?.offerId,"regular-cheaper");
 });
+
+
+test("estado comercial é preservado na projeção, e preço regular fica com zero desconto",()=>{
+ const regular=base({productId:"p-reg",merchantId:"olympikus",offerId:"o-reg",currentPrice:299,previousPrice:299,discountPercent:0,promotionStatus:"REGULAR_PRICE"});
+ const projected=buildCatalogSearchProjection([regular]).rows[0];
+ assert.equal(projected.promotionStatus,"REGULAR_PRICE");assert.equal(projected.discountPercent,0);
+ const promo=buildCatalogSearchProjection([base()]).rows[0];
+ assert.equal(promo.promotionStatus,"PROMOTION_CONFIRMED");
+});
+test("migração separa preços sem desconto de promoções reais",()=>{
+ const sql=readFileSync(new URL("../../migrations/0014_regular_price_offer_evidence.sql",import.meta.url),"utf8");
+ assert.match(sql,/promotion_status = 'REGULAR_PRICE' AND old_price = current_price/);
+ assert.match(sql,/promotion_status='REGULAR_PRICE' AND discount_percent=0/);
+ assert.match(sql,/BEGIN;/);assert.match(sql,/COMMIT;/);
+ assert.doesNotMatch(sql,/\b(TRUNCATE|DELETE|UPDATE|INSERT)\b/i);
+});
