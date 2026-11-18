@@ -36,16 +36,18 @@ export default function AwinFeedUpload(){
    });
    const data=await response.json();
    if(!response.ok)throw Error(data.message||data.code||"Falha na análise");
-   setReport(data as Audit);
+   const audited=data as Audit;
+   setReport(audited);
+   if(audited.accepted>0&&audited.canProcess)await process(audited);
   }catch(e){setError(e instanceof Error?e.message:"Erro no envio")}
   finally{setPending(false)}
  }
- async function process(){
-  if(!report)return;setProcessing(true);setError("");
+ async function process(audit:Audit|null=report){
+  if(!audit)return;setProcessing(true);setError("");
   try{
    const response=await fetch("/api/admin/awin-feeds/process",{
     method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({merchant:report.merchant,feedId:report.feedId,sha256:report.sha256})
+    body:JSON.stringify({merchant:audit.merchant,feedId:audit.feedId,sha256:audit.sha256})
    });
    const data=await response.json();
    if(!response.ok)throw Error(data.message||data.code||"Processamento não concluído");
@@ -97,8 +99,8 @@ export default function AwinFeedUpload(){
      {report.issuesTruncated&&<p className="text-sm text-muted-foreground">Amostra limitada a 300 ocorrências. Os totais acima abrangem todo o arquivo.</p>}
     </div>
     {!processed?<div className="border-t pt-4 space-y-2">
-     <p className="text-sm">Os produtos aceitos podem ser incorporados ao banco agora, sem executar comandos no terminal. Eles permanecem em staging até a validação de publicação.</p>
-     <Button onClick={process} disabled={processing||report.accepted===0||!report.canProcess} className="gap-2"><PlayCircle className="h-4 w-4"/>{processing?"Gravando produtos…":`Processar ${format(report.accepted)} produtos aceitos`}</Button>
+     <p className="text-sm">Os produtos aprovados são processados automaticamente após a análise. Os itens gravados permanecem em staging até a homologação de publicação.</p>
+     <Button onClick={()=>void process()} disabled={processing||report.accepted===0||!report.canProcess} className="gap-2"><PlayCircle className="h-4 w-4"/>{processing?"Gravando produtos…":`Reprocessar ${format(report.accepted)} produtos aceitos`}</Button>
      {!report.canProcess&&<p className="text-sm text-destructive"><AlertTriangle className="inline h-4 w-4"/> Banco de catálogo indisponível para processamento.</p>}
     </div>:<div className="border-t pt-4 space-y-2" data-testid="awin-process-result">
      <p className="font-semibold text-green-700"><CheckCircle2 className="inline h-5 w-5 mr-2"/>Processamento concluído no banco</p>
