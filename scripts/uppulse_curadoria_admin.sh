@@ -3,7 +3,7 @@
 # Não cria contas, não altera o PostgreSQL e não coloca credenciais no Git.
 set -Eeuo pipefail
 if ! command -v docker >/dev/null 2>&1;then echo "Docker indisponível";exit 2;fi
-read -r -p "E-mail da conta já cadastrada no UpPulse: " email
+read -r -p "E-mail da conta já cadastrada no UpPulse: " email </dev/tty
 email="${email,,}"
 if [[ ! "$email" =~ ^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$ ]];then
  echo "E-mail inválido. Nenhuma autorização gravada.";exit 2
