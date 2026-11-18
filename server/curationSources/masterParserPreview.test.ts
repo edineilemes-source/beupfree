@@ -6,7 +6,7 @@ import {VERSIONS} from "../productIdentity/contracts";
 test("Curadoria chama o parser histórico exato para nome/modelo/versão, sem recriar regras",()=>{
  const input={externalIdentityId:"e1",productId:"p1",productName:"Tênis Olympikus Corre 4 Masculino Preto",
   brandName:"Olympikus",variantId:"v1",sizeRaw:"40",colorRaw:"Preto",gtin:null,mpn:null};
- const source=parseProductIdentity({name:input.productName,brand:input.brandName,size:{value:"40",system:"BR"}});
+ const source=parseProductIdentity({name:input.productName,brand:input.brandName});
  const preview=masterParserPreview(input);
  assert.deepEqual(preview.identity.master,source.master);
  assert.deepEqual(preview.identity.variant,source.variant);
