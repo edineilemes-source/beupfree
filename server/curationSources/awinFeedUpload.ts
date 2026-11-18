@@ -22,7 +22,7 @@ function adminAuthorization(resolveUser?:AdminResolver):RequestHandler{return as
  const origin=req.get("origin"),host=req.get("host");
  let sameOrigin=false;
  try{sameOrigin=Boolean(origin&&host&&new URL(origin).host===host)}catch{}
- if(!sameOrigin)return res.status(403).json({code:"SAME_ORIGIN_REQUIRED"});
+ if(req.method!=="GET"&&!sameOrigin)return res.status(403).json({code:"SAME_ORIGIN_REQUIRED"});
  if(!req.session?.userId)return res.status(401).json({code:"LOGIN_REQUIRED",message:"Entre na sua conta administrativa para importar feeds."});
  try{
   const user=await (resolveUser?resolveUser(req.session.userId):(await import("../auth/userRepository")).userRepository.findActiveById(req.session.userId));
@@ -47,7 +47,7 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver){
   let merchant="",feedId="";
   const merchants=new Set<string>(),feeds=new Set<string>();
   const filename=req.get("x-awin-file-name")??"";
-  const filenameIds=filename.match(/^(\\d{2,12})-(\\d{2,12})-/);
+  const filenameIds=filename.match(/^(\d{2,12})-(\d{2,12})-/);
   const issues:Array<{row:number;reason:string;name:string}>=[];
   const MAX_ISSUES=300;
   const hash=createHash("sha256").update(data).digest("hex");
@@ -111,10 +111,9 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver){
   const filename=merchant+"-"+feedId+"-"+fingerprint.slice(0,16)+".csv.gz";
   try{
    const {openGzipFile}=await import("../integrations/awin/input");
-   const {createHash:hash}=await import("node:crypto");
    const {readFile}=await import("node:fs/promises");
    const data=await readFile(join(root,filename));
-   if(hash("sha256").update(data).digest("hex")!==fingerprint)return res.status(409).json({code:"FEED_FINGERPRINT_MISMATCH"});
+   if(createHash("sha256").update(data).digest("hex")!==fingerprint)return res.status(409).json({code:"FEED_FINGERPRINT_MISMATCH"});
    const {pool}=await import("../db");
    const client=await pool.connect();
    try{
