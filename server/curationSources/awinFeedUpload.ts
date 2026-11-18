@@ -25,14 +25,19 @@ function adminIds(env:NodeJS.ProcessEnv):string[]{
  }catch{}
  return [...new Set([...fromEnv,...fromFile].filter(id=>/^[a-zA-Z0-9_-]{2,128}$/.test(id)))];
 }
-function enabled(env:NodeJS.ProcessEnv){return adminIds(env).length>0}
+function temporaryNoLogin(env:NodeJS.ProcessEnv){
+ return env.NODE_ENV==="development"&&env.PUBLIC_DEMO_MODE==="false"&&
+  env.UPPULSE_CURATOR_TEST_NO_AUTH==="true";
+}
+function enabled(env:NodeJS.ProcessEnv){return temporaryNoLogin(env)||adminIds(env).length>0}
 type AdminResolver=(id:string)=>Promise<{id:string;email:string;isActive:boolean}|undefined>;
 function adminAuthorization(resolveUser?:AdminResolver):RequestHandler{return async(req,res,next)=>{
- if(!enabled(process.env))return res.status(503).json({code:"ADMIN_ACCESS_NOT_CONFIGURED",message:"Configure a conta administrativa pelo script scripts/uppulse_curadoria_admin.sh no Codespaces."});
+ if(!enabled(process.env))return res.status(503).json({code:"ADMIN_ACCESS_NOT_CONFIGURED",message:"Importação desabilitada neste ambiente."});
  const origin=req.get("origin"),host=req.get("host");
  let sameOrigin=false;
  try{sameOrigin=Boolean(origin&&host&&new URL(origin).host===host)}catch{}
  if(req.method!=="GET"&&!sameOrigin)return res.status(403).json({code:"SAME_ORIGIN_REQUIRED"});
+ if(temporaryNoLogin(process.env))return next();
  if(!req.session?.userId)return res.status(401).json({code:"LOGIN_REQUIRED",message:"Entre na sua conta administrativa para importar feeds."});
  try{
   const user=await (resolveUser?resolveUser(req.session.userId):(await import("../auth/userRepository")).userRepository.findActiveById(req.session.userId));
@@ -49,7 +54,7 @@ function limiter():Transform{
 export function createAwinFeedUploadRouter(resolveUser?:AdminResolver){
  const router=Router();
  const authorize=adminAuthorization(resolveUser);
- router.get("/status",authorize,(_req,res)=>res.json({enabled:true,maxFileBytes:MAX_GZIP,mode:"HOMOLOGATION_ONLY",publication:false,staging:Boolean(process.env.DATABASE_URL)}));
+ router.get("/status",authorize,(_req,res)=>res.json({enabled:true,maxFileBytes:MAX_GZIP,mode:"HOMOLOGATION_ONLY",publication:false,staging:Boolean(process.env.DATABASE_URL),temporaryAccess:temporaryNoLogin(process.env)}));
  router.post("/upload",authorize,raw({type:"application/gzip",limit:MAX_GZIP}),async(req,res)=>{
   const data=req.body;
   if(!Buffer.isBuffer(data)||data.length<20||data.length>MAX_GZIP||data[0]!==0x1f||data[1]!==0x8b)
