@@ -121,3 +121,10 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Etapa após atualizar agente: ChatGPT aciona DIAGNOSTICO + CATALOGO, resolve bloqueio concreto de PREVIEW/BUILD, homologa porta e gate de release. Não declarar servidor no ar antes de HTTP verificado. Reinício após abertura de terminal tem hook preparado, reconstrução completa do devcontainer segue não homologada.
 - Relatório detalhado: `docs/relatorios/UPPULSE_PREPARACAO_LANCAMENTO_2026-11-17.md`. Banco histórico `uppulse_catalog` não é base pública de produção. Publicação Hostinger pendente de acesso/ambiente autorizados e validação de dados/compras; nenhuma publicação ou migração executada.
 - **Ficha Inteligente segue congelada; sem novas pesquisas IA pagas.**
+
+ 
+## Continuidade de prioridade — Olympikus (2026-11-17)
+- Verificar pela rota `/api/admin/awin-feeds/merchant/17698/audit` ou pelo painel Curadoria → Feeds os números **por anunciante** no banco `uppulse_catalog`.
+- Diagnosticar ausência/cobertura da Master e da classificação/preço/projeção. A importação de 5.167 ofertas **em staging** não equivale a publicação. Não criar filtro fixo com produtos ainda não elegíveis.
+- Se a etapa de preço regular depender da migração 0014, confirmar backup/teste de restauração e autorização antes de tocar no esquema. Não executar API paga nem credenciar provisoriamente produtos sem validação.
+- Relatório: `docs/relatorios/MISSAO11_OLYMPIKUS_PRODUTO_MASTER_E_LOJA_2026-11-17.md`.
