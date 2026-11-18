@@ -11,6 +11,7 @@ type Audit={status:string;merchant:string;feedId:string;storedName:string;sha256
  stats:{rows:number;normalized:number;invalid:number;priceStates:Record<string,number>;
  taxonomy:Record<string,number>;eligibility:Record<string,number>;reasons:Record<string,number>};
  issues:Issue[];issuesTotal:number;issuesPageSize:number;accepted:number;discarded:number;review:number;imported:number;published:number;canProcess:boolean};
+type MerchantAudit={merchant:{name:string;id:string};counts:{offers:number;distinctProducts:number;activeOffers:number;identities:number|null;stagedIdentities:number|null;promotionEvidence:number|null;classifiedProducts:number|null;eligibleClassifications:number|null;normalizedVariants:number|null;masterMemberships:number|null;masterIdentities:number|null;searchProducts:number|null;availableSearchProducts:number|null};steps:{received:boolean;masterCovered:boolean;catalogClassified:boolean;priceAudited:boolean;projected:boolean;storeVisibleInFilter:boolean};note:string;storeFacetRule:string};
 type ProcessReport={status:string;imported:number;unchanged:number;accepted:number;review:number;discarded:number;invalid:number;published:number;message:string};
 const format=(n:number)=>n.toLocaleString("pt-BR");
 export default function AwinFeedUpload(){
@@ -23,6 +24,20 @@ export default function AwinFeedUpload(){
  const [visibleIssues,setVisibleIssues]=useState<Issue[]>([]);
  const [loadingIssues,setLoadingIssues]=useState(false);
  const [processed,setProcessed]=useState<ProcessReport|null>(null);
+ const [merchantAudit,setMerchantAudit]=useState<MerchantAudit|null>(null);
+ const [auditLoading,setAuditLoading]=useState(false);
+ const [auditMerchant,setAuditMerchant]=useState("17698");
+ async function refreshMerchantAudit(id:string){
+  if(!/^[0-9]{2,12}$/.test(id))return;
+  setAuditLoading(true);
+  try{
+   const r=await fetch(`/api/admin/awin-feeds/merchant/${id}/audit`,{credentials:"same-origin"});
+   const data=await r.json();
+   if(!r.ok)throw Error(data.message||data.code||"Auditoria indisponível");
+   setMerchantAudit(data as MerchantAudit);
+  }catch(e){setError(e instanceof Error?e.message:"Falha na auditoria")}
+  finally{setAuditLoading(false)}
+ }
  const {data:status,error:accessError}=useQuery<{enabled:boolean;maxFileBytes:number;staging:boolean;temporaryAccess:boolean}>({
   queryKey:["/api/admin/awin-feeds/status"],retry:false,
   queryFn:async()=>{const r=await fetch("/api/admin/awin-feeds/status",{credentials:"same-origin"});const j=await r.json();if(!r.ok)throw Error(j.message||j.code||"Acesso indisponível");return j}
@@ -41,6 +56,7 @@ export default function AwinFeedUpload(){
    if(!response.ok)throw Error(data.message||data.code||"Falha na análise");
    const audited=data as Audit;
    setReport(audited);
+   setAuditMerchant(audited.merchant);
    setIssuesPage(1);setVisibleIssues(audited.issues);
    if(audited.accepted>0&&audited.canProcess)await process(audited);
   }catch(e){setError(e instanceof Error?e.message:"Erro no envio")}
@@ -69,6 +85,7 @@ export default function AwinFeedUpload(){
    const data=await response.json();
    if(!response.ok)throw Error(data.message||data.code||"Processamento não concluído");
    setProcessed(data as ProcessReport);
+   await refreshMerchantAudit(audit.merchant);
   }catch(e){setError(e instanceof Error?e.message:"Falha no processamento")}
   finally{setProcessing(false)}
  }
@@ -81,6 +98,34 @@ export default function AwinFeedUpload(){
    </div>
   </header>
   <main className="container mx-auto px-4 py-7 max-w-5xl space-y-5">
+   <Card className="p-5 space-y-3" data-testid="merchant-audit">
+    <h2 className="text-lg font-semibold">Auditoria da loja — Produto Mestre e publicação</h2>
+    <div className="flex flex-wrap gap-2 items-end">
+     <div className="space-y-1"><Label htmlFor="merchant-audit-id">ID AWIN da loja</Label>
+      <Input id="merchant-audit-id" value={auditMerchant} onChange={e=>setAuditMerchant(e.target.value)} inputMode="numeric" className="w-40"/></div>
+     <Button variant="outline" disabled={auditLoading||!/^[0-9]{2,12}$/.test(auditMerchant)} onClick={()=>void refreshMerchantAudit(auditMerchant)}>
+      {auditLoading?"Conferindo…":"Verificar etapas no banco"}
+     </Button>
+    </div>
+    {merchantAudit&&<div className="space-y-3" data-testid="merchant-audit-result">
+     <p className="font-semibold">{merchantAudit.merchant.name} — AWIN {merchantAudit.merchant.id}</p>
+     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      {([["Ofertas no banco",merchantAudit.counts.offers],["Produtos distintos",merchantAudit.counts.distinctProducts],
+      ["Identidades do parceiro",merchantAudit.counts.identities],["Identidades com Master",merchantAudit.counts.masterMemberships],
+      ["Produtos classificados",merchantAudit.counts.classifiedProducts],["Ofertas com preço auditado",merchantAudit.counts.promotionEvidence],
+      ["Produtos projetados",merchantAudit.counts.searchProducts],["Disponíveis no filtro Loja",merchantAudit.counts.availableSearchProducts]] as Array<[string,number|null]>).map(([label,value])=>
+       <div key={label} className="border rounded-md p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="text-xl font-semibold">{value===null?"Indisponível":format(value)}</p></div>)}
+     </div>
+     <div className="grid sm:grid-cols-2 gap-2">
+      {([["Ofertas importadas",merchantAudit.steps.received],["Cobertura do Produto Mestre",merchantAudit.steps.masterCovered],
+        ["Classificação do catálogo",merchantAudit.steps.catalogClassified],["Validação comercial",merchantAudit.steps.priceAudited],
+        ["Projeção da vitrine",merchantAudit.steps.projected],["Loja disponível nos filtros",merchantAudit.steps.storeVisibleInFilter]] as Array<[string,boolean]>).map(([label,passed])=>
+       <p key={label} className="border rounded-md p-2 text-sm">{passed?"✓":"Pendente"} — {label}</p>)}
+     </div>
+     <p className="text-xs text-muted-foreground">{merchantAudit.note} {merchantAudit.storeFacetRule}</p>
+     {merchantAudit.steps.storeVisibleInFilter&&<Link href={`/catalogo?loja=${encodeURIComponent(merchantAudit.merchant.name)}`}><Button variant="outline">Ver produtos dessa loja no catálogo</Button></Link>}
+    </div>}
+   </Card>
    <Card className="p-5 space-y-2">
     <h2 className="text-lg font-semibold">Importar feed AWIN</h2>
     <p className="text-sm text-muted-foreground">A identificação do anunciante e do feed é lida do arquivo AWIN. Nenhum código é preenchido antecipadamente.</p>
