@@ -7,6 +7,7 @@ import Catalog from "@/pages/Catalog";
 import Marca from "@/pages/Marca";
 import AdminTriagem from "@/pages/AdminTriagem";
 import CurationSources from "@/pages/CurationSources";
+import AwinFeedUpload from "@/pages/AwinFeedUpload";
 import NotFound from "@/pages/not-found";
 import CatalogV2 from "@/pages/CatalogV2";
 import { FavoritesProvider } from "@/context/FavoritesContext";
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/marca/:slug" component={Marca} />
       {!PUBLIC_DEMO_MODE && <Route path="/admin/triagem" component={AdminTriagem} />}
       {!PUBLIC_DEMO_MODE && <Route path="/admin/curadoria/listas" component={CurationSources} />}
+      {!PUBLIC_DEMO_MODE && <Route path="/admin/curadoria/feeds" component={AwinFeedUpload} />}
       {!PUBLIC_DEMO_MODE && <Route path="/triagem" component={AdminTriagem} />}
       <Route path="/catalogo-v2" component={CatalogV2} />
       {CATALOG_PREVIEW_ENABLED && <Route path="/dev/catalogo-dafiti" component={CatalogPreview} />}
