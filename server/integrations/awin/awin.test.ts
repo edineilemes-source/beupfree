@@ -191,3 +191,17 @@ test("gate reutilizável fecha lote por merchant, feed e contagem", async () => 
   assert.throws(() => assertAwinSourceBatch([item], { merchantId: "17893", feedId: "46605", expectedCount: 1 }), /MERCHANT_MISMATCH/);
   assert.throws(() => assertAwinSourceBatch([item], { merchantId: "42", feedId: "46605", expectedCount: 2 }), /COUNT_MISMATCH/);
 });
+
+test("Olympikus AWIN usa Fashion:size quando size_stock_amount não existe",()=>{
+  const raw={merchant_id:"17698",merchant_name:"Olympikus BR",product_name:"Tênis Olympikus 40",merchant_product_id:"prod-40",aw_product_id:"awin-40",aw_deep_link:"https://example.test/awin",search_price:"299.99",currency:"BRL", "Fashion:size":"40","size_stock_amount":"","product_GTIN":"",brand_name:"Olympikus"};
+  const parsed=normalizeAwinItem({raw,rowNumber:1},{feedId:"51837",ingestedAt:"2026-11-17T00:00:00Z"});
+  assert.equal(isInvalidAwinItem(parsed),false);
+  if(isInvalidAwinItem(parsed))return;
+  assert.equal(parsed.variant.size,"40");
+  assert.equal(parsed.provenance.merchantId,"17698");
+  assert.equal(parsed.offer.currentPrice,299.99);
+  assert.equal(parsed.offer.prices.old,null);
+  const filled=normalizeAwinItem({raw:{...raw,size_stock_amount:"41"},rowNumber:1},{feedId:"51837"});
+  assert.equal(isInvalidAwinItem(filled),false);
+  if(!isInvalidAwinItem(filled))assert.equal(filled.variant.size,"41");
+});
