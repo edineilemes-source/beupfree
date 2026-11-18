@@ -13,6 +13,8 @@ import {parseAwinCsv} from "../integrations/awin/csv";
 import {normalizeAwinItem,isInvalidAwinItem} from "../integrations/awin/normalize";
 import {assessAwinCatalogCandidate} from "../integrations/awin/catalogCandidate";
 import {masterPipelineCoverage} from "./masterPipeline";
+import {VERSIONS} from "../productIdentity/contracts";
+import {masterParserPreview} from "./masterParserPreview";
 
 const MAX_GZIP=20*1024*1024,MAX_UNCOMPRESSED=160*1024*1024,MAX_ROWS=100000;
 function adminIds(env:NodeJS.ProcessEnv):string[]{
@@ -187,6 +189,38 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
    }catch(e){await db.query("ROLLBACK").catch(()=>{});throw e}
    finally{db.release()}
   }catch(e){return res.status(503).json({code:"MERCHANT_AUDIT_FAILED",message:"Não foi possível verificar todas as etapas do catálogo neste banco."})}
+ });
+ router.get("/merchant/:merchantId/master-preview",authorize,async(req,res)=>{
+  const merchantId=req.params.merchantId;
+  if(!/^[0-9]{2,12}$/.test(merchantId))return res.status(400).json({code:"MERCHANT_ID_INVALID"});
+  try{
+   const pool=auditPool??(await import("../db")).pool;
+   const db=await pool.connect();
+   try{
+    await db.query("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY");
+    const rows=(await db.query(`SELECT
+      e.id "externalIdentityId",p.id "productId",p.main_name "productName",
+      b.name "brandName",v.id "variantId",v.size "sizeRaw",
+      v.colour "colorRaw",v.gtin "gtin",v.mpn "mpn"
+     FROM commerce_merchants m
+     JOIN external_product_identities e ON e.merchant_id=m.id
+     JOIN products p ON p.id=e.product_id
+     LEFT JOIN brands b ON b.id=p.brand_id
+     LEFT JOIN LATERAL (
+      SELECT id,size,colour,gtin,mpn FROM product_variants v
+      WHERE v.product_id=e.product_id AND v.merchant_id=e.merchant_id
+        AND v.provider_id=e.provider_id
+      ORDER BY v.id LIMIT 1
+     ) v ON TRUE
+     WHERE m.external_merchant_id=$1 ORDER BY e.id LIMIT 20`,[merchantId])).rows;
+    await db.query("COMMIT");
+    return res.json({merchantId,previewOnly:true,limit:20,
+     parserVersion:VERSIONS.parser,
+     samples:rows.map(masterParserPreview)});
+   }catch(error){await db.query("ROLLBACK").catch(()=>{});throw error}
+   finally{db.release()}
+  }catch(error){return res.status(503).json({code:"MASTER_PREVIEW_UNAVAILABLE",
+   message:"Não foi possível executar o parser histórico sobre os dados desta loja."})}
  });
  router.post("/process",authorize,async(req,res)=>{
   const fingerprint=String(req.body?.sha256??"");
