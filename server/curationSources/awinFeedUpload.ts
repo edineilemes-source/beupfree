@@ -147,10 +147,11 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver){
       "catalog_search_products","product_master_memberships","product_identity_jobs"];
     const available=(await db.query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name=ANY($1::text[])",[tables])).rows.map(r=>String(r.table_name));
     const has=(name:string)=>available.includes(name);
-    if(!has("commerce_merchants")||!has("offers")||!has("product_variants"))
-      return res.status(409).json({code:"CATALOG_SCHEMA_INCOMPLETE",message:"Tabelas principais do catálogo não encontradas."});
+    if(!has("commerce_merchants")||!has("offers")||!has("product_variants")){
+      await db.query("ROLLBACK");return res.status(409).json({code:"CATALOG_SCHEMA_INCOMPLETE",message:"Tabelas principais do catálogo não encontradas."});
+    }
     const merchants=(await db.query("SELECT id,name,external_merchant_id FROM commerce_merchants WHERE external_merchant_id=$1",[merchantId])).rows;
-    if(merchants.length!==1)return res.status(404).json({code:"MERCHANT_NOT_FOUND"});
+    if(merchants.length!==1){await db.query("ROLLBACK");return res.status(404).json({code:"MERCHANT_NOT_FOUND"});}
     const merchant=merchants[0];
     const run=async(sql:string)=>Number((await db.query(sql,[merchant.id])).rows[0]?.n??0);
     const counts={
