@@ -126,7 +126,8 @@ def serve(sha,port,profile="basic"):
   "UPPULSE_PUBLIC_CATALOG_SOURCE":"operational","UPPULSE_PUBLIC_CATALOG_APPROVED":"true",
   "UPPULSE_DISABLE_EXTERNAL_JOBS":"true","RESEARCH_PAID_ENABLED":"false",
   "RESEARCH_POSTGRES_HOMOLOGATED":"false","PUBLIC_DEMO_MODE":"false",
-  "PORT":str(port),"NODE_ENV":"development"})
+  "PORT":str(port),"NODE_ENV":"development",
+  "UPPULSE_CURATOR_TEST_NO_AUTH":"true"})
  env.pop("TAVILY_API_KEY",None);env.pop("OPENAI_API_KEY",None)
  with (S/("preview-"+str(port)+".log")).open("a") as log:
   proc=subprocess.Popen(["npm","run","dev"],cwd=path,env=env,
