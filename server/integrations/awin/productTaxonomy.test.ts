@@ -191,3 +191,12 @@ test("purpose-built basketball shoes remain classified for basketball",()=>{
   assert.equal(classify("Tênis Basquete",name).activities.includes("BASKETBALL"),true,name);
  }
 });
+
+test("preço regular validado permite tênis com oferta completa, sem promoção fictícia",()=>{
+ const t=classify("Tênis","Tênis Olympikus Corre 4");
+ const regular={...commercial,priceState:"REGULAR_PRICE" as const,promotionConfirmed:false,validOldPrice:false,discountConsistent:false};
+ assert.equal(classifyCatalogEligibility(t,regular).status,"IN_SCOPE_CONFIRMED");
+ assert.equal(classifyCatalogEligibility(t,{...regular,imageAvailable:false}).status,"REVIEW_REQUIRED");
+ assert.equal(classifyCatalogEligibility(t,{...regular,priceState:"REVIEW_REQUIRED"}).status,"REVIEW_REQUIRED");
+ assert.equal(classifyCatalogEligibility(t,{...regular,priceState:undefined}).status,"REVIEW_REQUIRED");
+});
