@@ -48,3 +48,17 @@ test("migração separa preços sem desconto de promoções reais",()=>{
  assert.match(sql,/BEGIN;/);assert.match(sql,/COMMIT;/);
  assert.doesNotMatch(sql,/\b(TRUNCATE|DELETE|UPDATE|INSERT)\b/i);
 });
+
+
+test("mesmo modelo em três lojas: preço menor pode vencer promoção e desconto zero fica por último",()=>{
+ const source=[
+  base({productId:"master-a",merchantId:"olympikus",offerId:"o-oly",currentPrice:299,previousPrice:299,discountPercent:0,promotionStatus:"REGULAR_PRICE"}),
+  base({productId:"master-a",merchantId:"dafiti",offerId:"o-daf",currentPrice:310,previousPrice:400,discountPercent:22.5,promotionStatus:"PROMOTION_CONFIRMED"}),
+  base({productId:"master-a",merchantId:"futfanatics",offerId:"o-fut",currentPrice:289,previousPrice:350,discountPercent:17.429,promotionStatus:"PROMOTION_CONFIRMED"})
+ ];
+ const rows=buildCatalogSearchProjection(source).rows;
+ assert.equal(rows.length,3);
+ assert.deepEqual(rows.slice().sort((a,b)=>a.currentPrice-b.currentPrice).map(x=>x.merchantId),["futfanatics","olympikus","dafiti"]);
+ assert.deepEqual(rows.slice().sort((a,b)=>b.discountPercent-a.discountPercent).map(x=>x.merchantId),["dafiti","futfanatics","olympikus"]);
+ assert.equal(rows.find(x=>x.merchantId==="olympikus")?.promotionStatus,"REGULAR_PRICE");
+});
