@@ -127,7 +127,7 @@ export function normalizeAwinItem(item: AwinFeedItem, options: { feedId: string;
       ? `page:${pageIdentity}`
       : `descriptor:${normalizedText(brand)}|${normalizedText(name)}|${normalizedText(model)}`;
   const productKey = hash(`${AWIN_PROVIDER}:${merchantId}:${conceptualIdentity}`);
-  const size = value(raw, "size_stock_amount");
+  const size = value(raw, "size_stock_amount") ?? value(raw, "Fashion:size");
   const colour = value(raw, "colour");
   // Filled does not mean trustworthy: sentinels such as EAN "0" must not define identity.
   const merchantVariantAttributes = [
