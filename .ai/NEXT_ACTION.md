@@ -150,3 +150,11 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Implementar próximo: jobs persistentes e idempotentes por merchant/feed e estado do pipeline; worker histórico de Produto Mestre em escopo seguro; normalização/evidências; projeção pública após validação e atualização periódica de feeds. Não executar migração ou publicação prematura.
 - Codespaces: issues #58/#59 ainda exigem resposta do agente; restabelecer DB preservando volume.
 - Relatório: `docs/relatorios/CURADORIA_V3_TRIAGEM_AUTOMATICA_2026-11-23.md`.
+
+ 
+## Próxima ação — Curadoria V3 e teste nas portas Codespaces (2026-11-23)
+- Concluir ponte Codespaces e recuperar de forma não destrutiva o contêiner `beupfree-catalog-pg17` caso ainda esteja em falha; não recriar volumes.
+- Validar commit imutável da etapa `bfa0ecc57e573458cdbf40dc373e2de06c1cf140` no agente restrito (GitHub Issues); executar preview 5011–5015 somente após banco verificado.
+- Revisar/obter autorização de migração do journal; não executá-la nesta sessão; não ativar handlers que alteram `offers`, `product_master_memberships` ou `catalog_search_products` antes de preflight e testes.
+- Continuar implementação dos adaptadores reais existentes e agendador de atualização para fechar o ciclo upload → Master → validação → loja.
+- Documentação `docs/relatorios/CURADORIA_V3_WORKFLOW_PERSISTENTE_2026-11-23.md`.
