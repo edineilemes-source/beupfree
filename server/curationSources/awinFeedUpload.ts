@@ -15,6 +15,7 @@ import {assessAwinCatalogCandidate} from "../integrations/awin/catalogCandidate"
 import {masterPipelineCoverage} from "./masterPipeline";
 import {VERSIONS} from "../productIdentity/contracts";
 import {masterParserPreview} from "./masterParserPreview";
+import {listRegisteredStores} from "./storeRegistry";
 
 const MAX_GZIP=20*1024*1024,MAX_UNCOMPRESSED=160*1024*1024,MAX_ROWS=100000;
 function adminIds(env:NodeJS.ProcessEnv):string[]{
@@ -137,6 +138,19 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
    if(report.sha256!==hash||report.merchant!==merchant||report.feedId!==feedId||!Array.isArray(report.issues))return res.status(409).json({code:"REPORT_IDENTITY_MISMATCH"});
    return res.json({page,pageSize,total:report.issues.length,issues:report.issues.slice((page-1)*pageSize,page*pageSize)});
   }catch{return res.status(404).json({code:"AUDIT_REPORT_NOT_FOUND"})}
+ });
+ router.get("/stores",authorize,async(_req,res)=>{
+  try{
+   const pool=auditPool??(await import("../db")).pool;
+   const client=await pool.connect();
+   try{
+    await client.query("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY");
+    const stores=await listRegisteredStores(client as any);
+    await client.query("COMMIT");
+    return res.json({stores,total:stores.length,source:"commerce_merchants",readOnly:true});
+   }catch(error){await client.query("ROLLBACK").catch(()=>{});throw error}
+   finally{client.release()}
+  }catch(error){return res.status(503).json({code:"STORE_REGISTRY_UNAVAILABLE",message:"Cadastro de lojas indisponível neste banco."})}
  });
  router.get("/merchant/:merchantId/audit",authorize,async(req,res)=>{
   const merchantId=req.params.merchantId;
