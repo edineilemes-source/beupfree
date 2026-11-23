@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+type RegisteredStore={id:string;name:string;provider:string;externalMerchantId:string;active:boolean;feeds:Array<{id:string;externalFeedId:string;name:string|null;active:boolean;lastSeenAt:string|null;lastImportCompletedAt:string|null}>};
 type Issue={row:number;name:string;reason:string};
 type Audit={status:string;merchant:string;feedId:string;storedName:string;sha256:string;
  stats:{rows:number;normalized:number;invalid:number;priceStates:Record<string,number>;
@@ -57,6 +58,15 @@ export default function AwinFeedUpload(){
  const {data:status,error:accessError}=useQuery<{enabled:boolean;maxFileBytes:number;staging:boolean;temporaryAccess:boolean}>({
   queryKey:["/api/admin/awin-feeds/status"],retry:false,
   queryFn:async()=>{const r=await fetch("/api/admin/awin-feeds/status",{credentials:"same-origin"});const j=await r.json();if(!r.ok)throw Error(j.message||j.code||"Acesso indisponível");return j}
+ });
+ const {data:storeRegistry,refetch:refreshStores}=useQuery<{stores:RegisteredStore[];total:number}>({
+  queryKey:["/api/admin/awin-feeds/stores"],retry:false,
+  queryFn:async()=>{
+   const r=await fetch("/api/admin/awin-feeds/stores",{credentials:"same-origin"});
+   const data=await r.json();
+   if(!r.ok)throw Error(data.message||data.code||"Cadastro de lojas indisponível");
+   return data;
+  }
  });
  async function submit(event:React.FormEvent<HTMLFormElement>){
   event.preventDefault();setPending(true);setError("");setReport(null);setProcessed(null);
@@ -114,6 +124,20 @@ export default function AwinFeedUpload(){
    </div>
   </header>
   <main className="container mx-auto px-4 py-7 max-w-5xl space-y-5">
+   <Card className="p-5 space-y-3" data-testid="registered-stores">
+    <div className="flex items-center justify-between gap-2 flex-wrap">
+     <div><h2 className="text-lg font-semibold">Lojas cadastradas e feeds</h2><p className="text-xs text-muted-foreground">Lojas reais do catálogo. Escolha uma para auditar; nenhum produto é publicado nesta consulta.</p></div>
+     <Button variant="outline" size="sm" onClick={()=>void refreshStores()}>Atualizar lista</Button>
+    </div>
+    {storeRegistry?.stores.length===0&&<p className="text-sm text-muted-foreground">Nenhuma loja cadastrada no banco conectado.</p>}
+    {storeRegistry?.stores.map(store=><div key={store.id} className="rounded-md border p-3 flex justify-between items-center gap-3 flex-wrap">
+     <div><p className="font-semibold">{store.name}</p>
+      <p className="text-xs text-muted-foreground">{store.provider} · anunciante {store.externalMerchantId} · {store.feeds.length} feed(s)</p>
+      {store.feeds.map(feed=><p key={feed.id} className="text-xs text-muted-foreground">Feed {feed.externalFeedId} · última importação: {feed.lastImportCompletedAt?new Date(feed.lastImportCompletedAt).toLocaleString("pt-BR"):"não registrada"}</p>)}
+     </div>
+     <Button variant="outline" size="sm" onClick={()=>{setAuditMerchant(store.externalMerchantId);void refreshMerchantAudit(store.externalMerchantId)}}>Auditar esta loja</Button>
+    </div>)}
+   </Card>
    <Card className="p-5 space-y-3" data-testid="merchant-audit">
     <h2 className="text-lg font-semibold">Auditoria da loja — Produto Mestre e publicação</h2>
     <div className="flex flex-wrap gap-2 items-end">
