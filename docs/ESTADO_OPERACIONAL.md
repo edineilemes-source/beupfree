@@ -177,3 +177,11 @@ Foi publicado um agente restrito e um instalador para o Codespace de homologaç�
 - Testes do novo endpoint HTTP e limites integrados no Release Gate, **SUCCESS** run `45280828634`, commit `061ccd973555263f2fe75f688c143f8cc9819c9d`.
 - A migração proposta para journal continua não aplicada; workers comerciais/projeção automáticos ainda não conectados. Preview Codespaces depende de ponte e banco online.
 - Relatório `docs/relatorios/CURADORIA_V3_COMPARACAO_MASTER_EM_TELA_2026-11-23.md`.
+
+ 
+## Recuperação do catálogo e reconhecimento pela ponte (23/11/2026)
+- Usuário iniciou cópia do volume original `beupfree-catalog-pg17-data` no volume separado `beupfree-catalog-pg17-restaurado-20261123`, contêiner `beupfree-catalog-pg17-audit`, porta local `5436`, PostgreSQL 17.
+- Banco `uppulse_catalog` validado por consultas **reais**: 33.520 produtos, 102.018 ofertas, 16.945 produtos na busca — contagens idênticas ao histórico. Volume original preservado.
+- Consulta `information_schema.tables` sob esquema `public` com nomes `product_master%` e `product_identity%` retornou zero. Isto NÃO confirma ausência dos dados Master: consultar `pg_catalog` em todos esquemas e confirmar migrações antes de usar vínculo Master como gate.
+- Ponte antes não reconhecia o novo contêiner. Agente v1.3.1 agora admite exclusivamente `beupfree-catalog-pg17-audit` após verificar system identifier `7699654111778938913` e as 3 contagens históricas; busca credencial do contêiner antigo sem registrá-la em log. Não modifica dados.
+- Instalador `scripts/uppulse_bridge_install.sh` atualizado para enfileirar preview na porta 5013. **A versão que roda no Codespaces não muda sozinha com o push:** requer executar instalador idempotente no Codespaces. Não alegar preview aberto sem resposta de Issue e HTTP 200.
