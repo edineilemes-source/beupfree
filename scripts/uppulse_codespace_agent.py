@@ -93,7 +93,7 @@ def catalog_database():
    # Only accept the audited recovery clone from this incident, not an empty
    # PostgreSQL or an arbitrary container that happens to have the same name.
    control=cmd(["docker","exec",container,"pg_controldata","/var/lib/postgresql/data"],timeout=15,check=False)
-   if not re.search(r"Database system identifier:\\s*7699654111778938913\\b",control):continue
+   if not re.search(r"Database system identifier:\s*7699654111778938913\b",control):continue
    # Clone was started without POSTGRES_PASSWORD because its PGDATA already
    # existed. Reuse the original container's credential, never print it.
    original_env=cmd(["docker","inspect","--format","{{json .Config.Env}}","beupfree-catalog-pg17"],timeout=10,check=False)
