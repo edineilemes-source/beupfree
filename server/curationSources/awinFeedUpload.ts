@@ -16,6 +16,7 @@ import {masterPipelineCoverage} from "./masterPipeline";
 import {VERSIONS} from "../productIdentity/contracts";
 import {masterParserPreview} from "./masterParserPreview";
 import {listRegisteredStores} from "./storeRegistry";
+import {decideAutomaticCuration} from "./automatedDecision";
 
 const MAX_GZIP=20*1024*1024,MAX_UNCOMPRESSED=160*1024*1024,MAX_ROWS=100000;
 function adminIds(env:NodeJS.ProcessEnv):string[]{
@@ -69,6 +70,8 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
   const filename=req.get("x-awin-file-name")??"";
   const filenameIds=filename.match(/^(\d{2,12})-(\d{2,12})-/);
   const issues:Array<{row:number;reason:string;name:string}>=[];
+  const masterReviews:Array<{row:number;reason:string;name:string;productKey:string}>=[];
+  const masterSummary={inspected:0,unresolved:0,stageCandidates:0,byReason:{} as Record<string,number>,parserVersion:VERSIONS.parser};
   const PAGE_SIZE=300;
   const hash=createHash("sha256").update(data).digest("hex");
   const stats={rows:0,normalized:0,invalid:0,merchantMismatch:0,feedMismatch:0,
@@ -88,6 +91,18 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
     if(isInvalidAwinItem(item)){stats.invalid++;for(const reason of item.reasons){bucket(stats.reasons,"RAW_"+reason);issue("RAW_"+reason)}recordIssues();continue}
     stats.normalized++;
     const result=assessAwinCatalogCandidate(item);
+    // Existing original Product Master parser runs for every normalized feed row.
+    // Ambiguity is recorded separately; matching is done by the historical sidecar,
+    // never guessed from this first-stage feed inspection.
+    const automatic=decideAutomaticCuration(item);
+    masterSummary.inspected++;
+    if(automatic.action==="STAGE")masterSummary.stageCandidates++;
+    if(automatic.master.ambiguities.length){
+     masterSummary.unresolved++;
+     for(const reason of automatic.master.ambiguities)bucket(masterSummary.byReason,reason);
+     masterReviews.push({row:row.rowNumber,reason:automatic.master.ambiguities.join(" · "),
+      name:name.slice(0,300),productKey:automatic.productKey});
+    }
     bucket(stats.priceStates,result.price.status);
     bucket(stats.taxonomy,result.taxonomy.universe);
     bucket(stats.eligibility,result.eligibility.status);
@@ -113,12 +128,13 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
     catch(e:any){if(e?.code!=="ENOENT")throw e;await rename(temporary,destination);}
    }catch(e){await unlink(temporary).catch(()=>{});throw e;}
    const reportFile=join(root,filename+".report.json");
-   try{await writeFile(reportFile,JSON.stringify({merchant,feedId,sha256:hash,issues}),{mode:0o600,flag:"wx"})}catch(e:any){if(e?.code!=="EEXIST")throw e}
+   try{await writeFile(reportFile,JSON.stringify({merchant,feedId,sha256:hash,issues,masterReviews,masterSummary}),{mode:0o600,flag:"wx"})}catch(e:any){if(e?.code!=="EEXIST")throw e}
    const accepted=stats.eligibility.IN_SCOPE_CONFIRMED??0;
    const imported=0;
    // Import is a separate explicit action from upload; the audit is retained for review.
    return res.status(201).json({status:"RECEIVED_AND_AUDITED",merchant,feedId,
     storedName:filename,sha256:hash,stats,issues:issues.slice(0,PAGE_SIZE),issuesTotal:issues.length,issuesPageSize:PAGE_SIZE,
+    masterSummary,masterReviews:masterReviews.slice(0,PAGE_SIZE),masterReviewsTotal:masterReviews.length,
     accepted,discarded:stats.eligibility.OUT_OF_SCOPE_CONFIRMED??0,
     review:stats.eligibility.REVIEW_REQUIRED??0,imported,published:0,
     canProcess:Boolean(process.env.DATABASE_URL),nextAction:"PROCESS_ACCEPTED"});
@@ -235,6 +251,23 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
    finally{db.release()}
   }catch(error){return res.status(503).json({code:"MASTER_PREVIEW_UNAVAILABLE",
    message:"Não foi possível executar o parser histórico sobre os dados desta loja."})}
+ });
+ router.get("/report/:merchant/:feedId/:hash/master-reviews",authorize,async(req,res)=>{
+  const {merchant,feedId,hash}=req.params;
+  if(!/^[0-9]{2,12}$/.test(merchant)||!/^[0-9]{2,12}$/.test(feedId)||!/^[a-f0-9]{64}$/.test(hash))
+   return res.status(400).json({code:"REPORT_ARGUMENTS_INVALID"});
+  const page=Number(req.query.page??1),pageSize=300;
+  if(!Number.isSafeInteger(page)||page<1||page>334)return res.status(400).json({code:"REPORT_PAGE_INVALID"});
+  const root=process.env.UPPULSE_FEED_INBOX_DIR||join(homedir(),".local","share","uppulse","awin-inbox");
+  const name=merchant+"-"+feedId+"-"+hash.slice(0,16)+".csv.gz.report.json";
+  try{
+   const report=JSON.parse(await readFile(join(root,name),"utf8"));
+   if(report.sha256!==hash||report.merchant!==merchant||report.feedId!==feedId||
+      !Array.isArray(report.masterReviews))return res.status(409).json({code:"MASTER_REVIEW_REPORT_UNAVAILABLE"});
+   return res.json({page,pageSize,total:report.masterReviews.length,
+    items:report.masterReviews.slice((page-1)*pageSize,page*pageSize),
+    summary:report.masterSummary});
+  }catch{return res.status(404).json({code:"MASTER_REVIEW_REPORT_NOT_FOUND"})}
  });
  router.post("/process",authorize,async(req,res)=>{
   const fingerprint=String(req.body?.sha256??"");
