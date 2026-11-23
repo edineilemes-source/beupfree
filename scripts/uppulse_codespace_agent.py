@@ -5,7 +5,7 @@ from urllib.parse import quote
 R=pathlib.Path("/workspaces/uppulse-homologacao/missao9/codigo")
 S=pathlib.Path(os.environ.get("UPPULSE_BRIDGE_STATE_DIR",str(pathlib.Path.home()/".local/state/uppulse-bridge")))
 S.mkdir(parents=True,exist_ok=True)
-VERSION="1.3.2"
+VERSION="1.3.3"
 REPO="edineilemes-source/beupfree"
 BRANCH="feat/uppulse-missao10-supercatalogo"
 PORTS={5011,5012,5013,5014,5015}
@@ -189,7 +189,14 @@ def execute(action,args):
    env.update({"DATABASE_URL":db_url(),"UPPULSE_DISABLE_EXTERNAL_JOBS":"true",
     "RESEARCH_PAID_ENABLED":"false","RESEARCH_POSTGRES_HOMOLOGATED":"false"})
    env.pop("OPENAI_API_KEY",None);env.pop("TAVILY_API_KEY",None)
-   output=cmd(["node","--import","tsx","scripts/recover-olympikus-master.ts"],cwd=path,timeout=900,env=env)
+   execution=subprocess.run(["node","--import","tsx","scripts/recover-olympikus-master.ts"],
+    cwd=path,env=env,capture_output=True,text=True,timeout=900)
+   if execution.returncode:
+    # Script prints only a safe controlled marker. Do NOT publish raw stderr,
+    # secrets, URLs or SQL errors to the public GitHub issue.
+    match=re.search(r"OLYMPIKUS_MASTER_BLOCKED:\\s*([A-Z][A-Z0-9_]{3,90})",execution.stderr)
+    raise RuntimeError(match.group(1) if match else "OLYMPIKUS_MASTER_EXECUTION_FAILED")
+   output=execution.stdout
    # Never include environment variables or database credentials in public issues.
    last=output.splitlines()[-1] if output else ""
    result=json.loads(last)
