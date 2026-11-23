@@ -21,3 +21,10 @@ Prosseguir com a integração da Curadoria automática sem reimplementar nem adu
 - Para fluxo completo: motor de jobs do Produto Mestre com universo e membros ativos completos, normalização/preços/classificação idempotentes, projeção elegível, rotina de consulta remota de feeds e lista de rejeições persistente. Não aplicar migrações nem publicar na Hostinger sem gates.
 
 **Status desta etapa: CÓDIGO IMPLEMENTADO; HOMOLOGAÇÃO REAL DO CODESPACES PENDENTE.**
+
+## Resultado das validações em 23/11/2026
+- GitHub Actions run `45280828634` no commit `061ccd973555263f2fe75f688c143f8cc9819c9d`: **SUCCESS**, com TypeScript, testes unitários, política do catálogo público e build.
+- A ponte Codespaces respondeu a #58 (STATUS) e #59 (DIAGNOSTICO): v1.3.0 funcionando; contêiner `beupfree-catalog-pg17` reportado como `exited`.
+- Issue [#64](https://github.com/edineilemes-source/beupfree/issues/64) (PREVIEW 5013, commit documental `1252f366adc278e3f24d25fc03c43af4e8148c71`) respondeu `BLOCKED: CATALOG_DATABASE_NOT_UNIQUELY_VERIFIED`. Logo **porta 5013 não foi aberta**, e não houve alteração do checkout/banco.
+- Issue [#63](https://github.com/edineilemes-source/beupfree/issues/63) (VALIDAR unit, mesmo SHA) foi aceita; aguardar confirmação explícita de resultado antes de tratá-la como concluída.
+- A recuperação do serviço PostgreSQL exige diagnóstico da falha `runc` reportada anteriormente no terminal do operador; o agente restrito de GitHub Issues não executa operações Docker de recuperação. Não remover contêiner, volume, nem reiniciar Docker sem inspeção dos outros serviços.
