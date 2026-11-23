@@ -170,3 +170,10 @@ Foi publicado um agente restrito e um instalador para o Codespace de homologaç�
 - GitHub Actions `45279307377` aprovou código SHA `bfa0ecc57e573458cdbf40dc373e2de06c1cf140` (incluindo testes direcionados).
 - Banco, tabela Master, ofertas e projeção pública não sofreram escritas nesta etapa. Preview real ainda depende da recuperação do Codespaces/DB.
 - Relatório: `docs/relatorios/CURADORIA_V3_WORKFLOW_PERSISTENTE_2026-11-23.md`.
+
+ 
+## Curadoria V3 — matcher histórico executável via painel (2026-11-23)
+- `masterShadowPreview.ts`: botão/UI e endpoint administrativo de simulação comparativa do parser/matcher/retrieval/grouping originais com até 100 identidades do anunciante mais até 100 candidatas de outras lojas; *somente leitura*, não conclui equivalência global nem publica ofertas.
+- Testes do novo endpoint HTTP e limites integrados no Release Gate, **SUCCESS** run `45280828634`, commit `061ccd973555263f2fe75f688c143f8cc9819c9d`.
+- A migração proposta para journal continua não aplicada; workers comerciais/projeção automáticos ainda não conectados. Preview Codespaces depende de ponte e banco online.
+- Relatório `docs/relatorios/CURADORIA_V3_COMPARACAO_MASTER_EM_TELA_2026-11-23.md`.
