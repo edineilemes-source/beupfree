@@ -38,7 +38,7 @@ export async function previewMerchantMasterShadow(
  const brands=[...new Set(merchantSources.map(source=>{
   const name=sourceBrand(source);
   return parseProductIdentity({name:source.name,brand:name}).brand;
- }).filter((brand):brand is string=>Boolean(brand)&&/^[a-z0-9 .-]{2,60}$/.test(brand)))].slice(0,20);
+ }).filter((brand):brand is string=>typeof brand==="string"&&/^[a-z0-9 .-]{2,60}$/.test(brand)))].slice(0,20);
  const other=brands.length?(await db.query(`
   SELECT e.id FROM external_product_identities e
   JOIN commerce_merchants m ON m.id=e.merchant_id
