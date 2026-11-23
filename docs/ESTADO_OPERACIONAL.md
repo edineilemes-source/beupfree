@@ -155,3 +155,10 @@ Foi publicado um agente restrito e um instalador para o Codespace de homologaç�
 - Implementadas ponte do parser histórico e esteira versionada por loja na Curadoria, com consulta read-only por amostragem de 20 identidades; não realiza matching/persistência por conta própria.
 - Release Gate do código base `d08f2f966956ecacf415b42acd2fb5da83e3dc16` aprovado (run 44330425674). Ainda exige verificação do preview e dados reais de Olympikus. Não executou migração, publicação nem API paga.
 - Próximo gate: orquestrar jobs existentes, classificação, normalização, evidência comercial, publicação, rejeições e atualização agendada, com histórico persistente sem modificar o mecanismo Master.
+
+ 
+## Curadoria V3 — robô automático de triagem após recebimento (2026-11-23)
+- Código canônico da branch reutiliza as regras já homologadas (AWIN normalize/assess, parser de Product Identity V1.5, tamanho/cor e classificação de público). Recebimento do feed gera automaticamente resumo de candidatos e ambiguidades com arquivo versionado; novo endpoint administrativo de paginação e UI para inspecioná-los.
+- `package.json` foi atualizado para incluir todos os novos testes de Curadoria V3 no release gate oficial, além dos testes existentes.
+- **Ainda não há publicação automática ponta a ponta**: worker persistente de Master, classificações/evidências comerciais, projeção/Loja e rotina de feed remoto ficam pendentes. Não tratar triagem como equivalência/homologação comercial.
+- Referência: `docs/relatorios/CURADORIA_V3_TRIAGEM_AUTOMATICA_2026-11-23.md`. Banco de catálogo não alterado por esta etapa.
