@@ -5,7 +5,7 @@ from urllib.parse import quote
 R=pathlib.Path("/workspaces/uppulse-homologacao/missao9/codigo")
 S=pathlib.Path(os.environ.get("UPPULSE_BRIDGE_STATE_DIR",str(pathlib.Path.home()/".local/state/uppulse-bridge")))
 S.mkdir(parents=True,exist_ok=True)
-VERSION="1.3.1"
+VERSION="1.3.2"
 REPO="edineilemes-source/beupfree"
 BRANCH="feat/uppulse-missao10-supercatalogo"
 PORTS={5011,5012,5013,5014,5015}
@@ -28,7 +28,7 @@ def mark(n):
  state=seen();state.add(n)
  tmp=S/"done.tmp";tmp.write_text(json.dumps(sorted(state)));tmp.replace(S/"done.json")
 def parse(action,body):
- if action in {"STATUS","DIAGNOSTICO","CATALOGO"}:
+ if action in {"STATUS","DIAGNOSTICO","CATALOGO","MASTER_OLYMPIKUS"}:
   if body.strip() not in ("","{}"):raise ValueError("STATUS_DOES_NOT_TAKE_ARGUMENTS")
   return {}
  try:d=json.loads(body)
@@ -177,6 +177,26 @@ def stop(port):
  (S/("preview-"+str(port)+".json")).unlink(missing_ok=True)
  return "Managed preview on "+str(port)+" stopped; no other processes touched"
 def execute(action,args):
+ if action=="MASTER_OLYMPIKUS":
+  container,_,port,database,_,_,products,offers=catalog_database()
+  if container!="beupfree-catalog-pg17-audit" or port!="5436" or database!="uppulse_catalog" or products!=33520 or offers!=102018:
+   raise RuntimeError("AUDITED_RECOVERY_CLONE_ONLY")
+  sha=cmd(["git","ls-remote","origin","refs/heads/"+BRANCH]).split()[0]
+  path=snapshot(sha)
+  try:
+   validate(path,"basic")
+   env=dict(os.environ)
+   env.update({"DATABASE_URL":db_url(),"UPPULSE_DISABLE_EXTERNAL_JOBS":"true",
+    "RESEARCH_PAID_ENABLED":"false","RESEARCH_POSTGRES_HOMOLOGATED":"false"})
+   env.pop("OPENAI_API_KEY",None);env.pop("TAVILY_API_KEY",None)
+   output=cmd(["node","--import","tsx","scripts/recover-olympikus-master.ts"],cwd=path,timeout=900,env=env)
+   # Never include environment variables or database credentials in public issues.
+   last=output.splitlines()[-1] if output else ""
+   result=json.loads(last)
+   if result.get("status") not in {"MASTER_OLYMPIKUS_COMPLETED","ALREADY_COMPLETED"}:
+    raise RuntimeError("MASTER_PROCESSING_NOT_CONFIRMED")
+   return "Olympikus historical Master: "+json.dumps(result,ensure_ascii=False)[:1500]
+  finally:shutil.rmtree(path,ignore_errors=True)
  if action=="CATALOGO":
   try:
    container,_,_,database,username,_,_,_=catalog_database()
@@ -226,7 +246,7 @@ def cycle():
   if n in done or item.get("author",{}).get("login","").lower()!="edineilemes-source":continue
   if not title.startswith("[UPPULSE-AGENT] "):continue
   action=title.removeprefix("[UPPULSE-AGENT] ")
-  if action not in {"STATUS","DIAGNOSTICO","CATALOGO","VALIDAR","PREVIEW","PARAR PREVIEW"}:continue
+  if action not in {"STATUS","DIAGNOSTICO","CATALOGO","MASTER_OLYMPIKUS","VALIDAR","PREVIEW","PARAR PREVIEW"}:continue
   mark(n)
   try:
    args=parse(action,item.get("body") or "")
