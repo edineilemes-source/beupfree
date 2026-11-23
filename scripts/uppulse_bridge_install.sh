@@ -59,11 +59,8 @@ if (( ${#bridge_pids[@]} > 1 )); then
 fi
 if (( ${#bridge_pids[@]} == 1 )); then
  pid="${bridge_pids[0]}"
- if [[ "$old_checksum" == "$new_checksum" ]]; then
-  echo "$pid" > "$state/agent.pid"
-  echo "UPPULSE_BRIDGE_ALREADY_RUNNING: pid $pid; repaired stale pidfile"
-  exit 0
- fi
+ # Always restart the single owned agent: on-disk checksum may match
+ # even when a previous upgrade failed and the live process is older.
  echo "Updating owned bridge process (PID $pid) only..."
  kill -TERM "$pid"
  for attempt in {1..30};do
