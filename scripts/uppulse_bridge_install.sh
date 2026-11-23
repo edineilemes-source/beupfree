@@ -54,20 +54,38 @@ for item in os.listdir("/proc"):
  except (OSError,PermissionError): pass
 PY
 )
-if (( ${#bridge_pids[@]} > 1 )); then
- echo "UPPULSE_BRIDGE_MULTIPLE_OWNED_PROCESSES: ${bridge_pids[*]}; manual inspection required";exit 2
-fi
-if (( ${#bridge_pids[@]} == 1 )); then
- pid="${bridge_pids[0]}"
- # Always restart the single owned agent: on-disk checksum may match
- # even when a previous upgrade failed and the live process is older.
- echo "Updating owned bridge process (PID $pid) only..."
- kill -TERM "$pid"
+# It is possible to have duplicate UpPulse agents after a stale pidfile.
+# These PIDs were discovered by exact executable + script pathname, not by a
+# broad process-name match; terminate only these specifically owned agents.
+if (( ${#bridge_pids[@]} > 0 )); then
+ echo "UPPULSE_BRIDGE_OWNED_PIDS: ${bridge_pids[*]}"
+ for pid in "${bridge_pids[@]}"; do
+  # Re-check ownership at signal time to avoid terminating a reused PID.
+  if [[ -r "/proc/$pid/cmdline" ]] && python3 - "$pid" "$target/uppulse_codespace_agent.py" <<'PY'
+import os,sys
+pid,agent=sys.argv[1:]
+try:
+ args=[x.decode("utf-8","replace") for x in open("/proc/"+pid+"/cmdline","rb").read().split(bytes([0])) if x]
+except OSError: sys.exit(1)
+sys.exit(0 if args and args[-1]==agent and os.path.basename(args[0]).startswith("python") else 1)
+PY
+  then
+   kill -TERM "$pid"
+  fi
+ done
  for attempt in {1..30};do
-  if ! kill -0 "$pid" 2>/dev/null;then break;fi
+  alive=0
+  for pid in "${bridge_pids[@]}";do
+   if kill -0 "$pid" 2>/dev/null;then
+    # Zombie process has already released its singleton lock.
+    stat="$(ps -o stat= -p "$pid" 2>/dev/null || true)"
+    if [[ "$stat" != Z* ]];then alive=1;fi
+   fi
+  done
+  if (( alive == 0 ));then break;fi
   sleep 0.2
  done
- if kill -0 "$pid" 2>/dev/null;then
+ if (( alive != 0 ));then
   echo "UPPULSE_BRIDGE_OLD_PROCESS_STILL_RUNNING: no duplicate will be started";exit 2
  fi
 fi
