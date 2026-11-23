@@ -27,6 +27,7 @@ export type WorkflowJournal={
  checkpoint(key:string,step:WorkflowStep,processed:number):Promise<void>;
  block(key:string,step:WorkflowStep,reasonCodes:string[]):Promise<void>;
  finish(key:string):Promise<void>;
+ release?(key:string):Promise<void>;
 };
 export type WorkflowHandlers=Record<WorkflowStep,()=>Promise<WorkflowStepResult>>;
 export function workflowIdentity(merchantId:string,feedId:string,sha256:string){
@@ -44,6 +45,7 @@ export async function runCurationWorkflow(
  const workflowKey=workflowIdentity(source.merchantId,source.feedId,source.sha256);
  // Claim must be atomic and reject concurrent workers for the same workflowKey.
  const snapshot=await journal.claim({...source,workflowKey});
+ try{
  if(snapshot.workflowKey!==workflowKey||snapshot.merchantId!==source.merchantId||
   snapshot.feedId!==source.feedId||snapshot.sha256!==source.sha256)throw Error("WORKFLOW_CLAIM_MISMATCH");
  if(snapshot.status==="COMPLETE")return {workflowKey,status:"COMPLETE",executed:[],next:null};
@@ -79,4 +81,5 @@ export async function runCurationWorkflow(
   return {workflowKey,status:"COMPLETE",executed,next:null};
  }
  return {workflowKey,status:"PARTIAL",executed,next:WORKFLOW_STEPS[done]};
+ }finally{await journal.release?.(workflowKey)}
 }
