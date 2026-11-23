@@ -162,3 +162,11 @@ Foi publicado um agente restrito e um instalador para o Codespace de homologaç�
 - `package.json` foi atualizado para incluir todos os novos testes de Curadoria V3 no release gate oficial, além dos testes existentes.
 - **Ainda não há publicação automática ponta a ponta**: worker persistente de Master, classificações/evidências comerciais, projeção/Loja e rotina de feed remoto ficam pendentes. Não tratar triagem como equivalência/homologação comercial.
 - Referência: `docs/relatorios/CURADORIA_V3_TRIAGEM_AUTOMATICA_2026-11-23.md`. Banco de catálogo não alterado por esta etapa.
+
+ 
+## Curadoria V3 — controle de execução persistente (2026-11-23)
+- Implementados e versionados o planejamento read-only por loja e a esteira incremental com checkpoints, tratamento de falhas e idempotência por merchant/feed/sha256; adapter PostgreSQL preparado mas não ligado aos handlers comerciais.
+- Migração `migrations/curadoria_v3_workflow_runs_PROPOSTA.sql` é **PROPOSTA NÃO APLICADA**. Sem backup/restauração e autorização não executar.
+- GitHub Actions `45279307377` aprovou código SHA `bfa0ecc57e573458cdbf40dc373e2de06c1cf140` (incluindo testes direcionados).
+- Banco, tabela Master, ofertas e projeção pública não sofreram escritas nesta etapa. Preview real ainda depende da recuperação do Codespaces/DB.
+- Relatório: `docs/relatorios/CURADORIA_V3_WORKFLOW_PERSISTENTE_2026-11-23.md`.
