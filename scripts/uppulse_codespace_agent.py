@@ -5,7 +5,7 @@ from urllib.parse import quote
 R=pathlib.Path("/workspaces/uppulse-homologacao/missao9/codigo")
 S=pathlib.Path(os.environ.get("UPPULSE_BRIDGE_STATE_DIR",str(pathlib.Path.home()/".local/state/uppulse-bridge")))
 S.mkdir(parents=True,exist_ok=True)
-VERSION="1.3.0"
+VERSION="1.3.1"
 REPO="edineilemes-source/beupfree"
 BRANCH="feat/uppulse-missao10-supercatalogo"
 PORTS={5011,5012,5013,5014,5015}
@@ -81,7 +81,7 @@ def own(port):
  except (OSError,ValueError,KeyError):return None
 def catalog_database():
  # No automatic start/stop/recreate. Validate the current live catalog before selecting a DB.
- candidates=("beupfree-recovery-postgres","beupfree-catalog-pg17")
+ candidates=("beupfree-catalog-pg17-audit","beupfree-recovery-postgres","beupfree-catalog-pg17")
  verified=[]
  for container in candidates:
   if cmd(["docker","inspect","-f","{{.State.Status}}",container],timeout=10,check=False)!="running":continue
@@ -89,6 +89,18 @@ def catalog_database():
   vars=dict(x.split("=",1) for x in json.loads(envlines) if "=" in x)
   username=vars.get("POSTGRES_USER","postgres")
   password=vars.get("POSTGRES_PASSWORD")
+  if container=="beupfree-catalog-pg17-audit":
+   # Only accept the audited recovery clone from this incident, not an empty
+   # PostgreSQL or an arbitrary container that happens to have the same name.
+   control=cmd(["docker","exec",container,"pg_controldata","/var/lib/postgresql/data"],timeout=15,check=False)
+   if not re.search(r"Database system identifier:\\s*7699654111778938913\\b",control):continue
+   # Clone was started without POSTGRES_PASSWORD because its PGDATA already
+   # existed. Reuse the original container's credential, never print it.
+   original_env=cmd(["docker","inspect","--format","{{json .Config.Env}}","beupfree-catalog-pg17"],timeout=10,check=False)
+   try:original_vars=dict(x.split("=",1) for x in json.loads(original_env) if "=" in x)
+   except (ValueError,TypeError):continue
+   if original_vars.get("POSTGRES_USER","postgres")!=username:continue
+   password=original_vars.get("POSTGRES_PASSWORD")
   if not password:continue
   published=cmd(["docker","port",container,"5432"],timeout=10,check=False).splitlines()
   port=published[0].rsplit(":",1)[-1] if published else ""
@@ -106,6 +118,15 @@ def catalog_database():
    if len(parts)!=2 or not all(x.isdecimal() for x in parts):continue
    products,offers=map(int,parts)
    if products<1000 or offers<1000:continue
+   if container=="beupfree-catalog-pg17-audit":
+    # Real recovery was independently inspected and matched exactly:
+    # products=33520, offers=102018, search=16945. Fail closed if
+    # a different/empty database is mounted at the same container name.
+    if database!="uppulse_catalog" or products!=33520 or offers!=102018:continue
+    projection=cmd(["docker","exec",container,"psql","-U",username,"-d",database,
+     "-X","-A","-t","-v","ON_ERROR_STOP=1","-c",
+     "SELECT count(*) FROM public.catalog_search_products"],timeout=20,check=False)
+    if projection.strip()!="16945":continue
    verified.append((container,address,port,database,username,password,products,offers))
  if len(verified)!=1:raise RuntimeError("CATALOG_DATABASE_NOT_UNIQUELY_VERIFIED")
  return verified[0]
