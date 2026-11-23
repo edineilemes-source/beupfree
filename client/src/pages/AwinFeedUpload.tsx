@@ -16,7 +16,8 @@ type Audit={status:string;merchant:string;feedId:string;storedName:string;sha256
  issues:Issue[];issuesTotal:number;issuesPageSize:number;accepted:number;discarded:number;review:number;imported:number;published:number;canProcess:boolean};
 type MasterPreview={merchantId:string;previewOnly:boolean;parserVersion:string;samples:Array<{externalIdentityId:string;productId:string;rawName:string;identity:{master:{brand:string|null;productType:string|null;modelTokens:string[];modelFamily:string|null;version:string|null;technicalQualifiers:string[]};variant:{colors:string[];size:{value:string;system:string}|null};ambiguities:string[]};normalization:{size:{raw:string|null;normalized:number|null;status:string};color:{raw:string|null;normalized:string[]|null;status:string}}}>};
 type PipelineStep={stage:string;status:"DONE"|"PARTIAL"|"PENDING"|"NOT_VERIFIED";done:number|null;expected:number|null;reason:string};
-type MerchantAudit={pipeline:{stages:Record<string,PipelineStep>;versions:{identity:{parser:string;matcher:string}};publicationApproved:boolean};merchant:{name:string;id:string};counts:{offers:number;distinctProducts:number;activeOffers:number;identities:number|null;stagedIdentities:number|null;promotionEvidence:number|null;classifiedProducts:number|null;eligibleClassifications:number|null;normalizedVariants:number|null;masterMemberships:number|null;masterIdentities:number|null;searchProducts:number|null;availableSearchProducts:number|null};steps:{received:boolean;masterCovered:boolean;catalogClassified:boolean;priceAudited:boolean;projected:boolean;storeVisibleInFilter:boolean};note:string;storeFacetRule:string};
+type CurationWorkflow={workflowVersion:string;nextAction:string;blockers:string[];readyToRequestPublication:boolean;publicationAuthorized:boolean;executeMode:string};
+type MerchantAudit={workflow?:CurationWorkflow;pipeline:{stages:Record<string,PipelineStep>;versions:{identity:{parser:string;matcher:string}};publicationApproved:boolean};merchant:{name:string;id:string};counts:{offers:number;distinctProducts:number;activeOffers:number;identities:number|null;stagedIdentities:number|null;promotionEvidence:number|null;classifiedProducts:number|null;eligibleClassifications:number|null;normalizedVariants:number|null;masterMemberships:number|null;masterIdentities:number|null;searchProducts:number|null;availableSearchProducts:number|null};steps:{received:boolean;masterCovered:boolean;catalogClassified:boolean;priceAudited:boolean;projected:boolean;storeVisibleInFilter:boolean};note:string;storeFacetRule:string};
 type ProcessReport={status:string;imported:number;unchanged:number;accepted:number;review:number;discarded:number;invalid:number;published:number;message:string};
 const format=(n:number)=>n.toLocaleString("pt-BR");
 export default function AwinFeedUpload(){
@@ -181,6 +182,13 @@ export default function AwinFeedUpload(){
         ["Projeção da vitrine",merchantAudit.steps.projected],["Loja disponível nos filtros",merchantAudit.steps.storeVisibleInFilter]] as Array<[string,boolean]>).map(([label,passed])=>
        <p key={label} className="border rounded-md p-2 text-sm">{passed?"✓":"Pendente"} — {label}</p>)}
      </div>
+     {merchantAudit.workflow&&<div className="rounded-md border p-3 space-y-2" data-testid="curation-workflow-preflight">
+      <p className="font-semibold">Plano automático da loja — pré-verificação</p>
+      <p className="text-sm">Próxima etapa: <strong>{merchantAudit.workflow.nextAction.replaceAll("_"," ")}</strong></p>
+      <p className="text-xs text-muted-foreground">Este é um diagnóstico somente leitura. Não dispara processamento de identidade, migração nem publicação.</p>
+      {merchantAudit.workflow.blockers.length>0&&<div className="flex flex-wrap gap-1">{merchantAudit.workflow.blockers.map(code=><span key={code} className="rounded border px-2 py-1 text-xs">{code.replaceAll("_"," ")}</span>)}</div>}
+      {merchantAudit.workflow.readyToRequestPublication&&<p className="text-sm">Cobertura registrada. A publicação exige validação de cada oferta, vínculo Master vigente e elegibilidade comercial.</p>}
+     </div>}
      <div className="space-y-2 border-t pt-3">
       <h3 className="font-semibold">Esteira da Curadoria V3 — execução por etapa</h3>
       <p className="text-xs text-muted-foreground">Versões históricas preservadas: parser {merchantAudit.pipeline.versions.identity.parser}; matcher {merchantAudit.pipeline.versions.identity.matcher}. A cobertura não equivale a homologação de equivalência.</p>
