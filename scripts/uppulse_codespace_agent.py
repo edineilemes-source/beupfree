@@ -5,7 +5,7 @@ from urllib.parse import quote
 R=pathlib.Path("/workspaces/uppulse-homologacao/missao9/codigo")
 S=pathlib.Path(os.environ.get("UPPULSE_BRIDGE_STATE_DIR",str(pathlib.Path.home()/".local/state/uppulse-bridge")))
 S.mkdir(parents=True,exist_ok=True)
-VERSION="1.3.3"
+VERSION="1.3.4"
 REPO="edineilemes-source/beupfree"
 BRANCH="feat/uppulse-missao10-supercatalogo"
 PORTS={5011,5012,5013,5014,5015}
@@ -194,7 +194,7 @@ def execute(action,args):
    if execution.returncode:
     # Script prints only a safe controlled marker. Do NOT publish raw stderr,
     # secrets, URLs or SQL errors to the public GitHub issue.
-    match=re.search(r"OLYMPIKUS_MASTER_BLOCKED:\\s*([A-Z][A-Z0-9_]{3,90})",execution.stderr)
+    match=re.search(r"OLYMPIKUS_MASTER_BLOCKED:\s*([A-Z][A-Z0-9_]{3,90})",execution.stderr)
     raise RuntimeError(match.group(1) if match else "OLYMPIKUS_MASTER_EXECUTION_FAILED")
    output=execution.stdout
    # Never include environment variables or database credentials in public issues.
