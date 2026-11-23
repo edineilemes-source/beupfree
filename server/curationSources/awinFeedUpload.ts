@@ -17,6 +17,7 @@ import {VERSIONS} from "../productIdentity/contracts";
 import {masterParserPreview} from "./masterParserPreview";
 import {listRegisteredStores} from "./storeRegistry";
 import {decideAutomaticCuration} from "./automatedDecision";
+import {planCurationWorkflow} from "./curationOrchestrator";
 
 const MAX_GZIP=20*1024*1024,MAX_UNCOMPRESSED=160*1024*1024,MAX_ROWS=100000;
 function adminIds(env:NodeJS.ProcessEnv):string[]{
@@ -218,7 +219,7 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
       projected:counts.searchProducts!==null&&counts.searchProducts>0,
       storeVisibleInFilter:counts.availableSearchProducts!==null&&counts.availableSearchProducts>0
     };
-    return res.json({merchant:{name:merchant.name,id:merchant.external_merchant_id},counts,steps,pipeline:masterPipelineCoverage(counts),
+    return res.json({merchant:{name:merchant.name,id:merchant.external_merchant_id},counts,steps,pipeline:masterPipelineCoverage(counts),workflow:planCurationWorkflow(merchantId,null,counts),
       note:"O Produto Mestre exige evidências atuais além da existência de memberships; esta auditoria mede cobertura, não certifica equivalência entre produtos.",
       storeFacetRule:"A loja aparece automaticamente no filtro Loja somente quando há produtos elegíveis e disponíveis na projeção."});
    }catch(e){await db.query("ROLLBACK").catch(()=>{});throw e}
