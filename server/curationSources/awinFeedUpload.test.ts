@@ -55,6 +55,16 @@ test("importação AWIN reconhece a fonte automaticamente e exige sessão admini
   assert.ok(Array.isArray(report.issues));
   assert.ok(Number.isInteger(report.issuesTotal));
   assert.equal(report.issuesTotal,report.issues.length);
+  assert.equal(report.masterSummary.inspected,report.stats.normalized);
+  assert.equal(report.masterSummary.parserVersion,"product-identity-v1.5");
+  assert.ok(Array.isArray(report.masterReviews));
+  assert.equal(report.masterReviewsTotal,report.masterReviews.length);
+  const masterUrl=`http://127.0.0.1:${port}/api/admin/awin-feeds/report/${report.merchant}/${report.feedId}/${report.sha256}/master-reviews?page=1`;
+  const masterResponse=await fetch(masterUrl);
+  assert.equal(masterResponse.status,200);
+  const masterBody=await masterResponse.json();
+  assert.equal(masterBody.total,report.masterReviewsTotal);
+  assert.deepEqual(masterBody.items,report.masterReviews);
   const issuesUrl=`http://127.0.0.1:${port}/api/admin/awin-feeds/report/${report.merchant}/${report.feedId}/${report.sha256}/issues?page=1`;
   const issuesResponse=await fetch(issuesUrl);
   assert.equal(issuesResponse.status,200);
@@ -65,6 +75,11 @@ test("importação AWIN reconhece a fonte automaticamente e exige sessão admini
   assert.equal(badPage.status,400);
   assert.match(report.storedName,/^17698-51837-[0-9a-f]{16}\.csv\.gz$/);
   assert.equal(statSync(join(dir,report.storedName)).size,data.length);
+  const duplicate=await fetch(url,{method:"POST",headers:base,body:data});
+  const duplicateReport=await duplicate.json();
+  assert.equal(duplicate.status,201);
+  assert.equal(duplicateReport.sha256,report.sha256);
+  assert.equal((await (await fetch(masterUrl)).json()).total,report.masterReviewsTotal);
   const mismatch=await fetch(url,{method:"POST",headers:{...base,"X-Awin-File-Name":"99999-51837-x.csv.gz"},body:data});
   assert.equal(mismatch.status,422);
  }finally{
