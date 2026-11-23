@@ -134,3 +134,39 @@ test("auditoria da loja compara ofertas, Master, classificação e projeção se
   }
  }
 });
+
+test("simulação histórica Master é exposta pela Curadoria somente leitura, sem autorizar publicação",async()=>{
+ const previous={node:process.env.NODE_ENV,demo:process.env.PUBLIC_DEMO_MODE,temporary:process.env.UPPULSE_CURATOR_TEST_NO_AUTH};
+ process.env.NODE_ENV="development";process.env.PUBLIC_DEMO_MODE="false";process.env.UPPULSE_CURATOR_TEST_NO_AUTH="true";
+ const sql:string[]=[];let released=false;
+ const db={query:async(query:string)=>{
+  sql.push(query);return {rows:[]}
+ },release:()=>{released=true}};
+ const app=express();
+ app.use("/api/admin/awin-feeds",createAwinFeedUploadRouter(undefined,{connect:async()=>db}));
+ const server=app.listen(0);
+ try{
+  await new Promise<void>(resolve=>server.once("listening",resolve));
+  const port=(server.address() as AddressInfo).port;
+  const base=`http://127.0.0.1:${port}/api/admin/awin-feeds/merchant/17698/master-shadow`;
+  const denied=await fetch(base+"?limit=999");
+  assert.equal(denied.status,400);
+  const accepted=await fetch(base+"?limit=20");
+  assert.equal(accepted.status,200);
+  const report=await accepted.json();
+  assert.equal(report.mode,"READ_ONLY_SHADOW");
+  assert.equal(report.scanned,0);
+  assert.equal(report.published,0);
+  assert.equal(report.merged,0);
+  assert.equal(report.coverageLimited,true);
+  assert.equal(released,true);
+  assert.ok(sql.includes("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"));
+  assert.ok(sql.includes("COMMIT"));
+  assert.equal(sql.some(q=>/^(INSERT|UPDATE|DELETE|ALTER|TRUNCATE)/i.test(q)),false);
+ }finally{
+  await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));
+  for(const [name,key] of [["node","NODE_ENV"],["demo","PUBLIC_DEMO_MODE"],["temporary","UPPULSE_CURATOR_TEST_NO_AUTH"]] as const){
+   const value=previous[name];if(value===undefined)delete process.env[key];else process.env[key]=value;
+  }
+ }
+});
