@@ -47,7 +47,7 @@ agent=sys.argv[1]
 for item in os.listdir("/proc"):
  if not item.isdigit(): continue
  try:
-  raw=open("/proc/"+item+"/cmdline","rb").read().split(b"\\0")
+  raw=open("/proc/"+item+"/cmdline","rb").read().split(bytes([0]))
   args=[a.decode("utf-8","replace") for a in raw if a]
   if args and args[-1]==agent and os.path.basename(args[0]).startswith("python"):
    print(item)
