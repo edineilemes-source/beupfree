@@ -158,3 +158,11 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Revisar/obter autorização de migração do journal; não executá-la nesta sessão; não ativar handlers que alteram `offers`, `product_master_memberships` ou `catalog_search_products` antes de preflight e testes.
 - Continuar implementação dos adaptadores reais existentes e agendador de atualização para fechar o ciclo upload → Master → validação → loja.
 - Documentação `docs/relatorios/CURADORIA_V3_WORKFLOW_PERSISTENTE_2026-11-23.md`.
+
+ 
+## Próximo passo prioritário (2026-11-23) — validar Curadoria V3 no Codespaces
+- Release Gate SUCCESS `45280828634`, commit `061ccd973555263f2fe75f688c143f8cc9819c9d`. Testar no Codespaces snapshot de SHA remoto com versão documental atual, sem mexer no checkout.
+- Endpoint de simulação `/api/admin/awin-feeds/merchant/17698/master-shadow?limit=100` e botão Curadoria → Feeds: testar depois de restaurar banco.
+- Issues de ponte #58/#59/#61/#62 abertas sem resposta na última inspeção. Código GitHub funciona, terminal Codespaces não acessível; não alegar preview no ar.
+- Prosseguir com integração de handlers reais em ambiente de homologação após banco verificado e migração do journal autorizada com backup; não publicar automaticamente sem gates comerciais por oferta.
+- Relatório `docs/relatorios/CURADORIA_V3_COMPARACAO_MASTER_EM_TELA_2026-11-23.md`.
