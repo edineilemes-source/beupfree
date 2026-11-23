@@ -38,18 +38,35 @@ hook='[[ -f "$HOME/.local/share/uppulse-bridge/uppulse_bridge_ensure.sh" ]] && b
 if ! grep -Fqx "$hook" "$HOME/.bashrc" 2>/dev/null; then
  printf '\n# UpPulse Codespaces bridge: restore on interactive terminal attach\n%s\n' "$hook" >> "$HOME/.bashrc"
 fi
-if [[ -f "$state/agent.pid" ]] && kill -0 "$(cat "$state/agent.pid")" 2>/dev/null; then
- pid="$(cat "$state/agent.pid")"
- if ! [[ "$pid" =~ ^[0-9]+$ ]] || ! grep -azFq "$target/uppulse_codespace_agent.py" "/proc/$pid/cmdline" 2>/dev/null; then
-  echo "UPPULSE_BRIDGE_PROCESS_NOT_OWNED: refusing to stop unknown process";exit 2
- fi
+# Determine ownership from /proc rather than trusting a potentially stale PID file.
+# The prior upgrade left the original process holding singleton.lock while
+# agent.pid was overwritten by the failed second launch.
+mapfile -t bridge_pids < <(python3 - "$target/uppulse_codespace_agent.py" <<'PY'
+import os,sys
+agent=sys.argv[1]
+for item in os.listdir("/proc"):
+ if not item.isdigit(): continue
+ try:
+  raw=open("/proc/"+item+"/cmdline","rb").read().split(b"\\0")
+  args=[a.decode("utf-8","replace") for a in raw if a]
+  if args and args[-1]==agent and os.path.basename(args[0]).startswith("python"):
+   print(item)
+ except (OSError,PermissionError): pass
+PY
+)
+if (( ${#bridge_pids[@]} > 1 )); then
+ echo "UPPULSE_BRIDGE_MULTIPLE_OWNED_PROCESSES: ${bridge_pids[*]}; manual inspection required";exit 2
+fi
+if (( ${#bridge_pids[@]} == 1 )); then
+ pid="${bridge_pids[0]}"
  if [[ "$old_checksum" == "$new_checksum" ]]; then
-  echo "UPPULSE_BRIDGE_ALREADY_RUNNING: pid $pid, installed version unchanged"
+  echo "$pid" > "$state/agent.pid"
+  echo "UPPULSE_BRIDGE_ALREADY_RUNNING: pid $pid; repaired stale pidfile"
   exit 0
  fi
- echo "Updating bridge process only (not application previews)..."
+ echo "Updating owned bridge process (PID $pid) only..."
  kill -TERM "$pid"
- for attempt in {1..20};do
+ for attempt in {1..30};do
   if ! kill -0 "$pid" 2>/dev/null;then break;fi
   sleep 0.2
  done
