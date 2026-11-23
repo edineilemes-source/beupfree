@@ -18,6 +18,7 @@ import {masterParserPreview} from "./masterParserPreview";
 import {listRegisteredStores} from "./storeRegistry";
 import {decideAutomaticCuration} from "./automatedDecision";
 import {planCurationWorkflow} from "./curationOrchestrator";
+import {previewMerchantMasterShadow} from "./masterShadowPreview";
 
 const MAX_GZIP=20*1024*1024,MAX_UNCOMPRESSED=160*1024*1024,MAX_ROWS=100000;
 function adminIds(env:NodeJS.ProcessEnv):string[]{
@@ -225,6 +226,25 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
    }catch(e){await db.query("ROLLBACK").catch(()=>{});throw e}
    finally{db.release()}
   }catch(e){return res.status(503).json({code:"MERCHANT_AUDIT_FAILED",message:"Não foi possível verificar todas as etapas do catálogo neste banco."})}
+ });
+ router.get("/merchant/:merchantId/master-shadow",authorize,async(req,res)=>{
+  const id=req.params.merchantId;
+  if(!/^\d{2,12}$/.test(id))return res.status(400).json({code:"MERCHANT_ID_INVALID"});
+  const limit=Number(req.query.limit??100);
+  if(!Number.isSafeInteger(limit)||limit<2||limit>200)
+   return res.status(400).json({code:"SHADOW_LIMIT_INVALID"});
+  try{
+   const pool=auditPool??(await import("../db")).pool;
+   const client=await pool.connect();
+   try{
+    await client.query("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY");
+    const report=await previewMerchantMasterShadow(client,id,limit);
+    await client.query("COMMIT");
+    return res.json(report);
+   }catch(error){await client.query("ROLLBACK").catch(()=>{});throw error}
+   finally{client.release()}
+  }catch{return res.status(503).json({code:"MASTER_SHADOW_UNAVAILABLE",
+   message:"A comparação histórica de identidade não pôde ser realizada neste banco."})}
  });
  router.get("/merchant/:merchantId/master-preview",authorize,async(req,res)=>{
   const merchantId=req.params.merchantId;
