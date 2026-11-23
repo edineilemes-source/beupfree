@@ -105,11 +105,10 @@ echo "Actions: STATUS, VALIDAR, PREVIEW (5011-5015), PARAR PREVIEW"
 echo "No catalog writes, no port shutdowns, no reset/checkout/commit/push"
 echo
 echo "Recovery installed on terminal attach; stopped Codespace still requires opening the workspace; postStart rebuild hook not yet verified"
-# Queue the isolated Curadoria preview without touching other services or ports.
-preview_sha="$(git rev-parse "$ref")"
-preview_json="{\"commit\":\"$preview_sha\",\"port\":5013,\"profile\":\"basic\"}"
-if gh issue create --repo edineilemes-source/beupfree --title "[UPPULSE-AGENT] PREVIEW" --body "$preview_json" >/dev/null;then
- echo "PREVIEW_5013_REQUESTED: Curadoria sem login -> Feeds de parceiros (AWIN). Mantenha a porta privada no Codespaces."
+# Queue the narrowly scoped Olympikus Master recovery. The preview is already
+# responding on 5013 and must not be replaced merely to refresh this bridge.
+if gh issue create --repo edineilemes-source/beupfree --title "[UPPULSE-AGENT] MASTER_OLYMPIKUS" --body '{}' >/dev/null;then
+ echo "MASTER_OLYMPIKUS_REQUESTED: migration and historic matcher only on verified audited clone; see new issue for result."
 else
- echo "PREVIEW_5013_NOT_QUEUED: bridge installed; create PREVIEW issue separately"
+ echo "MASTER_OLYMPIKUS_NOT_QUEUED: check GitHub Issues manually"
 fi
