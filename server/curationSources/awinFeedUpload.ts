@@ -129,6 +129,11 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
    }catch(e){await unlink(temporary).catch(()=>{});throw e;}
    const reportFile=join(root,filename+".report.json");
    try{await writeFile(reportFile,JSON.stringify({merchant,feedId,sha256:hash,issues,masterReviews,masterSummary}),{mode:0o600,flag:"wx"})}catch(e:any){if(e?.code!=="EEXIST")throw e}
+   // Keep previous audit immutable. Historical duplicate uploads may lack the
+   // new Product Master diagnostics; write a separately versioned sidecar.
+   try{await writeFile(reportFile+".master-v15.json",
+    JSON.stringify({merchant,feedId,sha256:hash,masterReviews,masterSummary}),
+    {mode:0o600,flag:"wx"})}catch(e:any){if(e?.code!=="EEXIST")throw e}
    const accepted=stats.eligibility.IN_SCOPE_CONFIRMED??0;
    const imported=0;
    // Import is a separate explicit action from upload; the audit is retained for review.
@@ -259,7 +264,7 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
   const page=Number(req.query.page??1),pageSize=300;
   if(!Number.isSafeInteger(page)||page<1||page>334)return res.status(400).json({code:"REPORT_PAGE_INVALID"});
   const root=process.env.UPPULSE_FEED_INBOX_DIR||join(homedir(),".local","share","uppulse","awin-inbox");
-  const name=merchant+"-"+feedId+"-"+hash.slice(0,16)+".csv.gz.report.json";
+  const name=merchant+"-"+feedId+"-"+hash.slice(0,16)+".csv.gz.report.json.master-v15.json";
   try{
    const report=JSON.parse(await readFile(join(root,name),"utf8"));
    if(report.sha256!==hash||report.merchant!==merchant||report.feedId!==feedId||
