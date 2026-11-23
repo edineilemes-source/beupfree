@@ -15,6 +15,7 @@ type Audit={status:string;merchant:string;feedId:string;storedName:string;sha256
  taxonomy:Record<string,number>;eligibility:Record<string,number>;reasons:Record<string,number>};
  issues:Issue[];issuesTotal:number;issuesPageSize:number;accepted:number;discarded:number;review:number;imported:number;published:number;canProcess:boolean};
 type MasterPreview={merchantId:string;previewOnly:boolean;parserVersion:string;samples:Array<{externalIdentityId:string;productId:string;rawName:string;identity:{master:{brand:string|null;productType:string|null;modelTokens:string[];modelFamily:string|null;version:string|null;technicalQualifiers:string[]};variant:{colors:string[];size:{value:string;system:string}|null};ambiguities:string[]};normalization:{size:{raw:string|null;normalized:number|null;status:string};color:{raw:string|null;normalized:string[]|null;status:string}}}>};
+type MasterShadowReport={merchantExternalId:string;scanned:number;limit:number;truncated:boolean;mode:string;coverageLimited:boolean;conclusions:string;versions:{parser:string;matcher:string};stats:{merchantProducts:number;evaluatedPairs:number;master:Record<string,number>;variant:Record<string,number>;simulatedGroups:number;singletons:number;coverageLimited?:boolean}|null;groups:Array<{members:number}>;reviewPairs:Array<{left:string;right:string;reasons:string[];decision:string}>;warnings:string[];published:number;merged:number};
 type PipelineStep={stage:string;status:"DONE"|"PARTIAL"|"PENDING"|"NOT_VERIFIED";done:number|null;expected:number|null;reason:string};
 type CurationWorkflow={workflowVersion:string;nextAction:string;blockers:string[];readyToRequestPublication:boolean;publicationAuthorized:boolean;executeMode:string};
 type MerchantAudit={workflow?:CurationWorkflow;pipeline:{stages:Record<string,PipelineStep>;versions:{identity:{parser:string;matcher:string}};publicationApproved:boolean};merchant:{name:string;id:string};counts:{offers:number;distinctProducts:number;activeOffers:number;identities:number|null;stagedIdentities:number|null;promotionEvidence:number|null;classifiedProducts:number|null;eligibleClassifications:number|null;normalizedVariants:number|null;masterMemberships:number|null;masterIdentities:number|null;searchProducts:number|null;availableSearchProducts:number|null};steps:{received:boolean;masterCovered:boolean;catalogClassified:boolean;priceAudited:boolean;projected:boolean;storeVisibleInFilter:boolean};note:string;storeFacetRule:string};
@@ -35,9 +36,22 @@ export default function AwinFeedUpload(){
  const [processed,setProcessed]=useState<ProcessReport|null>(null);
  const [merchantAudit,setMerchantAudit]=useState<MerchantAudit|null>(null);
  const [masterPreview,setMasterPreview]=useState<MasterPreview|null>(null);
+ const [masterShadow,setMasterShadow]=useState<MasterShadowReport|null>(null);
+ const [shadowLoading,setShadowLoading]=useState(false);
  const [previewLoading,setPreviewLoading]=useState(false);
  const [auditLoading,setAuditLoading]=useState(false);
  const [auditMerchant,setAuditMerchant]=useState("17698");
+ async function inspectMasterComparisons(id:string){
+  if(!/^\d{2,12}$/.test(id))return;
+  setShadowLoading(true);setMasterShadow(null);
+  try{
+   const response=await fetch(`/api/admin/awin-feeds/merchant/${id}/master-shadow?limit=100`,{credentials:"same-origin"});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.message||data.code||"Simulação de comparação indisponível");
+   setMasterShadow(data as MasterShadowReport);
+  }catch(e){setError(e instanceof Error?e.message:"Falha na simulação do Produto Mestre")}
+  finally{setShadowLoading(false)}
+ }
  async function loadMasterPreview(id:string){
   if(!/^[0-9]{2,12}$/.test(id))return;
   setPreviewLoading(true);
@@ -57,7 +71,7 @@ export default function AwinFeedUpload(){
    const data=await r.json();
    if(!r.ok)throw Error(data.message||data.code||"Auditoria indisponível");
    setMerchantAudit(data as MerchantAudit);
-   setMasterPreview(null);
+   setMasterPreview(null);setMasterShadow(null);
   }catch(e){setError(e instanceof Error?e.message:"Falha na auditoria")}
   finally{setAuditLoading(false)}
  }
@@ -201,6 +215,17 @@ export default function AwinFeedUpload(){
       <Button variant="outline" onClick={()=>void loadMasterPreview(merchantAudit.merchant.id)} disabled={previewLoading}>
        {previewLoading?"Lendo identidades…":"Inspecionar nome, modelo, cor e tamanho pelo Produto Mestre original"}
       </Button>
+      <Button variant="outline" onClick={()=>void inspectMasterComparisons(merchantAudit.merchant.id)} disabled={shadowLoading}>
+       {shadowLoading?"Executando comparações…":"Simular matcher original do Produto Mestre (100 identidades)"}
+      </Button>
+      {masterShadow&&<div className="rounded-md border p-3 space-y-2" data-testid="master-shadow-preview">
+       <p className="font-semibold">Comparação pelo matcher histórico — somente leitura</p>
+       <p className="text-sm">Identidades analisadas: {format(masterShadow.scanned)}. Pares avaliados: {format(masterShadow.stats?.evaluatedPairs??0)}. Pares em revisão: {format(masterShadow.stats?.master.REVIEW??0)}.</p>
+       <p className="text-xs text-muted-foreground">A amostra não cobre necessariamente outros anunciantes nem todo o catálogo. Nenhum produto foi fundido ou publicado. {masterShadow.warnings.join(" · ")}</p>
+       {masterShadow.reviewPairs.length>0&&<div className="max-h-44 overflow-y-auto">
+        {masterShadow.reviewPairs.map((pair,index)=><p key={index} className="text-xs border-b p-2">Revisão: {pair.reasons.join(", ")||"Evidência insuficiente"}</p>)}
+       </div>}
+      </div>}
       {masterPreview&&<div className="space-y-2" data-testid="master-preview">
        <p className="text-xs text-muted-foreground">Amostra de até 20 identidades · parser {masterPreview.parserVersion}. Apenas leitura; nenhum produto é fundido ou publicado.</p>
        <div className="max-h-96 overflow-auto"><table className="w-full text-xs"><thead><tr className="border-b text-left"><th className="p-2">Nome original</th><th className="p-2">Marca / modelo / geração</th><th className="p-2">Tamanho / cor</th><th className="p-2">Ambiguidades</th></tr></thead><tbody>
