@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 type RegisteredStore={id:string;name:string;provider:string;externalMerchantId:string;active:boolean;feeds:Array<{id:string;externalFeedId:string;name:string|null;active:boolean;lastSeenAt:string|null;lastImportCompletedAt:string|null}>};
 type Issue={row:number;name:string;reason:string};
+type MasterReviewIssue={row:number;name:string;reason:string;productKey:string};
 type Audit={status:string;merchant:string;feedId:string;storedName:string;sha256:string;
+ masterSummary?:{inspected:number;unresolved:number;stageCandidates:number;byReason:Record<string,number>;parserVersion:string};masterReviews?:MasterReviewIssue[];masterReviewsTotal?:number;
  stats:{rows:number;normalized:number;invalid:number;priceStates:Record<string,number>;
  taxonomy:Record<string,number>;eligibility:Record<string,number>;reasons:Record<string,number>};
  issues:Issue[];issuesTotal:number;issuesPageSize:number;accepted:number;discarded:number;review:number;imported:number;published:number;canProcess:boolean};
@@ -26,6 +28,9 @@ export default function AwinFeedUpload(){
  const [issuesPage,setIssuesPage]=useState(1);
  const [visibleIssues,setVisibleIssues]=useState<Issue[]>([]);
  const [loadingIssues,setLoadingIssues]=useState(false);
+ const [masterReviewPage,setMasterReviewPage]=useState(1);
+ const [visibleMasterReviews,setVisibleMasterReviews]=useState<MasterReviewIssue[]>([]);
+ const [masterReviewLoading,setMasterReviewLoading]=useState(false);
  const [processed,setProcessed]=useState<ProcessReport|null>(null);
  const [merchantAudit,setMerchantAudit]=useState<MerchantAudit|null>(null);
  const [masterPreview,setMasterPreview]=useState<MasterPreview|null>(null);
@@ -84,6 +89,7 @@ export default function AwinFeedUpload(){
    setReport(audited);
    setAuditMerchant(audited.merchant);
    setIssuesPage(1);setVisibleIssues(audited.issues);
+   setMasterReviewPage(1);setVisibleMasterReviews(audited.masterReviews??[]);
    if(audited.accepted>0&&audited.canProcess)await process(audited);
   }catch(e){setError(e instanceof Error?e.message:"Erro no envio")}
   finally{setPending(false)}
@@ -100,6 +106,19 @@ export default function AwinFeedUpload(){
    setIssuesPage(page);
   }catch(e){setError(e instanceof Error?e.message:"Falha na consulta das ocorrências")}
   finally{setLoadingIssues(false)}
+ }
+ async function changeMasterReviewPage(page:number){
+  if(!report||page<1||page>Math.ceil((report.masterReviewsTotal??0)/300))return;
+  setMasterReviewLoading(true);
+  try{
+   const url=`/api/admin/awin-feeds/report/${report.merchant}/${report.feedId}/${report.sha256}/master-reviews?page=${page}`;
+   const response=await fetch(url,{credentials:"same-origin"});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.code||"Falha ao consultar divergências do Produto Mestre");
+   setVisibleMasterReviews(data.items as MasterReviewIssue[]);
+   setMasterReviewPage(page);
+  }catch(e){setError(e instanceof Error?e.message:"Falha na consulta")}
+  finally{setMasterReviewLoading(false)}
  }
  async function process(audit:Audit|null=report){
   if(!audit)return;setProcessing(true);setError("");
@@ -218,6 +237,19 @@ export default function AwinFeedUpload(){
       {Object.entries(report.stats.reasons).sort((a,b)=>b[1]-a[1]).map(([reason,total])=><tr className="border-b" key={reason}><td className="p-2">{reason}</td><td className="p-2 text-right">{format(total)}</td></tr>)}
      </tbody></table></div>}
     </div>
+    {report.masterSummary&&<div className="space-y-2" data-testid="master-automatic-report">
+     <h3 className="font-semibold">Robô de identificação — Produto Mestre original</h3>
+     <p className="text-sm text-muted-foreground">Parser {report.masterSummary.parserVersion} · {format(report.masterSummary.inspected)} registros analisados automaticamente · {format(report.masterSummary.unresolved)} com ambiguidades de identidade. Divergências não geram fusão automática nem publicação.</p>
+     {Object.entries(report.masterSummary.byReason).length>0&&<div className="flex flex-wrap gap-2">{Object.entries(report.masterSummary.byReason).map(([reason,total])=><span key={reason} className="rounded-md border px-2 py-1 text-xs">{reason}: {format(total)}</span>)}</div>}
+     {visibleMasterReviews.length>0&&<div className="max-h-64 overflow-y-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Linha</th><th className="p-2">Produto</th><th className="p-2">Pendência da identidade</th></tr></thead><tbody>
+      {visibleMasterReviews.map(issue=><tr key={issue.row} className="border-b"><td className="p-2">{issue.row}</td><td className="p-2">{issue.name}</td><td className="p-2">{issue.reason}</td></tr>)}
+     </tbody></table></div>}
+     {(report.masterReviewsTotal??0)>300&&<div className="flex items-center justify-between gap-2">
+      <Button variant="outline" disabled={masterReviewLoading||masterReviewPage===1} onClick={()=>void changeMasterReviewPage(masterReviewPage-1)}>Anterior</Button>
+      <span className="text-sm">Página {masterReviewPage} de {Math.ceil((report.masterReviewsTotal??0)/300)}</span>
+      <Button variant="outline" disabled={masterReviewLoading||masterReviewPage>=Math.ceil((report.masterReviewsTotal??0)/300)} onClick={()=>void changeMasterReviewPage(masterReviewPage+1)}>Próxima</Button>
+     </div>}
+    </div>}
     <div><h3 className="font-semibold mb-2">Produtos com problemas — {format(report.issuesTotal)} produtos com ocorrências</h3>
      <div className="overflow-x-auto max-h-80"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Linha</th><th className="p-2">Produto</th><th className="p-2">Motivo</th></tr></thead><tbody>
       {visibleIssues.map((issue,index)=><tr key={index} className="border-b"><td className="p-2">{issue.row}</td><td className="p-2">{issue.name}</td><td className="p-2">{issue.reason}</td></tr>)}
