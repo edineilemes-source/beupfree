@@ -32,3 +32,9 @@ O envio/cadastro de um feed deve acionar, sem intervenção humana rotineira, a 
 
 ## Regra de conclusão
 **Não declarar o motor ponta a ponta pronto** até haver handlers reais conectados, journal no banco aprovado, testes de reinício/concorrência, catálogo real e validação visual. O pipeline atual prepara a execução e seus interlocks, não publica produtos automaticamente.
+
+## Encaminhamento automático ao Codespaces — 23/11/2026
+
+- Foram abertas as tarefas da ponte [#61 VALIDAR](https://github.com/edineilemes-source/beupfree/issues/61), perfil `unit`, e [#62 PREVIEW](https://github.com/edineilemes-source/beupfree/issues/62), porta `5013`, ambas apontando para o SHA imutável `6ac84aca960407a4b5358216a93a30825be467f3`.
+- As solicitações de status [#58](https://github.com/edineilemes-source/beupfree/issues/58) e diagnóstico [#59](https://github.com/edineilemes-source/beupfree/issues/59) continuavam sem resposta na última verificação. **Não existe evidência de que o agente esteja ativo ou de que a porta 5013 tenha sido aberta.**
+- O teste no GitHub Actions passou; não confundir isso com validação de banco real ou preview no Codespaces. Caso o agente retorne, processará tarefas somente enquanto o Codespace e a ponte estiverem em execução; nenhuma Issue liga um Codespace desligado.
