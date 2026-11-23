@@ -142,3 +142,11 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Issue #56 tentou preview 5012 da versão com documentação; retornou `CATALOG_DATABASE_NOT_UNIQUELY_VERIFIED`.
 - Diagnóstico read-only issue #57 confirmou `catalog_db_container=exited`: o contêiner existente `beupfree-catalog-pg17` está parado. Nenhuma intervenção foi feita no volume.
 - Para homologar visualmente e consultar Master, iniciar **somente contêiner existente**, reconfirmar DB canônico e repetir `PREVIEW` de SHA remoto, sem reset/rebuild/migração. Não declarar homologado antes da confirmação.
+
+ 
+## Prioridade — Curadoria V3 automática (2026-11-23)
+- Implementados a análise de identidade automática por registro durante upload, relatório de ambiguidades paginado, relatório de rejeições original preservado e sua apresentação na UI. Não há acionamento de IA externa por produto.
+- CI oficial agora inclui testes criados para Curadoria V3 no `test:unit`. Verificar release gate da branch a partir do commit `bb8fb55ad9ac781922ed24c79a346de50ac5fc83`.
+- Implementar próximo: jobs persistentes e idempotentes por merchant/feed e estado do pipeline; worker histórico de Produto Mestre em escopo seguro; normalização/evidências; projeção pública após validação e atualização periódica de feeds. Não executar migração ou publicação prematura.
+- Codespaces: issues #58/#59 ainda exigem resposta do agente; restabelecer DB preservando volume.
+- Relatório: `docs/relatorios/CURADORIA_V3_TRIAGEM_AUTOMATICA_2026-11-23.md`.
