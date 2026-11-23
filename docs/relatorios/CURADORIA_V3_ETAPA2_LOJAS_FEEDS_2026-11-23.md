@@ -2,7 +2,7 @@
 
 Repo `edineilemes-source/beupfree`; branch `feat/uppulse-missao10-supercatalogo`.
 
-Status: **IMPLEMENTADO EM CÓDIGO; AGUARDA TESTES CI E HOMOLOGAÇÃO NO CODESPACES**.
+Status: **IMPLEMENTADO, TESTADO NO CI; AGUARDA HOMOLOGAÇÃO NO CODESPACES**.
 
 ## Fonte da retomada
 - `docs/relatorios/CURADORIA_V3_ETAPA1_PRESERVACAO_MASTER_2026-11-18.md`, `docs/ESTADO_OPERACIONAL.md`, `.ai/NEXT_ACTION.md` e código do Produto Mestre foram consultados diretamente no GitHub.
@@ -23,3 +23,8 @@ Status: **IMPLEMENTADO EM CÓDIGO; AGUARDA TESTES CI E HOMOLOGAÇÃO NO CODESPAC
 - Homologar `/api/admin/awin-feeds/stores` no banco real e a tela em preview, após recuperação.
 - Continuar cadastro/configuração de novas fontes, periodicidade por loja, orquestrador idempotente, rejeições, execução segura do Produto Mestre histórico, classificação, preços e projeção. Isso **não está concluído**.
 - Não publicar produtos/Hostinger ou executar migração sem os gates correspondentes.
+
+## CI confirmado após a implementação
+
+- GitHub Actions `UpPulse Release Gate`, run `45274085396`, SHA `52c85d0c48f7a44327c13ba67e5c7f6ac1f04866`: **SUCCESS** (verificação após commits de código, antes deste relatório).
+- Nenhuma ação de banco, deploy ou reinício de contêiner foi executada pelo conector.
