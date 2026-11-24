@@ -166,3 +166,8 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Issues de ponte #58/#59/#61/#62 abertas sem resposta na última inspeção. Código GitHub funciona, terminal Codespaces não acessível; não alegar preview no ar.
 - Prosseguir com integração de handlers reais em ambiente de homologação após banco verificado e migração do journal autorizada com backup; não publicar automaticamente sem gates comerciais por oferta.
 - Relatório `docs/relatorios/CURADORIA_V3_COMPARACAO_MASTER_EM_TELA_2026-11-23.md`.
+
+## Próxima ação — Olympikus 0% (24/11/2026)
+- Regra de negócio reafirmada: 0% de desconto e preço atual igual ao anterior de compatibilidade representam preço regular sem promoção; permitir comparação e indexação quando elegível.
+- Código no GitHub preparado: `scripts/olympikus_regular_clone_release.py` executa backup/restauração integral antes da migração `0014` e está limitado ao clone verificado. Reinstalar agente a partir do GitHub e executar release com flag explícita somente no Codespaces, sem Hostinger. A publicação ainda não ocorreu.
+- Verificar a Issue #93 e testar o catálogo/merchant facets após execução; preservar ofertas regulares sem inventar desconto. Referência: `docs/relatorios/MISSAO10_OLYMPIKUS_PRECO_REGULAR_20261124.md`.
