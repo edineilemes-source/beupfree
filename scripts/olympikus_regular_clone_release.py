@@ -68,6 +68,17 @@ def main():
         raise RuntimeError("AUDIT_CLONE_FINGERPRINT_MISMATCH")
     if baseline() != BASELINE:
         raise RuntimeError("AUDIT_CLONE_BASELINE_CHANGED")
+    # Never index products lacking a persisted photo or a live, usable affiliate offer.
+    merchant = "(SELECT id FROM commerce_merchants WHERE external_merchant_id='17698')"
+    pictured = int(sql("SELECT count(DISTINCT e.product_id) FROM external_product_identities e " +
+                       "JOIN product_images i ON i.product_id=e.product_id WHERE e.merchant_id=" + merchant))
+    sellable = int(sql("SELECT count(DISTINCT v.product_id) FROM product_variants v " +
+                       "JOIN offers o ON o.variant_id=v.id AND o.merchant_id=v.merchant_id " +
+                       "WHERE v.merchant_id=" + merchant +
+                       " AND o.in_stock=true AND o.affiliate_url ~ '^https?://'"))
+    if pictured != 813 or sellable != 813:
+        raise RuntimeError("PRODUCT_IMAGE_OR_STOCK_LINK_COVERAGE_INCOMPLETE")
+
     constraints = sql("""SELECT count(*) FROM pg_constraint
         WHERE conname IN ('chk_offer_promotion_price_order','chk_offer_promotion_discount',
         'chk_catalog_search_prices','chk_catalog_search_discount')
