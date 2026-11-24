@@ -7,9 +7,10 @@ import {createCatalogPriceEvidence} from "../server/integrations/awin/regularPri
 import {classifyAudience} from "../server/integrations/awin/dafitiCuration";
 import {CATALOG_CLASSIFIER_VERSION,CATALOG_NORMALIZER_VERSION,mapEligibilityToOperationalState,normalizeCatalogSize,normalizeCatalogColour} from "../server/integrations/awin/operationalCatalog";
 import {persistClassifications,persistNormalizations,type ClassificationWrite,type NormalizationWrite} from "../server/integrations/awin/catalogPersistence";
+import {isPersistablePromotion,promotionOnlyState} from "../server/integrations/awin/promotionOnlyPolicy";
 const args=process.argv.slice(2),arg=(name:string)=>args.find(x=>x.startsWith(name+"="))?.slice(name.length+1);
 const merchant=arg("--merchant")??"",feedId=arg("--feed-id")??"",expectedCount=Number(arg("--expected-raw-count"));
-const commit=args.includes("--confirm-staging");
+const commit=args.includes("--confirm-staging"),promotionOnly=args.includes("--promotion-only");
 if(!/^\d+$/.test(merchant)||!/^\d+$/.test(feedId)||!Number.isSafeInteger(expectedCount)||expectedCount<1)throw Error("SOURCE_IDS_EXPECTED_COUNT_REQUIRED");
 const urlText=process.env.AWIN_CATALOG_ADMIN_DATABASE_URL,expectedDb=process.env.AWIN_CATALOG_EXPECTED_DATABASE,expectedHost=process.env.AWIN_CATALOG_EXPECTED_HOST;
 if(!urlText||!expectedDb||!expectedHost)throw Error("EXPLICIT_DATABASE_TARGET_REQUIRED");
@@ -50,7 +51,7 @@ async function main(){
    seenVariants.add(linked.variant_id);seenOffers.add(linked.offer_id);
    const assessment=assessAwinCatalogCandidate(item),evidence=createCatalogPriceEvidence(item);
    taxonomy.push(assessment.taxonomy.universe);priceStates.push(evidence.status);eligibility.push(assessment.eligibility.status);
-   if(evidence.status!=="REVIEW_REQUIRED"){
+   if(promotionOnly?isPersistablePromotion(evidence):evidence.status!=="REVIEW_REQUIRED"){
     if(evidence.compatibilityPreviousPrice===null)throw Error("NO_COMPATIBLE_PRICE");
     priceRows.push({offerId:linked.offer_id,status:evidence.status,price:evidence.currentPrice,
      old:evidence.compatibilityPreviousPrice,percent:evidence.discountPercent,type:evidence.evidenceType});
@@ -66,7 +67,7 @@ async function main(){
   for(const [productId,g] of groups){
    const t=g[0].assessment.taxonomy,anyOut=g.some(x=>x.assessment.taxonomy.universe==="NON_SNEAKER");
    const allOK=g.every(x=>x.assessment.eligibility.status==="IN_SCOPE_CONFIRMED");
-   const state=anyOut?"OUT_OF_SCOPE":allOK?"CATALOG_ELIGIBLE":"QUARANTINED";
+   const state=promotionOnly?promotionOnlyState(g.map(x=>x.assessment)):(anyOut?"OUT_OF_SCOPE":allOK?"CATALOG_ELIGIBLE":"QUARANTINED");
    classifications.push({productId,providerId:m.provider_id,merchantId:m.id,
     universe:anyOut?"NON_SNEAKER":t.universe,style:t.style,activities:[...new Set(g.flatMap(x=>x.assessment.taxonomy.activities))],
     confidence:t.confidence,reasonCodes:[...new Set(g.flatMap(x=>[...x.assessment.taxonomy.reasons,...x.assessment.eligibility.reasons]))],
@@ -77,7 +78,11 @@ async function main(){
   let insertedEvidence=0;let classResult:null|unknown=null,normResult:null|unknown=null;
   if(commit){
    const constraints=(await client.query("SELECT conname,pg_get_constraintdef(oid) definition FROM pg_constraint WHERE conrelid IN ('offer_promotion_evidence'::regclass,'catalog_search_products'::regclass) AND conname IN ('chk_offer_promotion_price_order','chk_offer_promotion_discount','chk_catalog_search_prices','chk_catalog_search_discount')")).rows;
-   if(constraints.length!==4||constraints.some(x=>!String(x.definition).includes("REGULAR_PRICE")))throw Error("MIGRATION_0014_NOT_APPLIED");
+   if(constraints.length!==4)throw Error("CATALOG_PRICE_CONSTRAINTS_MISSING");
+   if(promotionOnly){
+    if(constraints.some(x=>!String(x.definition).includes("discount_percent >")&&!String(x.definition).includes("old_price >")&&!String(x.definition).includes("previous_price >")))throw Error("PROMOTION_ONLY_CONSTRAINTS_UNEXPECTED");
+    if(priceRows.some(x=>x.status!=="PROMOTION_CONFIRMED"||x.old<=x.price||x.percent<=0))throw Error("NON_PROMOTIONAL_EVIDENCE_BLOCKED");
+   }else if(constraints.some(x=>!String(x.definition).includes("REGULAR_PRICE")))throw Error("MIGRATION_0014_NOT_APPLIED");
    const prior=(await client.query("SELECT count(*)::int n FROM offer_promotion_evidence pe JOIN offers o ON o.id=pe.offer_id WHERE o.merchant_id=$1",[m.id])).rows[0].n;
    if(prior)throw Error("PRICE_EVIDENCE_ALREADY_EXISTS");
    for(let i=0;i<priceRows.length;i+=500){
@@ -92,7 +97,7 @@ async function main(){
    if(after!==baseline)throw Error("OTHER_MERCHANT_EVIDENCE_CHANGED");
    await client.query("COMMIT");
   }else await client.query("ROLLBACK");
-  console.log(JSON.stringify({mode:commit?"STAGING_WRITTEN":"READ_ONLY_DRY_RUN",merchant,feedId,
+  console.log(JSON.stringify({mode:commit?"STAGING_WRITTEN":"READ_ONLY_DRY_RUN",promotionOnly,merchant,feedId,
    rawCount:raw.length,productGroups:groups.size,priceStates:count(priceStates),taxonomy:count(taxonomy),
    rowEligibility:count(eligibility),classification:count(classifications.map(x=>x.operationalState)),
    evidenceCandidates:priceRows.length,insertedEvidence,classResult,normResult,
