@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only Olympikus commercial preflight on audited Codespaces clone.
+"""Read-only Olympikus regular-price commercial preflight on audited Codespaces clone.
 No schema changes, no offer activation, no catalog publication.
 """
 import json,os,pathlib,re,subprocess,sys,tempfile,shutil
@@ -55,15 +55,15 @@ def main():
    "AWIN_CATALOG_EXPECTED_HOST":"127.0.0.1","UPPULSE_DISABLE_EXTERNAL_JOBS":"true"})
   env.pop("OPENAI_API_KEY",None);env.pop("TAVILY_API_KEY",None)
   # Existing transactional staging program defaults to REPEATABLE READ ONLY
-  # without --confirm-staging. --promotion-only filters out regular prices.
+  # without --confirm-staging. Regular prices are represented with 0% discount.
   out=run(["node","--import","tsx","scripts/awin-regular-catalog-stage.ts",
-   "--merchant=17698","--feed-id=51837","--expected-raw-count=5167","--promotion-only"],cwd=temp,env=env)
+   "--merchant=17698","--feed-id=51837","--expected-raw-count=5167"],cwd=temp,env=env)
   result=json.loads(out)
-  if result.get("mode")!="READ_ONLY_DRY_RUN" or result.get("promotionOnly") is not True:
+  if result.get("mode")!="READ_ONLY_DRY_RUN":
    raise RuntimeError("UNEXPECTED_AUDIT_MODE")
-  if result.get("offersActivated")!=0 or result.get("projectionMutations")!=0:
+  if result.get("priceStates",{}).get("REGULAR_PRICE")!=5167 or result.get("classification",{}).get("CATALOG_ELIGIBLE")!=813 or result.get("evidenceCandidates")!=5167:\n   raise RuntimeError("REGULAR_PRICE_CLASSIFICATION_UNEXPECTED")\n  if result.get("offersActivated")!=0 or result.get("projectionMutations")!=0:
    raise RuntimeError("UNEXPECTED_COMMERCIAL_WRITES")
-  print(json.dumps({"status":"OLYMPIKUS_PROMO_DRY_RUN_OK","snapshot":remote[:12],
+  print(json.dumps({"status":"OLYMPIKUS_REGULAR_DRY_RUN_OK","snapshot":remote[:12],
    "merchant":"17698","feedId":"51837","report":result},ensure_ascii=False,indent=2))
  finally:
   shutil.rmtree(temp,ignore_errors=True)
