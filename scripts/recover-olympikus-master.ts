@@ -11,6 +11,7 @@ import {fileURLToPath} from "node:url";
 import {dirname,resolve} from "node:path";
 import pg from "pg";
 import {loadSources,persistIdentities} from "../server/productIdentity/operational";
+import type {CatalogCheckpoint} from "../server/productIdentity/catalog";
 import {sourceBrand} from "../server/productIdentity/reconciledReader";
 import {parseProductIdentity} from "../shared/product-identity/parser";
 
@@ -21,7 +22,7 @@ export const MASTER_TABLES=[
 
 export function selectOlympikusCohort(
  sources:Array<{id:string;merchantId:string;name:string;brandName:string|null;rawBrand:string|null;rawBrandCount:number}>,
- olympikusMerchantId:string,limit=2000
+ olympikusMerchantId:string,limit=12000
 ){
  const allMerchant=sources.filter(s=>s.merchantId===olympikusMerchantId);
  if(allMerchant.length!==813)throw Error("OLYMPIKUS_IDENTITY_COUNT_CHANGED");
@@ -99,7 +100,17 @@ async function main(){
   finally{client.release()}
   // The original historical engine uses an advisory lock and atomically
   // writes runs, decisions, Master rows and memberships as one transaction.
-  const result=await persistIdentities(pool,cohortIds);
+  // Original Mission 8 tiling schedules every brand-compatible tile instead
+  // of silently truncating other-store candidates at the 2,000-input bound.
+  // Checkpoint is in-memory only: the historical engine commits once and
+  // atomically, with its advisory lock, after all tile decisions are validated.
+  const tileCache=new Map<string,Awaited<ReturnType<NonNullable<CatalogCheckpoint["load"]>>>>();
+  const checkpoint:CatalogCheckpoint={
+   tileSize:500,
+   async load(key){return tileCache.get(key)??null;},
+   async save(key,tile){tileCache.set(key,tile);},
+  };
+  const result=await persistIdentities(pool,cohortIds,{},checkpoint);
   const check=await pool.query(`
    SELECT count(DISTINCT mm.external_product_identity_id)::int n
    FROM product_master_memberships mm
@@ -114,6 +125,8 @@ async function main(){
    originalParser:logical.versions?.parser,originalMatcher:logical.versions?.matcher,
    runId:result.runId,reused:result.reused,
    coverageLimited:logical.coverageLimited,
+   crossStoreCandidateCoverage:"ALL_IDENTITIES_MATCHING_OLYMPIKUS_BRAND_BLOCK",
+   scheduledTiles:(result.shadow as any).catalog?.tiles,
    unevaluatedPairs:logical.unevaluatedPairs.length,
    publication:"NOT_TRIGGERED",commercialWrites:0
   }));
