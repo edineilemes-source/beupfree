@@ -36,7 +36,8 @@ def main():
  password=values.get("POSTGRES_PASSWORD")
  if not password:raise RuntimeError("DATABASE_CREDENTIAL_UNAVAILABLE")
  username=values.get("POSTGRES_USER","postgres")
- remote=run(["git","ls-remote","origin","refs/heads/"+BRANCH]).split()[0]
+ run(["git","fetch","--no-tags","origin",BRANCH])
+ remote=run(["git","rev-parse","FETCH_HEAD"])
  if not re.fullmatch(r"[0-9a-f]{40}",remote):raise RuntimeError("REMOTE_SHA_INVALID")
  temp=pathlib.Path(tempfile.mkdtemp(prefix="uppulse-promo-audit-",dir="/tmp"))
  try:
