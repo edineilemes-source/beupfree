@@ -5,7 +5,7 @@ from urllib.parse import quote
 R=pathlib.Path("/workspaces/uppulse-homologacao/missao9/codigo")
 S=pathlib.Path(os.environ.get("UPPULSE_BRIDGE_STATE_DIR",str(pathlib.Path.home()/".local/state/uppulse-bridge")))
 S.mkdir(parents=True,exist_ok=True)
-VERSION="1.3.4"
+VERSION="1.3.5"
 REPO="edineilemes-source/beupfree"
 BRANCH="feat/uppulse-missao10-supercatalogo"
 PORTS={5011,5012,5013,5014,5015}
@@ -123,10 +123,17 @@ def catalog_database():
     # products=33520, offers=102018, search=16945. Fail closed if
     # a different/empty database is mounted at the same container name.
     if database!="uppulse_catalog" or products!=33520 or offers!=102018:continue
+    # Preserve the pre-Olympikus catalog exactly while allowing only verified
+    # Olympikus rows to be added, up to its 813 distinct products.
     projection=cmd(["docker","exec",container,"psql","-U",username,"-d",database,
-     "-X","-A","-t","-v","ON_ERROR_STOP=1","-c",
-     "SELECT count(*) FROM public.catalog_search_products"],timeout=20,check=False)
-    if projection.strip()!="16945":continue
+     "-X","-A","-t","-F","|","-v","ON_ERROR_STOP=1","-c",
+     "SELECT (SELECT count(*) FROM public.catalog_search_products WHERE merchant_id <> "
+     "(SELECT id FROM public.commerce_merchants WHERE external_merchant_id='17698')),"
+     "(SELECT count(*) FROM public.catalog_search_products WHERE merchant_id = "
+     "(SELECT id FROM public.commerce_merchants WHERE external_merchant_id='17698'))"],timeout=20,check=False)
+    pieces=projection.strip().split("|")
+    if len(pieces)!=2 or not all(v.isdecimal() for v in pieces):continue
+    if int(pieces[0])!=16945 or int(pieces[1])>813:continue
    verified.append((container,address,port,database,username,password,products,offers))
  if len(verified)!=1:raise RuntimeError("CATALOG_DATABASE_NOT_UNIQUELY_VERIFIED")
  return verified[0]
