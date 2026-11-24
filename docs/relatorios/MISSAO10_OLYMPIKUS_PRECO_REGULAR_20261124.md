@@ -21,3 +21,15 @@ Produtos genuinamente de tênis e comercialmente elegíveis podem ser indexados 
 - Validação final do snapshot: Issue #93 (ver resultado no GitHub).
 - **PUBLICAÇÃO AINDA NÃO EXECUTADA**: script exige execução expressa no terminal do Codespaces; nenhuma migração, backup restaurado ou gravação da Olympikus foi realizada por esta preparação.
 - Não realiza deploy na Hostinger ou mudança do banco original; a loja só ficará visível no preview operacional após a projeção de produtos elegíveis. Não declarar release de produção.
+
+## Execução confirmada pelo operador — 24/11/2026
+
+- O executor `scripts/olympikus_regular_clone_release.py` confirmou o snapshot `2b6057068d4b` com `OLYMPIKUS_AUDIT_CLONE_RELEASED`.
+- `PREFLIGHT_OK`: 813 produtos elegíveis, 5.167 ofertas de preço regular.
+- `BACKUP_ARCHIVE_VERIFIED`: `/home/codespace/.local/share/uppulse/backups/uppulse_catalog_pre_0014_20261124T171736Z_45731.dump`.
+- `FULL_RESTORE_VERIFIED`: backup restaurado com sucesso em banco de teste antes da migração.
+- `MIGRATION_0014_VERIFIED`: constraints de preço regular aplicadas no clone.
+- `STAGING_VERIFIED`: 5.167 evidências de preço, classificação e variantes processadas.
+- `availableSearchProducts=813`: os 813 produtos estão na projeção de busca da base homologada. Total esperado: 17.758 registros.
+- `productionDeploy=false`, `otherMerchantsChanged=false`: não houve alteração declarada na base de produção nem em outros lojistas.
+- O agente Codespaces instalado ainda é versão 1.3.4: Issue #94 `CATALOGO` retornou `CATALOG_READ_ONLY_QUERY_UNAVAILABLE` porque compara total de busca com o baseline anterior de 16.945. O código do agente v1.3.5 já permite o crescimento exclusivo da Olympikus. Atualização da ponte e homologação visual/HTTP da vitrine são pendentes, sem invalidar a confirmação SQL do executor.
