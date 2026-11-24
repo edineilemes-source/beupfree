@@ -183,7 +183,7 @@ def main():
                                      "--merchant=17698", "--expected-count=813",
                                      "--projection-version=uppulse-catalog-search-v4-demographics",
                                      "--classifier-version=uppulse-taxonomy-v4-contextual",
-                                     "--normalizer-version=uppulse-colors-v3-2026-10-06",
+                                     "--normalizer-version=uppulse-normalizer-v3-uppulse-colors-v3-2026-10-06",
                                      "--source-snapshot=olympikus-awin-51837-" + sha[:12],
                                      "--confirm-persist"], cwd=snapshot, env=env))
         if projected.get("finalCount") != 813:
