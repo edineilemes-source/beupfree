@@ -185,3 +185,7 @@ Foi publicado um agente restrito e um instalador para o Codespace de homologaç�
 - Consulta `information_schema.tables` sob esquema `public` com nomes `product_master%` e `product_identity%` retornou zero. Isto NÃO confirma ausência dos dados Master: consultar `pg_catalog` em todos esquemas e confirmar migrações antes de usar vínculo Master como gate.
 - Ponte antes não reconhecia o novo contêiner. Agente v1.3.1 agora admite exclusivamente `beupfree-catalog-pg17-audit` após verificar system identifier `7699654111778938913` e as 3 contagens históricas; busca credencial do contêiner antigo sem registrá-la em log. Não modifica dados.
 - Instalador `scripts/uppulse_bridge_install.sh` atualizado para enfileirar preview na porta 5013. **A versão que roda no Codespaces não muda sozinha com o push:** requer executar instalador idempotente no Codespaces. Não alegar preview aberto sem resposta de Issue e HTTP 200.
+
+## Olympikus com preço regular — avanço em 24/11/2026
+- Banco recuperado no clone auditado `beupfree-catalog-pg17-audit`: 33.520 produtos, 102.018 ofertas, 16.945 registros de busca; Olympikus AWIN 17698/51837: 813 produtos e 5.167 preços regulares, sem promoção real comprovada. Todos os 813 são elegíveis no dry-run regular, não no fluxo promocional exclusivo.
+- Migração `0014_regular_price_offer_evidence.sql` ainda pendente (constraints atuais exigem desconto positivo). Execução controlada com backup/restauração e snapshot remoto preparada, sem aplicação ainda. Status e riscos em `docs/relatorios/MISSAO10_OLYMPIKUS_PRECO_REGULAR_20261124.md`.
