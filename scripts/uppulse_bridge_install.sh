@@ -105,6 +105,7 @@ echo "Actions: STATUS, VALIDAR, PREVIEW (5011-5015), PARAR PREVIEW, INTEGRAR_AWI
 echo "Catalog writes only through owner-authorized INTEGRAR_AWIN on verified clone; no reset/checkout/commit/push"
 echo
 echo "Recovery installed on terminal attach; stopped Codespace still requires opening the workspace; postStart rebuild hook not yet verified"
-# Partner onboarding is now event-driven through the restricted INTEGRAR_AWIN
-# action; installation never schedules or repeats a merchant write operation.
-echo "UPPULSE_PARTNER_ONBOARDING_READY: after AWIN admin upload and staging, request INTEGRAR_AWIN with merchant and feedId."
+# The normal path is now fully inside the Curadoria interface. The Issue
+# action remains an explicitly authorised recovery tool, not the standard flow.
+echo "UPPULSE_CURADORIA_5013: upload -> staging -> automatic guarded publication -> catalog. No GitHub Issue needed for new feeds."
+echo "INTEGRAR_AWIN remains an exceptional recovery action only; it is NOT the Curadoria workflow."
