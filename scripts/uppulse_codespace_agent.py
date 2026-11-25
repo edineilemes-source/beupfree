@@ -193,7 +193,7 @@ def execute(action,args):
    validate(path,"basic")
    argv=["python3",str(path/"scripts/awin-partner-onboard.py"),
       "--merchant="+args["merchant"],"--feed-id="+args["feedId"],
-      "--apply-to-audited-clone"]
+      "--source-sha="+sha,"--apply-to-audited-clone"]
    result=subprocess.run(argv,cwd=R,capture_output=True,text=True,timeout=7200)
    if result.returncode:
     reason=re.search(r"AWIN_PARTNER_BLOCKED:\s*([A-Z][A-Z0-9_]{3,99})",result.stderr)
