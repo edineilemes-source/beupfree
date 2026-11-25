@@ -34,10 +34,16 @@ function dbIsAuditedClone(value:string|undefined){
  }catch{return false}
 }
 export function publicationEnabled(env:NodeJS.ProcessEnv=process.env){
+ // The existing v1.3.6 bridge provides a private, clone-only Curadoria
+ // preview without the newer feature flag. Keep that safe profile usable.
+ const previewApproved=env.UPPULSE_CURATOR_AUTO_PUBLISH==="true" ||
+   (env.UPPULSE_CURATOR_AUTO_PUBLISH===undefined&&
+    env.UPPULSE_CURATOR_TEST_NO_AUTH==="true");
  return env.NODE_ENV==="development"&&env.PUBLIC_DEMO_MODE==="false"&&
-  env.UPPULSE_CURATOR_AUTO_PUBLISH==="true"&&env.UPPULSE_PUBLIC_CATALOG_APPROVED==="true"&&
-  env.PORT==="5013"&&dbIsAuditedClone(env.DATABASE_URL)&&
-  /^[0-9a-f]{40}$/.test(env.UPPULSE_PREVIEW_SOURCE_SHA||"");
+  previewApproved&&env.UPPULSE_PUBLIC_CATALOG_APPROVED==="true"&&
+  env.UPPULSE_DISABLE_EXTERNAL_JOBS==="true"&&env.PORT==="5013"&&
+  dbIsAuditedClone(env.DATABASE_URL)&&
+  (!env.UPPULSE_PREVIEW_SOURCE_SHA||/^[0-9a-f]{40}$/.test(env.UPPULSE_PREVIEW_SOURCE_SHA));
 }
 export function publicationDirectories(env:NodeJS.ProcessEnv=process.env){
  return {
@@ -80,7 +86,8 @@ async function startWorker(source:Source):Promise<void>{
  const worker=resolve(process.cwd(),"scripts","awin-curadoria-publish-worker.py");
  const snapshot=process.env.UPPULSE_PREVIEW_SOURCE_SHA||"";
  const args=[worker,"--merchant="+source.merchant,"--feed-id="+source.feedId,
-  "--sha256="+source.sha256,"--source-sha="+snapshot];
+  "--sha256="+source.sha256];
+ if(/^[0-9a-f]{40}$/.test(snapshot))args.push("--source-sha="+snapshot);
  const child=spawn("python3",args,{
   cwd:process.cwd(),env:{...process.env,
    UPPULSE_DISABLE_EXTERNAL_JOBS:"true",RESEARCH_PAID_ENABLED:"false"},
