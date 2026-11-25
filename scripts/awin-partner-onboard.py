@@ -66,6 +66,9 @@ def counts(merchant, feed, database=DATABASE):
       'identities',(SELECT count(DISTINCT e.product_id) FROM external_product_identities e
         JOIN commerce_merchants m ON m.id=e.merchant_id
         WHERE m.external_merchant_id='{merchant}'),
+      'identityRecords',(SELECT count(*) FROM external_product_identities e
+        JOIN commerce_merchants m ON m.id=e.merchant_id
+        WHERE m.external_merchant_id='{merchant}'),
       'master',{master_expression},
       'evidence',(SELECT count(*) FROM offer_promotion_evidence pe
         JOIN offers o ON o.id=pe.offer_id JOIN commerce_merchants m ON m.id=o.merchant_id
@@ -202,7 +205,7 @@ def execute(merchant,feed):
        r"Database system identifier:\s*"+FINGERPRINT+r"\b",info):
         raise RuntimeError("AUDITED_RECOVERY_CLONE_MISMATCH")
     before=counts(merchant,feed)
-    if before["raw"]<1 or before["identities"]<1:
+    if before["raw"]<1 or before["identities"]<1 or before["identityRecords"]<1:
         raise RuntimeError("FEED_NOT_STAGED_OR_MASTER_INPUT_MISSING")
     if before["projection"] or before["evidence"] or before["classifications"]:
         # An existing merchant/updated feed requires a separate append-only refresh.
@@ -290,7 +293,7 @@ def execute(merchant,feed):
         ensure_schema(source)
         # The original Product Master matcher runs before commercial staging.
         master=run_json(source,"scripts/awin-partner-master.ts",
-            ["--merchant="+merchant,"--expected-products="+str(before["identities"]),
+            ["--merchant="+merchant,"--expected-identities="+str(before["identityRecords"]),
              "--confirm-master"],env)
         if master.get("status") not in ("ALREADY_COMPLETED","MASTER_PARTNER_COMPLETED"):
             raise RuntimeError("MASTER_COVERAGE_UNVERIFIED")
@@ -317,7 +320,7 @@ def execute(merchant,feed):
             after["catalog"]!=before["catalog"]+eligible or
             after["projection"]!=eligible or after["evidence"]!=candidates or
             after["classifications"]!=before["identities"] or
-            after["master"]!=before["identities"] or
+            after["master"]!=before["identityRecords"] or
             protected_projection(merchant)!=protected_before):
             raise RuntimeError("FINAL_MERCHANT_ISOLATION_AUDIT_FAILED")
         visible=number(f"""SELECT count(*) FROM catalog_search_products c
@@ -328,7 +331,7 @@ def execute(merchant,feed):
             raise RuntimeError("VISIBLE_PRODUCTS_NOT_EQUAL_ELIGIBLE")
         print(json.dumps({"status":"AWIN_PARTNER_CATALOG_READY","merchant":merchant,
           "feed":feed,"snapshot":sha[:12],"raw":before["raw"],
-          "products":before["identities"],"eligible":eligible,
+          "products":before["identities"],"identityRecords":before["identityRecords"],"eligible":eligible,
           "quarantined":int(stage["classification"].get("QUARANTINED",0)),
           "outOfScope":int(stage["classification"].get("OUT_OF_SCOPE",0)),
           "commercialEvidence":candidates,"availableSearchProducts":visible,
