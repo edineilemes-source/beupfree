@@ -189,3 +189,8 @@ Foi publicado um agente restrito e um instalador para o Codespace de homologaç�
 ## Olympikus com preço regular — avanço em 24/11/2026
 - Banco recuperado no clone auditado `beupfree-catalog-pg17-audit`: 33.520 produtos, 102.018 ofertas, 16.945 registros de busca; Olympikus AWIN 17698/51837: 813 produtos e 5.167 preços regulares, sem promoção real comprovada. Todos os 813 são elegíveis no dry-run regular, não no fluxo promocional exclusivo.
 - Migração `0014_regular_price_offer_evidence.sql` ainda pendente (constraints atuais exigem desconto positivo). Execução controlada com backup/restauração e snapshot remoto preparada, sem aplicação ainda. Status e riscos em `docs/relatorios/MISSAO10_OLYMPIKUS_PRECO_REGULAR_20261124.md`.
+
+## Pipeline AWIN genérico após Olympikus — 25/11/2026
+- Regra permanente: `REGULAR_PRICE` com preço anterior de compatibilidade igual ao atual e 0% de desconto é comercialmente elegível se tênis confirmado, com estoque, imagem e link afiliado válido. Não inferir desconto de `base_price` ou parcelas.
+- O pipeline de novos parceiros da Curadoria agora tem executor em `scripts/awin-partner-onboard.py`, Produto Mestre histórico em `scripts/awin-partner-master.ts`, versões em `scripts/awin-partner-versions.ts`, testes em `scripts/awin-partner-onboard.test.ts` e ponte `INTEGRAR_AWIN` na versão 1.3.6.
+- Processamento automático a partir do staging administrativo, acionado com Issue GitHub autenticada de proprietário. Sem publicação Hostinger, merge cruzado de masters, refresh de lojista existente nem aplicação na base original. Detalhes em `docs/relatorios/MISSAO10_PIPELINE_GENERIC_AWIN_20261125.md`.
