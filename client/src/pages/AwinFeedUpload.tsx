@@ -274,6 +274,7 @@ export default function AwinFeedUpload(){
     <h2 className="text-lg font-semibold">Importar feed AWIN</h2>
     <p className="text-sm text-muted-foreground">A identificação do anunciante e do feed é lida do arquivo AWIN. Nenhum código é preenchido antecipadamente.</p>
     <p className="text-sm">Homologação: após enviar, a Curadoria faz triagem, importa somente os tênis aprovados e verifica automaticamente Produto Mestre, preços, catálogo e filtro Loja. A publicação ocorre somente após todas as verificações.</p>
+    <p className="text-sm" data-testid="curadoria-auto-readiness">{status?.automaticPublication?"✓ Este ambiente está pronto para publicação automática na vitrine de homologação.":"Publicação automática não habilitada nesta instância; importação será mantida em staging."}</p>
    </Card>
    <Card className="p-5"><form onSubmit={submit} className="space-y-4">
     <div className="space-y-1.5"><Label htmlFor="awin-file">Arquivo do parceiro (.csv.gz)</Label>
