@@ -50,6 +50,11 @@ def number(statement, database=DATABASE):
 
 def counts(merchant, feed, database=DATABASE):
     # Numeric identifiers have already passed a strict regex. No user SQL input.
+    master_expression = (f"""(SELECT count(*) FROM product_master_memberships mm
+        JOIN external_product_identities e ON e.id=mm.external_product_identity_id
+        JOIN commerce_merchants m ON m.id=e.merchant_id
+        WHERE m.external_merchant_id='{merchant}' AND mm.valid_to IS NULL)"""
+        if master_schema(database)==5 else "0")
     statement = f"""SELECT json_build_object(
       'products',(SELECT count(*) FROM products),
       'offers',(SELECT count(*) FROM offers),
@@ -61,10 +66,7 @@ def counts(merchant, feed, database=DATABASE):
       'identities',(SELECT count(DISTINCT e.product_id) FROM external_product_identities e
         JOIN commerce_merchants m ON m.id=e.merchant_id
         WHERE m.external_merchant_id='{merchant}'),
-      'master',(SELECT count(*) FROM product_master_memberships mm
-        JOIN external_product_identities e ON e.id=mm.external_product_identity_id
-        JOIN commerce_merchants m ON m.id=e.merchant_id
-        WHERE m.external_merchant_id='{merchant}' AND mm.valid_to IS NULL),
+      'master',{master_expression},
       'evidence',(SELECT count(*) FROM offer_promotion_evidence pe
         JOIN offers o ON o.id=pe.offer_id JOIN commerce_merchants m ON m.id=o.merchant_id
         WHERE m.external_merchant_id='{merchant}'),
@@ -90,11 +92,11 @@ def constraints():
        'chk_catalog_search_prices','chk_catalog_search_discount')
        AND pg_get_constraintdef(oid) LIKE '%REGULAR_PRICE%'""")
 
-def master_schema():
+def master_schema(database=DATABASE):
     return number("""SELECT count(*) FROM information_schema.tables
      WHERE table_schema='public' AND table_name IN
      ('master_products','product_identity_runs','product_identity_decisions',
-      'product_master_memberships','product_identity_jobs')""")
+      'product_master_memberships','product_identity_jobs')""",database)
 
 def backup_and_verify(merchant, feed, expected):
     folder=Path.home()/".local/share/uppulse/backups"
@@ -206,6 +208,13 @@ def execute(merchant,feed):
         # An existing merchant/updated feed requires a separate append-only refresh.
         # Never silently reuse an incomplete run or mutate already published rows.
         if before["projection"] and before["evidence"] and before["classifications"]:
+            evidence_for_feed=number(f"""SELECT count(*) FROM offer_promotion_evidence pe
+              JOIN commerce_feeds f ON f.id=pe.feed_id
+              JOIN commerce_merchants m ON m.id=f.merchant_id
+              WHERE m.external_merchant_id='{merchant}'
+                AND f.external_feed_id='{feed}'""")
+            if evidence_for_feed!=before["raw"]:
+                raise RuntimeError("EXISTING_MERCHANT_NEW_FEED_REQUIRES_REFRESH_WORKFLOW")
             print(json.dumps({"status":"ALREADY_ONBOARDED","merchant":merchant,
                "feed":feed,"counts":before},ensure_ascii=False),flush=True)
             return
