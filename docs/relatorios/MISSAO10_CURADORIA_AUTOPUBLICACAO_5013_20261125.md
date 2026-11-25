@@ -1,6 +1,6 @@
 # Missão 10 — Publicação automática via Curadoria, homologação 5013
 **Data:** 25/11/2026  
-**Fonte:** branch `feat/uppulse-curadoria-publicacao-automatica-20261125` (a integrar à branch canônica após testes).
+**Fonte:** branch de implementação `feat/uppulse-curadoria-publicacao-automatica-20261125`, publicada por avanço não destrutivo na branch canônica `feat/uppulse-missao10-supercatalogo` em `a33e75d45e9582394bcc2b6b0f054a51eb5744a2`.
 **Objetivo:** ninguém deve precisar abrir uma Issue, executar Python ou manipular SQL para publicar novos tênis aceitos através da Curadoria.
 
 ## Comportamento implementado
@@ -29,3 +29,8 @@ A rota antiga `/process` encerrava com `STAGED_IN_DATABASE` e `published:0`, sem
 - `client/src/pages/AwinFeedUpload.tsx`: progresso e link da loja no catálogo.
 - `scripts/uppulse_codespace_agent.py`: versão 1.3.7 fornece aprovação explícita/commit SHA ao iniciar previews futuros; o perfil seguro 5013 já existente da versão 1.3.6 também funciona sem atualização.
 - `package.json` e workflow: testes registrados.
+
+## Validação e publicação no GitHub
+- **Código publicado na branch oficial**: commit `a33e75d45e9582394bcc2b6b0f054a51eb5744a2`; nenhum checkout local, reset, merge destrutivo ou escrita no PostgreSQL executados nesta publicação.
+- **GitHub Actions**: workflow [run 45657898596](https://github.com/edineilemes-source/beupfree/actions/runs/45657898596) `SUCCESS` — Python `py_compile`, TypeScript, suíte unitária e build; testes de browser com respostas simuladas preparados para execução via preview `ui`.
+- **Preview**: execução anterior na 5013 foi encerrada sem afetar outros processos (Issue #108); nova versão solicitada na Issue #109, com validação de UI. A homologação de um novo feed ainda é pendente até a Curadoria realmente receber o arquivo pela interface.
