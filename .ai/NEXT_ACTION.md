@@ -177,3 +177,9 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - O usuário faz upload e Processar aceitos na Curadoria; após staging, criar Issue de proprietário `[UPPULSE-AGENT] INTEGRAR_AWIN` com corpo `{"merchant":"ID_AWIN","feedId":"ID_FEED"}`; o restante do ciclo usa verificação, backup/restauração, Master histórico, preço regular 0%, classificação, normalização e projeção no clone auditado. Não executar na produção.
 - É preciso atualizar a ponte do Codespaces UMA vez para versão 1.3.6. A integração de um segundo fornecedor ainda precisa ser homologada com dados reais e testes completos; não declarar produção.
 - Recusar refresh de lojista já processado sem fluxo incremental; não executar reimportação/migração às cegas.
+
+## Próxima ação prioritária — homologar Curadoria 5013 de ponta a ponta
+1. Confirmar GitHub Actions (TypeScript, Python, unit, build) e disponibilizar o novo SHA do branch canônico em snapshot isolado da 5013. Evitar reset, pull ou alteração local no Codespaces.
+2. Na Curadoria (navegador), reenviar feed original Clovis AWIN 107702/98680; a interface deve executar upload, processar 2.846 aprovados, monitorar job e terminar com `COMPLETED`/`ALREADY_ONBOARDED`, sem duplicar produtos. Conferir filtro Loja e catálogo na própria porta 5013.
+3. Homologar um **novo parceiro real** com `AWIN_PARTNER_CATALOG_READY` para provar caminho completo de primeiro onboarding e isolamento dos demais lojistas. Não usar Issue `INTEGRAR_AWIN` como substituto desse teste.
+4. Se bloqueado, ler o motivo seguro do job. Dados de staging e backup devem ficar intactos; sem alterar produção/Hostinger.
