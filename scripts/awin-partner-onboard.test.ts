@@ -38,7 +38,7 @@ test("historic Master step is reusable and never assumes cross-store identity ma
 
 test("restricted GitHub bridge requires owner-authored numeric IDs and never allows remote shell",()=>{
  assert.match(bridge,/INTEGRAR_AWIN/);
- assert.match(bridge,/set\(d\)!==\{"merchant","feedId"\}/);
+ assert.match(bridge,/set\(d\)!=\{"merchant","feedId"\}/);
  assert.match(bridge,/re\.fullmatch\(r"\\d\{2,12\}"/);
  assert.match(bridge,/author.*edineilemes-source/);
  assert.match(bridge,/AWIN_PARTNER_CATALOG_READY/);
