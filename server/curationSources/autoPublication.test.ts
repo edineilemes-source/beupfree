@@ -13,7 +13,8 @@ const digest=(bytes:Buffer)=>createHash("sha256").update(bytes).digest("hex");
 function env(jobs:string,inbox:string):NodeJS.ProcessEnv{
  return {NODE_ENV:"development",PUBLIC_DEMO_MODE:"false",
   UPPULSE_CURATOR_AUTO_PUBLISH:"true",UPPULSE_PUBLIC_CATALOG_APPROVED:"true",
-  UPPULSE_PREVIEW_SOURCE_SHA:"a".repeat(40),PORT:"5013",
+  UPPULSE_PREVIEW_SOURCE_SHA:"a".repeat(40),UPPULSE_DISABLE_EXTERNAL_JOBS:"true",
+  UPPULSE_CURATOR_TEST_NO_AUTH:"true",PORT:"5013",
   DATABASE_URL:"postgresql://curator:private@127.0.0.1:5436/uppulse_catalog",
   UPPULSE_CURATOR_JOB_DIR:jobs,UPPULSE_FEED_INBOX_DIR:inbox};
 }
@@ -21,6 +22,9 @@ function env(jobs:string,inbox:string):NodeJS.ProcessEnv{
 test("automatic publisher is gated to the inspected 5013 recovery clone",()=>{
  const valid=env("/tmp/jobs","/tmp/inbox");
  assert.equal(publicationEnabled(valid),true);
+ const legacy={...valid};delete legacy.UPPULSE_CURATOR_AUTO_PUBLISH;
+ delete legacy.UPPULSE_PREVIEW_SOURCE_SHA;
+ assert.equal(publicationEnabled(legacy),true,"current 5013 bridge must work without reinstall");
  for(const [key,value] of [
   ["NODE_ENV","production"],["PUBLIC_DEMO_MODE","true"],["PORT","5011"],
   ["UPPULSE_CURATOR_AUTO_PUBLISH","false"],
