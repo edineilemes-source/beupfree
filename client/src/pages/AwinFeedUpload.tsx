@@ -19,7 +19,8 @@ type MasterShadowReport={merchantExternalId:string;scanned:number;crossMerchantC
 type PipelineStep={stage:string;status:"DONE"|"PARTIAL"|"PENDING"|"NOT_VERIFIED";done:number|null;expected:number|null;reason:string};
 type CurationWorkflow={workflowVersion:string;nextAction:string;blockers:string[];readyToRequestPublication:boolean;publicationAuthorized:boolean;executeMode:string};
 type MerchantAudit={workflow?:CurationWorkflow;pipeline:{stages:Record<string,PipelineStep>;versions:{identity:{parser:string;matcher:string}};publicationApproved:boolean};merchant:{name:string;id:string};counts:{offers:number;distinctProducts:number;activeOffers:number;identities:number|null;stagedIdentities:number|null;promotionEvidence:number|null;classifiedProducts:number|null;eligibleClassifications:number|null;normalizedVariants:number|null;masterMemberships:number|null;masterIdentities:number|null;searchProducts:number|null;availableSearchProducts:number|null};steps:{received:boolean;masterCovered:boolean;catalogClassified:boolean;priceAudited:boolean;projected:boolean;storeVisibleInFilter:boolean};note:string;storeFacetRule:string};
-type ProcessReport={status:string;imported:number;unchanged:number;accepted:number;review:number;discarded:number;invalid:number;published:number;message:string};
+type PublicationJob={status:"QUEUED"|"RUNNING"|"COMPLETED"|"BLOCKED"|"NOT_ENABLED";phase:string;reason?:string;published?:number;result?:{status:string;availableSearchProducts?:number;catalogTotal?:number}};
+type ProcessReport={status:string;imported:number;unchanged:number;accepted:number;review:number;discarded:number;invalid:number;published:number;publication?:PublicationJob;message:string};
 const format=(n:number)=>n.toLocaleString("pt-BR");
 export default function AwinFeedUpload(){
  const [file,setFile]=useState<File|null>(null);
@@ -34,6 +35,7 @@ export default function AwinFeedUpload(){
  const [visibleMasterReviews,setVisibleMasterReviews]=useState<MasterReviewIssue[]>([]);
  const [masterReviewLoading,setMasterReviewLoading]=useState(false);
  const [processed,setProcessed]=useState<ProcessReport|null>(null);
+ const [publication,setPublication]=useState<PublicationJob|null>(null);
  const [merchantAudit,setMerchantAudit]=useState<MerchantAudit|null>(null);
  const [masterPreview,setMasterPreview]=useState<MasterPreview|null>(null);
  const [masterShadow,setMasterShadow]=useState<MasterShadowReport|null>(null);
@@ -75,7 +77,7 @@ export default function AwinFeedUpload(){
   }catch(e){setError(e instanceof Error?e.message:"Falha na auditoria")}
   finally{setAuditLoading(false)}
  }
- const {data:status,error:accessError}=useQuery<{enabled:boolean;maxFileBytes:number;staging:boolean;temporaryAccess:boolean}>({
+ const {data:status,error:accessError}=useQuery<{enabled:boolean;maxFileBytes:number;staging:boolean;temporaryAccess:boolean;automaticPublication?:boolean}>({
   queryKey:["/api/admin/awin-feeds/status"],retry:false,
   queryFn:async()=>{const r=await fetch("/api/admin/awin-feeds/status",{credentials:"same-origin"});const j=await r.json();if(!r.ok)throw Error(j.message||j.code||"Acesso indisponível");return j}
  });
@@ -88,8 +90,33 @@ export default function AwinFeedUpload(){
    return data;
   }
  });
+ // The actual publish operation runs in a separate checked background worker.
+ // Poll a durable server-side job; closing the tab must not cancel processing.
+ useEffect(()=>{
+  if(!report||!publication||!["QUEUED","RUNNING"].includes(publication.status))return;
+  let active=true;
+  const poll=async()=>{
+   try{
+    const path=`/api/admin/awin-feeds/publication/${report.merchant}/${report.feedId}/${report.sha256}`;
+    const response=await fetch(path,{credentials:"same-origin",cache:"no-store"});
+    const data=await response.json();
+    if(!response.ok)throw Error(data.message||data.code||"Falha ao consultar a publicação");
+    if(!active)return;
+    setPublication(data as PublicationJob);
+    if(data.status==="COMPLETED"){
+     void refreshMerchantAudit(report.merchant);
+     void refreshStores();
+    }
+   }catch(e){
+    if(active)setError(e instanceof Error?e.message:"Falha ao consultar a publicação");
+   }
+  };
+  void poll();
+  const timer=setInterval(()=>void poll(),3500);
+  return()=>{active=false;clearInterval(timer)};
+ },[report?.merchant,report?.feedId,report?.sha256,publication?.status]);
  async function submit(event:React.FormEvent<HTMLFormElement>){
-  event.preventDefault();setPending(true);setError("");setReport(null);setProcessed(null);
+  event.preventDefault();setPending(true);setError("");setReport(null);setProcessed(null);setPublication(null);
   try{
    if(!file||!file.name.toLowerCase().endsWith(".csv.gz"))throw Error("Selecione um arquivo AWIN .csv.gz");
    if(!status?.enabled)throw Error("Importação desabilitada neste ambiente.");
@@ -145,6 +172,7 @@ export default function AwinFeedUpload(){
    const data=await response.json();
    if(!response.ok)throw Error(data.message||data.code||"Processamento não concluído");
    setProcessed(data as ProcessReport);
+   setPublication((data as ProcessReport).publication??null);
    await refreshMerchantAudit(audit.merchant);
   }catch(e){setError(e instanceof Error?e.message:"Falha no processamento")}
   finally{setProcessing(false)}
@@ -245,7 +273,7 @@ export default function AwinFeedUpload(){
    <Card className="p-5 space-y-2">
     <h2 className="text-lg font-semibold">Importar feed AWIN</h2>
     <p className="text-sm text-muted-foreground">A identificação do anunciante e do feed é lida do arquivo AWIN. Nenhum código é preenchido antecipadamente.</p>
-    <p className="text-sm">Homologação: envio sem usuário e senha nesta página. A importação continua restrita ao ambiente de testes, sem publicação automática na vitrine.</p>
+    <p className="text-sm">Homologação: após enviar, a Curadoria faz triagem, importa somente os tênis aprovados e verifica automaticamente Produto Mestre, preços, catálogo e filtro Loja. A publicação ocorre somente após todas as verificações.</p>
    </Card>
    <Card className="p-5"><form onSubmit={submit} className="space-y-4">
     <div className="space-y-1.5"><Label htmlFor="awin-file">Arquivo do parceiro (.csv.gz)</Label>
@@ -261,7 +289,7 @@ export default function AwinFeedUpload(){
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
      {([["Registros recebidos",report.stats.rows],["Aceitos para staging",report.accepted],["Descartados (fora de escopo)",report.discarded],["Em revisão",report.review],
       ["Linhas inválidas",report.stats.invalid],["Preço regular",report.stats.priceStates.REGULAR_PRICE??0],
-      ["Promoção comprovada",report.stats.priceStates.PROMOTION_CONFIRMED??0],["Publicados nesta etapa",report.published]] as Array<[string,number]>).map(([label,value])=>
+      ["Promoção comprovada",report.stats.priceStates.PROMOTION_CONFIRMED??0],["Publicados diretamente no upload",report.published]] as Array<[string,number]>).map(([label,value])=>
       <div key={label} className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="text-xl font-bold">{format(value)}</p></div>)}
     </div>
     <div><h3 className="font-semibold mb-2">Motivos de rejeição ou revisão</h3>
@@ -294,13 +322,35 @@ export default function AwinFeedUpload(){
      </div>}
     </div>
     {!processed?<div className="border-t pt-4 space-y-2">
-     <p className="text-sm">Os produtos aprovados são processados automaticamente após a análise. Os itens gravados permanecem em staging até a homologação de publicação.</p>
+     <p className="text-sm">Os produtos aprovados são processados automaticamente. A publicação na vitrine de homologação ocorre após verificação do Produto Mestre, preços, classificação e projeção.</p>
      <Button onClick={()=>void process()} disabled={processing||report.accepted===0||!report.canProcess} className="gap-2"><PlayCircle className="h-4 w-4"/>{processing?"Gravando produtos…":`Reprocessar ${format(report.accepted)} produtos aceitos`}</Button>
      {!report.canProcess&&<p className="text-sm text-destructive"><AlertTriangle className="inline h-4 w-4"/> Banco de catálogo indisponível para processamento.</p>}
     </div>:<div className="border-t pt-4 space-y-2" data-testid="awin-process-result">
      <p className="font-semibold text-green-700"><CheckCircle2 className="inline h-5 w-5 mr-2"/>Processamento concluído no banco</p>
      <p className="text-sm">Inseridos ou atualizados: {format(processed.imported)} · Já existentes sem alteração: {format(processed.unchanged)} · Publicados: {format(processed.published)}</p>
      <p className="text-sm text-muted-foreground">{processed.message}</p>
+     {publication&&<div className="rounded-lg border p-3 space-y-2" data-testid="automatic-publication-status">
+      <p className="font-semibold">Publicação automática na homologação</p>
+      {["QUEUED","RUNNING"].includes(publication.status)&&<>
+       <p className="text-sm" role="status">Processando: {publication.phase.replaceAll("_"," ").toLowerCase()}.</p>
+       <p className="text-xs text-muted-foreground">O trabalho continua no servidor mesmo se esta página for fechada. Não reenvie o feed enquanto a validação estiver em andamento.</p>
+      </>}
+      {publication.status==="COMPLETED"&&<>
+       <p className="font-semibold text-green-700" role="status">
+        Produtos aprovados e disponíveis no catálogo: {format(publication.published??publication.result?.availableSearchProducts??0)}
+       </p>
+       <p className="text-sm">As demais lojas foram preservadas. Produtos rejeitados ou em revisão não foram publicados.</p>
+       {merchantAudit?.merchant?.name&&<Link href={`/catalogo?merchant=${encodeURIComponent(merchantAudit.merchant.name)}`}>
+        <Button variant="outline">Ver produtos da loja na vitrine</Button>
+       </Link>}
+      </>}
+      {publication.status==="BLOCKED"&&<p className="text-sm text-destructive" role="alert">
+       Publicação interrompida para preservar os dados. Staging mantido. Motivo: {publication.reason??publication.phase}.
+      </p>}
+      {publication.status==="NOT_ENABLED"&&<p className="text-sm text-muted-foreground" role="status">
+       A publicação automática está desativada neste ambiente. O staging foi preservado; nada foi liberado sem verificação.
+      </p>}
+     </div>}
     </div>}
    </Card>}
   </main>
