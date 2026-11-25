@@ -171,3 +171,9 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 - Regra de negócio reafirmada: 0% de desconto e preço atual igual ao anterior de compatibilidade representam preço regular sem promoção; permitir comparação e indexação quando elegível.
 - Código no GitHub preparado: `scripts/olympikus_regular_clone_release.py` executa backup/restauração integral antes da migração `0014` e está limitado ao clone verificado. Reinstalar agente a partir do GitHub e executar release com flag explícita somente no Codespaces, sem Hostinger. A publicação ainda não ocorreu.
 - Verificar a Issue #93 e testar o catálogo/merchant facets após execução; preservar ofertas regulares sem inventar desconto. Referência: `docs/relatorios/MISSAO10_OLYMPIKUS_PRECO_REGULAR_20261124.md`.
+
+## Entrada de parceiros AWIN multiempresa — 25/11/2026
+- Integração genérica publicada no GitHub com `scripts/awin-partner-onboard.py`, `scripts/awin-partner-master.ts`, `scripts/awin-partner-versions.ts`, ponte GitHub com ação autenticada `INTEGRAR_AWIN` e testes. Relatório: `docs/relatorios/MISSAO10_PIPELINE_GENERIC_AWIN_20261125.md`.
+- O usuário faz upload e Processar aceitos na Curadoria; após staging, criar Issue de proprietário `[UPPULSE-AGENT] INTEGRAR_AWIN` com corpo `{"merchant":"ID_AWIN","feedId":"ID_FEED"}`; o restante do ciclo usa verificação, backup/restauração, Master histórico, preço regular 0%, classificação, normalização e projeção no clone auditado. Não executar na produção.
+- É preciso atualizar a ponte do Codespaces UMA vez para versão 1.3.6. A integração de um segundo fornecedor ainda precisa ser homologada com dados reais e testes completos; não declarar produção.
+- Recusar refresh de lojista já processado sem fluxo incremental; não executar reimportação/migração às cegas.
