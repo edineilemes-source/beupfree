@@ -34,9 +34,12 @@ def now():
 
 def is_homologation():
     env = os.environ
+    permitted = env.get("UPPULSE_CURATOR_AUTO_PUBLISH") == "true" or (
+        "UPPULSE_CURATOR_AUTO_PUBLISH" not in env and
+        env.get("UPPULSE_CURATOR_TEST_NO_AUTH") == "true")
     if not (env.get("NODE_ENV") == "development" and
-            env.get("PUBLIC_DEMO_MODE") == "false" and
-            env.get("UPPULSE_CURATOR_AUTO_PUBLISH") == "true" and
+            env.get("PUBLIC_DEMO_MODE") == "false" and permitted and
+            env.get("UPPULSE_DISABLE_EXTERNAL_JOBS") == "true" and
             env.get("UPPULSE_PUBLIC_CATALOG_APPROVED") == "true" and
             env.get("PORT") == "5013"):
         return False
@@ -69,13 +72,14 @@ def write_status(path, source, status, phase, result=None, reason=None):
 
 def run():
     parser = argparse.ArgumentParser()
-    for key in ("merchant", "feed-id", "sha256", "source-sha"):
+    for key in ("merchant", "feed-id", "sha256"):
         parser.add_argument("--"+key, required=True)
+    parser.add_argument("--source-sha", default="")
     args = parser.parse_args()
     merchant, feed, fingerprint, source_sha = (
         args.merchant, args.feed_id, args.sha256, args.source_sha)
     if not (IDS.fullmatch(merchant) and IDS.fullmatch(feed) and
-            SHA.fullmatch(fingerprint) and COMMIT.fullmatch(source_sha)):
+            SHA.fullmatch(fingerprint) and (not source_sha or COMMIT.fullmatch(source_sha))):
         raise ValueError("INVALID_JOB_IDENTITY")
     source = {"merchant": merchant, "feedId": feed, "sha256": fingerprint}
     root = Path(os.environ.get("UPPULSE_CURATOR_JOB_DIR") or
@@ -103,8 +107,9 @@ def run():
             raise RuntimeError("PARTNER_PIPELINE_NOT_FOUND")
         record("RUNNING","VERIFYING_CATALOG")
         command = [sys.executable, str(script), "--merchant="+merchant,
-                   "--feed-id="+feed, "--source-sha="+source_sha,
-                   "--apply-to-audited-clone"]
+                   "--feed-id="+feed, "--apply-to-audited-clone"]
+        if source_sha:
+            command.append("--source-sha="+source_sha)
         env = dict(os.environ)
         env["UPPULSE_DISABLE_EXTERNAL_JOBS"]="true"
         env["RESEARCH_PAID_ENABLED"]="false"
