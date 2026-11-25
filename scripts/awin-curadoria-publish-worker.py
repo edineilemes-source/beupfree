@@ -139,13 +139,26 @@ def run():
                 output["availableSearchProducts"] < 1):
             raise RuntimeError("PUBLICATION_VISIBLE_PRODUCTS_UNVERIFIED")
         if output.get("status")=="ALREADY_ONBOARDED":
-            # Already processed by the old bridge. Query the isolated clone for
-            # actual catalog visibility; do not claim this action imported offers.
+            # Already processed by the older GitHub agent. Verify visible
+            # eligible rows in the clone instead of trusting projection totals.
             nested=output.get("counts",{})
-            count=nested.get("projection")
-            if not isinstance(count,int) or count<1:
+            expected=nested.get("projection")
+            if not isinstance(expected,int) or expected<1:
                 raise RuntimeError("EXISTING_PARTNER_VISIBILITY_UNVERIFIED")
-            output["availableSearchProducts"]=count
+            query=(
+                "SELECT count(*) FROM public.catalog_search_products c "
+                "JOIN public.commerce_merchants m ON m.id=c.merchant_id "
+                "WHERE m.external_merchant_id='"+merchant+"' "
+                "AND c.catalog_state='CATALOG_ELIGIBLE' AND c.available=true"
+            )
+            checked=subprocess.run(["docker","exec","beupfree-catalog-pg17-audit",
+                "psql","-U","postgres","-d","uppulse_catalog",
+                "-X","-A","-t","-v","ON_ERROR_STOP=1","-c",query],
+                capture_output=True,text=True,timeout=35)
+            if checked.returncode!=0 or not checked.stdout.strip().isdigit() or (
+                    int(checked.stdout.strip())!=expected):
+                raise RuntimeError("EXISTING_PARTNER_VISIBILITY_UNVERIFIED")
+            output["availableSearchProducts"]=expected
             output["catalogTotal"]=nested.get("catalog")
         record("COMPLETED","CATALOG_VISIBLE",output)
     except Exception as exc:
