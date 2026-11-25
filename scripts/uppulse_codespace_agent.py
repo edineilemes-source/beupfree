@@ -5,7 +5,7 @@ from urllib.parse import quote
 R=pathlib.Path("/workspaces/uppulse-homologacao/missao9/codigo")
 S=pathlib.Path(os.environ.get("UPPULSE_BRIDGE_STATE_DIR",str(pathlib.Path.home()/".local/state/uppulse-bridge")))
 S.mkdir(parents=True,exist_ok=True)
-VERSION="1.3.5"
+VERSION="1.3.6"
 REPO="edineilemes-source/beupfree"
 BRANCH="feat/uppulse-missao10-supercatalogo"
 PORTS={5011,5012,5013,5014,5015}
@@ -33,6 +33,11 @@ def parse(action,body):
   return {}
  try:d=json.loads(body)
  except (TypeError,ValueError):raise ValueError("BAD_JSON")
+ if action=="INTEGRAR_AWIN":
+  if not isinstance(d,dict) or set(d)!={"merchant","feedId"}:raise ValueError("BAD_PARAMETERS")
+  if any(not isinstance(d[key],str) or not re.fullmatch(r"\d{2,12}",d[key]) for key in ("merchant","feedId")):
+   raise ValueError("INVALID_PARTNER_SOURCE")
+  return d
  expected={"commit"} if action=="VALIDAR" else {"commit","port"} if action=="PREVIEW" else {"port"}
  optional={"profile"} if action in {"VALIDAR","PREVIEW"} else set()
  if not isinstance(d,dict) or not (expected<=set(d) and set(d)<=expected|optional):raise ValueError("BAD_PARAMETERS")
@@ -122,18 +127,13 @@ def catalog_database():
     # Real recovery was independently inspected and matched exactly:
     # products=33520, offers=102018, search=16945. Fail closed if
     # a different/empty database is mounted at the same container name.
-    if database!="uppulse_catalog" or products!=33520 or offers!=102018:continue
-    # Preserve the pre-Olympikus catalog exactly while allowing only verified
-    # Olympikus rows to be added, up to its 813 distinct products.
-    projection=cmd(["docker","exec",container,"psql","-U",username,"-d",database,
-     "-X","-A","-t","-F","|","-v","ON_ERROR_STOP=1","-c",
-     "SELECT (SELECT count(*) FROM public.catalog_search_products WHERE merchant_id <> "
-     "(SELECT id FROM public.commerce_merchants WHERE external_merchant_id='17698')),"
-     "(SELECT count(*) FROM public.catalog_search_products WHERE merchant_id = "
-     "(SELECT id FROM public.commerce_merchants WHERE external_merchant_id='17698'))"],timeout=20,check=False)
-    pieces=projection.strip().split("|")
-    if len(pieces)!=2 or not all(v.isdecimal() for v in pieces):continue
-    if int(pieces[0])!=16945 or int(pieces[1])>813:continue
+    if database!="uppulse_catalog" or products<33520 or offers<102018:continue
+    # After each merchant onboarding, totals grow; never reject a valid clone
+    # simply because another catalog was safely added.
+    observed_catalog=cmd(["docker","exec",container,"psql","-U",username,"-d",database,
+     "-X","-A","-t","-v","ON_ERROR_STOP=1","-c",
+     "SELECT count(*) FROM public.catalog_search_products"],timeout=20,check=False)
+    if not observed_catalog.strip().isdecimal() or int(observed_catalog)<16945:continue
    verified.append((container,address,port,database,username,password,products,offers))
  if len(verified)!=1:raise RuntimeError("CATALOG_DATABASE_NOT_UNIQUELY_VERIFIED")
  return verified[0]
@@ -184,6 +184,31 @@ def stop(port):
  (S/("preview-"+str(port)+".json")).unlink(missing_ok=True)
  return "Managed preview on "+str(port)+" stopped; no other processes touched"
 def execute(action,args):
+ if action=="INTEGRAR_AWIN":
+  # The owner-authorized issue supplies only numeric AWIN IDs. No shell strings,
+  # custom Docker targets, paths, credentials, or SQL are accepted.
+  sha=cmd(["git","ls-remote","origin","refs/heads/"+BRANCH]).split()[0]
+  path=snapshot(sha)
+  try:
+   validate(path,"basic")
+   argv=["python3",str(path/"scripts/awin-partner-onboard.py"),
+      "--merchant="+args["merchant"],"--feed-id="+args["feedId"],
+      "--apply-to-audited-clone"]
+   result=subprocess.run(argv,cwd=R,capture_output=True,text=True,timeout=7200)
+   if result.returncode:
+    reason=re.search(r"AWIN_PARTNER_BLOCKED:\s*([A-Z][A-Z0-9_]{3,99})",result.stderr)
+    raise RuntimeError(reason.group(1) if reason else "AWIN_PARTNER_ONBOARDING_FAILED")
+   lines=[line for line in result.stdout.splitlines() if line.strip().startswith('{"status":')]
+   if not lines:raise RuntimeError("AWIN_PARTNER_RESULT_MISSING")
+   report_data=json.loads(lines[-1])
+   if report_data.get("status") not in {"AWIN_PARTNER_CATALOG_READY","ALREADY_ONBOARDED"}:
+    raise RuntimeError("AWIN_PARTNER_RESULT_UNEXPECTED")
+   # Report a bounded allowlisted result, never paths or credentials.
+   keys=("status","merchant","feed","products","eligible","quarantined","outOfScope",
+         "commercialEvidence","availableSearchProducts","catalogTotal","snapshot")
+   summary={key:report_data[key] for key in keys if key in report_data}
+   return "AWIN partner processing: "+json.dumps(summary,ensure_ascii=False)
+  finally:shutil.rmtree(path,ignore_errors=True)
  if action=="MASTER_OLYMPIKUS":
   container,_,port,database,_,_,products,offers=catalog_database()
   if container!="beupfree-catalog-pg17-audit" or port!="5436" or database!="uppulse_catalog" or products!=33520 or offers!=102018:
@@ -260,7 +285,7 @@ def cycle():
   if n in done or item.get("author",{}).get("login","").lower()!="edineilemes-source":continue
   if not title.startswith("[UPPULSE-AGENT] "):continue
   action=title.removeprefix("[UPPULSE-AGENT] ")
-  if action not in {"STATUS","DIAGNOSTICO","CATALOGO","MASTER_OLYMPIKUS","VALIDAR","PREVIEW","PARAR PREVIEW"}:continue
+  if action not in {"STATUS","DIAGNOSTICO","CATALOGO","MASTER_OLYMPIKUS","VALIDAR","PREVIEW","PARAR PREVIEW","INTEGRAR_AWIN"}:continue
   mark(n)
   try:
    args=parse(action,item.get("body") or "")
