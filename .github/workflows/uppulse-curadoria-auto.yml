@@ -1,0 +1,26 @@
+name: UpPulse Curadoria Auto Publication
+on:
+  push:
+    branches: [feat/uppulse-curadoria-publicacao-automatica-20261125]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  curator-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Python worker syntax
+        run: python3 -m py_compile scripts/awin-curadoria-publish-worker.py scripts/awin-partner-onboard.py
+      - name: TypeScript types
+        run: npm run check
+      - name: Unit regressions including Curadoria jobs
+        run: npm run test:unit
+      - name: Client and server build
+        run: npm run build
