@@ -50,3 +50,11 @@ Substituir IDs pelos fornecidos pelo novo feed. Não repetir a migração manual
 - Código publicado na branch `feat/uppulse-missao10-supercatalogo` via conector GitHub. Verificações de TypeScript e testes são executadas em snapshot do agente e no Release Gate (sem deploy), consultar Issues #100, #101, #102 e workflows associados para resultado exato.
 - **Não foi executado onboarding de um novo fornecedor real** com esta versão genérica; a homologação efetiva em banco da Olympikus ocorreu com o executor específico anterior e não comprova automaticamente todos os caminhos de novos feeds.
 - Nenhuma alteração adicional em banco foi realizada nesta implementação genérica.
+
+## Verificação final desta implementação
+- Issue [#102](https://github.com/edineilemes-source/beupfree/issues/102): **SUCCESS** no snapshot `8baa55a924b9`, TypeScript e suíte unitária, incluindo os testes da automação de parceiros.
+- Issue [#103](https://github.com/edineilemes-source/beupfree/issues/103): **SUCCESS** no snapshot `abff6c2ec55c`, TypeScript, suíte unitária e build.
+- Issue [#104](https://github.com/edineilemes-source/beupfree/issues/104): **SUCCESS** no snapshot `4e3337365c23`, TypeScript, suíte unitária e build, já com seleção de snapshot imutável e contagem separada de identidades e produtos.
+- `AGENTS.md` ganhou contrato permanente da regra `REGULAR_PRICE` e da arquitetura multiempresa. Relatório e estado operacional foram publicados na mesma branch canônica.
+- A ponte em execução no Codespaces precisa **ser atualizada uma única vez** para a versão 1.3.6 com `scripts/uppulse_bridge_install.sh`; o GitHub já contém o código, mas o daemon instalado não é substituído apenas por commit remoto.
+- O sistema de homologação com Olympikus continua preservado. Nenhum novo anúncio/empresa foi gravado no banco durante esta missão. Para validar comercialmente o fluxo, utilizar o próximo parceiro real por meio do upload, staging e Issue autorizada.
