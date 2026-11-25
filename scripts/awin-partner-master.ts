@@ -12,7 +12,7 @@ import type {CatalogCheckpoint} from "../server/productIdentity/catalog";
 const args=process.argv.slice(2);
 const arg=(key:string)=>args.find(value=>value.startsWith(key+"="))?.slice(key.length+1);
 const merchant=arg("--merchant")??"";
-const expected=Number(arg("--expected-products"));
+const expected=Number(arg("--expected-identities"));
 const confirm=args.includes("--confirm-master");
 if(!/^\d{2,12}$/.test(merchant)||!Number.isSafeInteger(expected)||expected<1)
  throw Error("MASTER_SOURCE_EXPECTATIONS_REQUIRED");
