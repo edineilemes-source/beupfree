@@ -19,6 +19,7 @@ import {listRegisteredStores} from "./storeRegistry";
 import {decideAutomaticCuration} from "./automatedDecision";
 import {planCurationWorkflow} from "./curationOrchestrator";
 import {previewMerchantMasterShadow} from "./masterShadowPreview";
+import {publicationEnabled,getPublicationJob,startAutomaticPublication} from "./autoPublication";
 
 const MAX_GZIP=20*1024*1024,MAX_UNCOMPRESSED=160*1024*1024,MAX_ROWS=100000;
 function adminIds(env:NodeJS.ProcessEnv):string[]{
@@ -62,7 +63,7 @@ function limiter():Transform{
 export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool?:AuditPool){
  const router=Router();
  const authorize=adminAuthorization(resolveUser);
- router.get("/status",authorize,(_req,res)=>res.json({enabled:true,maxFileBytes:MAX_GZIP,mode:"HOMOLOGATION_ONLY",publication:false,staging:Boolean(process.env.DATABASE_URL),temporaryAccess:temporaryNoLogin(process.env)}));
+ router.get("/status",authorize,(_req,res)=>res.json({enabled:true,maxFileBytes:MAX_GZIP,mode:"HOMOLOGATION_ONLY",publication:publicationEnabled(),automaticPublication:publicationEnabled(),staging:Boolean(process.env.DATABASE_URL),temporaryAccess:temporaryNoLogin(process.env)}));
  router.post("/upload",authorize,raw({type:"application/gzip",limit:MAX_GZIP}),async(req,res)=>{
   const data=req.body;
   if(!Buffer.isBuffer(data)||data.length<20||data.length>MAX_GZIP||data[0]!==0x1f||data[1]!==0x8b)
@@ -295,6 +296,17 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
     summary:report.masterSummary});
   }catch{return res.status(404).json({code:"MASTER_REVIEW_REPORT_NOT_FOUND"})}
  });
+ router.get("/publication/:merchant/:feedId/:sha256",authorize,async(req,res)=>{
+  const {merchant,feedId,sha256}=req.params;
+  try{
+   const job=await getPublicationJob({merchant,feedId,sha256});
+   if(!job)return res.status(404).json({code:"PUBLICATION_JOB_NOT_FOUND"});
+   return res.json(job);
+  }catch(error){
+   const code=error instanceof Error?error.message:"PUBLICATION_JOB_UNAVAILABLE";
+   return res.status(400).json({code:"PUBLICATION_QUERY_INVALID",message:code.slice(0,110)});
+  }
+ });
  router.post("/process",authorize,async(req,res)=>{
   const fingerprint=String(req.body?.sha256??"");
   const merchant=String(req.body?.merchant??""),feedId=String(req.body?.feedId??"");
@@ -328,10 +340,27 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
     }
    }
    const report=await new PostgresAwinRepository(pool).import(validated(),{feedId,expectedMerchant:merchant});
+   let publication:
+    |{status:"QUEUED"|"RUNNING"|"COMPLETED"|"BLOCKED";phase:string;reason?:string}
+    |{status:"NOT_ENABLED";phase:string;reason:string}
+    ={status:"NOT_ENABLED",phase:"STAGING_COMPLETE",reason:"AUTOMATIC_PUBLICATION_NOT_CONFIGURED"};
+   if(accepted>0&&publicationEnabled()){
+    try{
+     publication=await startAutomaticPublication({merchant,feedId,sha256:fingerprint});
+    }catch(error){
+     // The importer transaction has already finished; do not misreport a
+     // completed staging operation as rolled back, or hide a publish failure.
+     publication={status:"BLOCKED",phase:"REQUIRES_REVIEW",
+       reason:error instanceof Error?error.message:"PUBLICATION_START_FAILED"};
+    }
+   }
    return res.json({status:"STAGED_IN_DATABASE",merchant,feedId,accepted,review,discarded,invalid,
     imported:report.created+report.updated,unchanged:report.unchanged,published:0,
     report:{seen:report.seen,created:report.created,updated:report.updated,unchanged:report.unchanged},
-    message:"Produtos aprovados foram incorporados ao banco em staging; publicação pública depende da validação de evidências e projeção."});
+    publication,
+    message:publication.status==="NOT_ENABLED"
+     ?"Produtos aceitos foram armazenados em staging; publicação automática indisponível neste ambiente."
+     :"Produtos aceitos foram armazenados. A esteira automática verifica Produto Mestre, preços, classificação e visibilidade na homologação."});
   }catch(e){
    const code=e instanceof Error?e.message:"PROCESSING_FAILED";
    return res.status(409).json({code:"CATALOG_STAGING_FAILED",message:"Não foi possível incorporar ao catálogo. A transação foi revertida em caso de erro.",detail:code.slice(0,150)});
