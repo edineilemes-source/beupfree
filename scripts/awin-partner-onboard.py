@@ -182,8 +182,12 @@ def main():
             options["apply"]="true"
         else:
             raise RuntimeError("INVALID_ARGUMENT")
-    if set(options)!={"merchant","feed-id","apply"} or options["apply"]!="true":
+    if (not {"merchant","feed-id","apply"}<=set(options) or
+        not set(options)<={"merchant","feed-id","apply","source-sha"} or
+        options["apply"]!="true"):
         raise RuntimeError("MERCHANT_FEED_EXPLICIT_CLONE_APPROVAL_REQUIRED")
+    if "source-sha" in options and not re.fullmatch(r"[0-9a-f]{40}",options["source-sha"]):
+        raise RuntimeError("INVALID_SOURCE_SHA")
     merchant,feed=options["merchant"],options["feed-id"]
     if not re.fullmatch(r"\d{2,12}",merchant) or not re.fullmatch(r"\d{2,12}",feed):
         raise RuntimeError("INVALID_MERCHANT_OR_FEED")
@@ -194,9 +198,9 @@ def main():
             fcntl.flock(handle,fcntl.LOCK_EX|fcntl.LOCK_NB)
         except BlockingIOError:
             raise RuntimeError("PARTNER_ONBOARDING_ALREADY_RUNNING")
-        execute(merchant,feed)
+        execute(merchant,feed,options.get("source-sha"))
 
-def execute(merchant,feed):
+def execute(merchant,feed,pinned_sha=None):
     status=command(["docker","inspect","-f","{{.State.Status}}",CONTAINER])
     ports=command(["docker","port",CONTAINER,"5432"])
     info=command(["docker","exec",CONTAINER,"pg_controldata",
@@ -234,9 +238,12 @@ def execute(merchant,feed):
     protected_before=protected_projection(merchant)
     # Use one immutable GitHub source snapshot, do not change the checkout.
     command(["git","fetch","--no-tags","origin",BRANCH])
-    sha=command(["git","rev-parse","FETCH_HEAD"])
+    latest=command(["git","rev-parse","FETCH_HEAD"])
+    sha=pinned_sha or latest
     if not re.fullmatch(r"[0-9a-f]{40}",sha):
         raise RuntimeError("SOURCE_SNAPSHOT_INVALID")
+    if pinned_sha:
+        command(["git","merge-base","--is-ancestor",pinned_sha,latest])
     source=Path(tempfile.mkdtemp(prefix="uppulse-partner-",dir="/tmp"))
     try:
         archive=subprocess.Popen(["git","archive",sha],cwd=ROOT,stdout=subprocess.PIPE)
