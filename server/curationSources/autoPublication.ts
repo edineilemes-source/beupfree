@@ -73,8 +73,8 @@ export async function verifyStagedSource(source:Source,env:NodeJS.ProcessEnv=pro
   throw Error("PUBLICATION_FEED_HASH_MISMATCH");
  return file;
 }
-type Dispatch=(source:Source)=>void;
-function startWorker(source:Source){
+type Dispatch=(source:Source)=>void|Promise<void>;
+async function startWorker(source:Source):Promise<void>{
  // Preview runs from a read-only, immutable GitHub archive. Scripts stay on
  // that source snapshot, while source data and the job journal stay outside it.
  const worker=resolve(process.cwd(),"scripts","awin-curadoria-publish-worker.py");
@@ -86,9 +86,9 @@ function startWorker(source:Source){
    UPPULSE_DISABLE_EXTERNAL_JOBS:"true",RESEARCH_PAID_ENABLED:"false"},
   detached:true,stdio:"ignore"
  });
- child.on("error",error=>{
-  // Worker startup failure is visible through an expired QUEUED job.
-  console.error("AWIN_CURATOR_WORKER_SPAWN_FAILED",(error as NodeJS.ErrnoException).code||"SPAWN_ERROR");
+ await new Promise<void>((resolve,reject)=>{
+  child.once("spawn",()=>resolve());
+  child.once("error",()=>reject(Error("WORKER_EXEC_FAILED")));
  });
  child.unref();
 }
@@ -115,7 +115,7 @@ export async function startAutomaticPublication(
   if(!existing)throw Error("PUBLICATION_JOB_UNREADABLE");
   return existing;
  }
- try{(options.dispatch||startWorker)(source);}
+ try{await (options.dispatch||startWorker)(source);}
  catch{
   // Staging remains valid; make failure visible rather than leaving a
   // permanently queued job when the worker cannot be started.
