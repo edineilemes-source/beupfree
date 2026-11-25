@@ -101,14 +101,10 @@ if ! tail -20 "$state/bridge.log" | grep -q UPPULSE_BRIDGE_READY;then
  exit 2
 fi
 echo "UPPULSE_BRIDGE_READY: GitHub Issues queue active (after dependency preflight)"
-echo "Actions: STATUS, VALIDAR, PREVIEW (5011-5015), PARAR PREVIEW"
-echo "No catalog writes, no port shutdowns, no reset/checkout/commit/push"
+echo "Actions: STATUS, VALIDAR, PREVIEW (5011-5015), PARAR PREVIEW, INTEGRAR_AWIN (clone only)"
+echo "Catalog writes only through owner-authorized INTEGRAR_AWIN on verified clone; no reset/checkout/commit/push"
 echo
 echo "Recovery installed on terminal attach; stopped Codespace still requires opening the workspace; postStart rebuild hook not yet verified"
-# Queue the narrowly scoped Olympikus Master recovery. The preview is already
-# responding on 5013 and must not be replaced merely to refresh this bridge.
-if gh issue create --repo edineilemes-source/beupfree --title "[UPPULSE-AGENT] MASTER_OLYMPIKUS" --body '{}' >/dev/null;then
- echo "MASTER_OLYMPIKUS_REQUESTED: migration and historic matcher only on verified audited clone; see new issue for result."
-else
- echo "MASTER_OLYMPIKUS_NOT_QUEUED: check GitHub Issues manually"
-fi
+# Partner onboarding is now event-driven through the restricted INTEGRAR_AWIN
+# action; installation never schedules or repeats a merchant write operation.
+echo "UPPULSE_PARTNER_ONBOARDING_READY: after AWIN admin upload and staging, request INTEGRAR_AWIN with merchant and feedId."
