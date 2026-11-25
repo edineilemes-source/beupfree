@@ -216,8 +216,15 @@ def execute(merchant,feed):
               JOIN commerce_merchants m ON m.id=f.merchant_id
               WHERE m.external_merchant_id='{merchant}'
                 AND f.external_feed_id='{feed}'""")
-            if evidence_for_feed!=before["raw"]:
-                raise RuntimeError("EXISTING_MERCHANT_NEW_FEED_REQUIRES_REFRESH_WORKFLOW")
+            same_feed_projection=number(f"""SELECT count(*) FROM catalog_search_products c
+              JOIN commerce_merchants m ON m.id=c.merchant_id
+              WHERE m.external_merchant_id='{merchant}'
+                AND c.source_snapshot LIKE 'awin-{merchant}-{feed}-%'""")
+            if (evidence_for_feed!=before["evidence"] or
+                before["classifications"]!=before["identities"] or
+                before["master"]!=before["identityRecords"] or
+                same_feed_projection!=before["projection"]):
+                raise RuntimeError("EXISTING_MERCHANT_REQUIRES_REFRESH_OR_REPAIR")
             print(json.dumps({"status":"ALREADY_ONBOARDED","merchant":merchant,
                "feed":feed,"counts":before},ensure_ascii=False),flush=True)
             return
