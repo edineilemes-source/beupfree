@@ -5,7 +5,7 @@ from urllib.parse import quote
 R=pathlib.Path("/workspaces/uppulse-homologacao/missao9/codigo")
 S=pathlib.Path(os.environ.get("UPPULSE_BRIDGE_STATE_DIR",str(pathlib.Path.home()/".local/state/uppulse-bridge")))
 S.mkdir(parents=True,exist_ok=True)
-VERSION="1.3.6"
+VERSION="1.3.7"
 REPO="edineilemes-source/beupfree"
 BRANCH="feat/uppulse-missao10-supercatalogo"
 PORTS={5011,5012,5013,5014,5015}
@@ -155,7 +155,9 @@ def serve(sha,port,profile="basic"):
   "UPPULSE_DISABLE_EXTERNAL_JOBS":"true","RESEARCH_PAID_ENABLED":"false",
   "RESEARCH_POSTGRES_HOMOLOGATED":"false","PUBLIC_DEMO_MODE":"false",
   "PORT":str(port),"NODE_ENV":"development",
-  "UPPULSE_CURATOR_TEST_NO_AUTH":"true"})
+  "UPPULSE_CURATOR_TEST_NO_AUTH":"true",
+  "UPPULSE_CURATOR_AUTO_PUBLISH":"true" if port==5013 else "false",
+  "UPPULSE_PREVIEW_SOURCE_SHA":sha})
  env.pop("TAVILY_API_KEY",None);env.pop("OPENAI_API_KEY",None)
  with (S/("preview-"+str(port)+".log")).open("a") as log:
   proc=subprocess.Popen(["npm","run","dev"],cwd=path,env=env,
