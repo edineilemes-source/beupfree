@@ -88,7 +88,7 @@ function startWorker(source:Source){
  });
  child.on("error",error=>{
   // Worker startup failure is visible through an expired QUEUED job.
-  console.error("AWIN_CURATOR_WORKER_SPAWN_FAILED",error.code||"SPAWN_ERROR");
+  console.error("AWIN_CURATOR_WORKER_SPAWN_FAILED",(error as NodeJS.ErrnoException).code||"SPAWN_ERROR");
  });
  child.unref();
 }
@@ -117,9 +117,15 @@ export async function startAutomaticPublication(
  }
  try{(options.dispatch||startWorker)(source);}
  catch{
-  // Only the spawn attempt failed; the importer is still in staging.
-  // Background worker never writes catalog data unless preflight succeeds.
-  throw Error("PUBLICATION_JOB_DISPATCH_FAILED");
+  // Staging remains valid; make failure visible rather than leaving a
+  // permanently queued job when the worker cannot be started.
+  const failed:PublicationJob={...initial,status:"BLOCKED",phase:"REQUIRES_REVIEW",
+   reason:"PUBLICATION_JOB_DISPATCH_FAILED",updatedAt:now()};
+  const {writeFile,rename}=await import("node:fs/promises");
+  const temporary=filename+"."+process.pid+".tmp";
+  await writeFile(temporary,JSON.stringify(failed),{mode:0o600,flag:"wx"});
+  await rename(temporary,filename);
+  return failed;
  }
  return initial;
 }
