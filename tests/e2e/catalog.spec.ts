@@ -40,6 +40,10 @@ test("filtra o catálogo por uma cor disponível e remove o filtro", async ({
   ).toBeGreaterThan(0);
   await expect(colorSection).toBeVisible();
 
+  await expect(colorSection).toHaveAttribute("aria-expanded", "false");
+  await colorSection.click();
+  await expect(colorSection).toHaveAttribute("aria-expanded", "true");
+
   const colorOptions = page.locator('[data-testid^="filter-cor-"]');
   expect(
     await colorOptions.count(),
