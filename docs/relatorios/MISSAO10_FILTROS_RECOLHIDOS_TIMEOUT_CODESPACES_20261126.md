@@ -28,7 +28,7 @@
 
 ## Preview 5013
 - GitHub Issue #121: tentativa controlada de parada de preview anterior, reportou ausência de processo gerenciado; outros processos preservados.
-- GitHub Issue #122: solicitada abertura do preview 5013 do SHA `b24bb62...`, perfil `basic`. Confirmar resultado do agente antes de declarar `HTTP 200` nesta versão.
+- GitHub Issue [#122](https://github.com/edineilemes-source/beupfree/issues/122): **SUCCESS Preview OK HTTP 200; profile basic passed** do snapshot `b24bb62ca5af3206236fc89f67fe9ce7281f2f70` na porta 5013. HTTP local verificado pelo agente, mas encaminhamento público ainda requer teste no navegador.
 - O GitHub port forwarding público continua sujeito a problema separado de acesso externo (404 antigo); HTTP local 200 não é prova suficiente de acesso pelo navegador.
 - Homologar visualmente: vitrine inicia com todas as seções fechadas, cor/tamanho abrem ao clique, chips de seleção/ordenação não mudam.
 
