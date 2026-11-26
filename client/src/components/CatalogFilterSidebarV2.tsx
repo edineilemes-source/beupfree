@@ -1,5 +1,5 @@
 import {demographicLabel, demographicSelection} from "@shared/demographicTaxonomy";
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -46,18 +46,21 @@ function isSameBrand(a: string, b: string) {
 function Section({
   title,
   children,
-  defaultOpen = true,
 }: {
   title: string;
   children: React.ReactNode;
-  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  // Vitrine: todas as seções iniciam recolhidas, inclusive Cor e Tamanho.
+  // O usuário controla cada seção individualmente; seleção/URL permanece intacta.
+  const [open, setOpen] = useState(false);
+  const contentId = useId();
   return (
     <div className="border-b border-border py-4">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-controls={contentId}
         className="flex w-full items-center justify-between text-left"
         data-testid={`section-${title.toLowerCase()}`}
       >
@@ -70,7 +73,7 @@ function Section({
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
         )}
       </button>
-      {open && <div className="mt-3">{children}</div>}
+      <div id={contentId} className="mt-3" hidden={!open}>{children}</div>
     </div>
   );
 }
