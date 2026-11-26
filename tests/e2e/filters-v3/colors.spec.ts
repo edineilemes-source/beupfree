@@ -57,3 +57,32 @@ test('selected zero remains removable; invalid selection survives API error',asy
  await expect.poll(()=>new URL(page.url()).searchParams.has('cor')).toBe(false);
  await expect(page.getByTestId('grid-catalog-products')).toBeVisible();
 });
+
+
+test("vitrine abre com todos os grupos de filtro fechados, permite abrir Cor e Tamanho sem perder seleções",async({page})=>{
+ await mockCatalog(page,false);
+ await page.goto('/catalogo?cor=azul&tamanho=40');
+ const groups=page.locator('button[data-testid^="section-"]');
+ await expect(groups.first()).toBeVisible();
+ const count=await groups.count();
+ expect(count).toBeGreaterThanOrEqual(5);
+ for(let i=0;i<count;i++)await expect(groups.nth(i)).toHaveAttribute('aria-expanded','false');
+ await expect(page.getByTestId('filter-cor-azul')).toBeHidden();
+ await expect(page.getByTestId('chip-cor-azul')).toBeVisible();
+ await expect(page.getByTestId('chip-tamanho-40')).toBeVisible();
+ const color=page.getByTestId('section-cor'),size=page.getByTestId('section-tamanho');
+ await color.click();
+ await expect(color).toHaveAttribute('aria-expanded','true');
+ await expect(page.getByTestId('filter-cor-azul')).toBeVisible();
+ await size.click();
+ await expect(size).toHaveAttribute('aria-expanded','true');
+ await expect(page.getByTestId('filter-tamanho-40')).toBeVisible();
+ await color.click();
+ await expect(color).toHaveAttribute('aria-expanded','false');
+ await expect(size).toHaveAttribute('aria-expanded','true');
+ await page.reload();
+ await expect(page.getByTestId('section-cor')).toHaveAttribute('aria-expanded','false');
+ await expect(page.getByTestId('section-tamanho')).toHaveAttribute('aria-expanded','false');
+ await expect(page.getByTestId('chip-cor-azul')).toBeVisible();
+ await expect(page.getByTestId('chip-tamanho-40')).toBeVisible();
+});
