@@ -190,6 +190,6 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 3. A Ficha Inteligente permanece desativada até validação da funcionalidade. Conservar preço regular 0% como produto elegível, sem etiqueta de promoção.
 
 ## Vitrine de homologação 5013: filtros iniciais fechados
-1. Conferir conclusão e HTTP local na Issue #122 para preview 5013 do SHA `b24bb62ca5af3206236fc89f67fe9ce7281f2f70`.
+1. **Concluído:** Issue #122 confirmou HTTP 200 e profile basic na porta 5013 para o SHA `b24bb62ca5af3206236fc89f67fe9ce7281f2f70`. Abertura pública ainda requer inspeção no navegador.
 2. Abrir pela aba PORTAS do Codespaces e verificar que cada grupo de filtro inicia fechado, incluindo Cor/Tamanho; clicar para expandir individualmente; validar seleções e preços/ordenação inalterados. Browser externo ainda pode exigir verificação do forwarding.
 3. Se desejar aumentar timeout, titular define até 240 min em https://github.com/settings/codespaces; sugeridos 120 min e atenção a custos. **Não recriar o Codespace antigo nem automatizar keepalive**; não há confirmação de mudança de timeout no Codespace existente.
