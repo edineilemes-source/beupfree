@@ -32,7 +32,7 @@ export default function MasterOffers({productId}:{productId:string}){
      {!data.offers?.length&&<p>Sem ofertas promocionais disponíveis.</p>}
      <div className="space-y-3">{data.offers?.map(offer=><article key={offer.offer_id} className="rounded-md border p-3" data-testid="master-offer">
       <h4 className="font-semibold">{offer.merchant_name}</h4><p>{offer.product_name}</p>
-      <p><strong>{money(offer.current_price)}</strong> <s>{money(offer.previous_price)}</s> · {Number(offer.discount_percent)}% de desconto</p>
+      <p><strong>{money(offer.current_price)}</strong>{Number(offer.discount_percent)>0?<> <s>{money(offer.previous_price)}</s> · {Number(offer.discount_percent)}% de desconto</>:" · Preço regular (sem desconto comprovado)"}</p>
       <p>Cores: {offer.normalized_colors.join(', ')||'Não informadas'} · Tamanhos: {offer.normalized_sizes.join(', ')||'Não informados'}</p>
       <a className="mt-2 inline-block underline" href={offer.affiliate_url} target="_blank" rel="noopener noreferrer">Ver oferta em {offer.merchant_name}</a>
      </article>)}</div>
