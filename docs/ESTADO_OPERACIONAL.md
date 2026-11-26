@@ -208,4 +208,4 @@ Foi publicado um agente restrito e um instalador para o Codespace de homologaç�
 ## Vitrine filtros recolhidos e timeout do Codespaces — 26/11/2026
 - **Implementado e testado**: vitrine Catálogo V2 inicia com todos os grupos de filtros recolhidos (Cor, Tamanho, Marca, Preço, Desconto, etc.), preserva seleções/URL e permite abrir os grupos individualmente. Testes Node e Playwright desktop/mobile concluídos em GitHub Actions #45907013539 SUCCESS, commit de código `b24bb62ca5af3206236fc89f67fe9ce7281f2f70`.
 - Codespaces: limite padrão configurável de 5 a 240 min pelo titular em Settings → Codespaces. **Nenhum ajuste automático foi aplicado ao Codespace existente**; mudanças padrão só são garantidas para novos Codespaces. Evitar keepalive e recriação por custo/preservação PostgreSQL. Relatório: `docs/relatorios/MISSAO10_FILTROS_RECOLHIDOS_TIMEOUT_CODESPACES_20261126.md`.
-- Preview 5013: Issue #122 solicitada para o commit atualizado; verificar resultado antes de declarar acesso público homologado.
+- Preview 5013: Issue #122 **SUCCESS** — HTTP 200 e profile basic passaram no snapshot de código `b24bb62ca5af`; encaminhamento externo ainda não verificado.
