@@ -28,6 +28,7 @@ test("confirmed Master shows regular 0% and promotional offers from two actual m
     promotion_status:"PROMOTION_CONFIRMED",affiliate_url:"https://shop.example/b"}
   ]};
   if(query.startsWith("SELECT v.gtin"))return {rows:[]};
+  if(query.includes("SELECT c.product_id,c.product_name,c.current_price"))return {rows:[]};
   throw Error("QUERY_UNEXPECTED:"+query.slice(0,100));
  }};
  const result=await verifyCrossStoreMaster(db,8);
@@ -49,6 +50,7 @@ test("same GTIN across stores is shown for manual review, never confirmed automa
   if(query.includes("count(*)::int total FROM"))return {rows:[{total:0}]};
   if(query.includes("min(e.product_id) product_id"))return {rows:[]};
   if(query.startsWith("SELECT v.gtin"))return {rows:[{gtin:"7891234567890"}]};
+  if(query.includes("SELECT c.product_id,c.product_name,c.current_price"))return {rows:[]};
   if(query.includes("SELECT DISTINCT ON (c.merchant_id)"))return {rows:[
    {product_id:"a",product_name:"Tênis Teste Azul",merchant_name:"Loja A",
     current_price:200,previous_price:200,discount_percent:0,
