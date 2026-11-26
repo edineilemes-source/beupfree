@@ -19,6 +19,7 @@ import {listRegisteredStores} from "./storeRegistry";
 import {decideAutomaticCuration} from "./automatedDecision";
 import {planCurationWorkflow} from "./curationOrchestrator";
 import {previewMerchantMasterShadow} from "./masterShadowPreview";
+import {verifyCrossStoreMaster} from "./masterAcrossStores";
 import {publicationEnabled,getPublicationJob,startAutomaticPublication} from "./autoPublication";
 
 const MAX_GZIP=20*1024*1024,MAX_UNCOMPRESSED=160*1024*1024,MAX_ROWS=100000;
@@ -162,6 +163,27 @@ export function createAwinFeedUploadRouter(resolveUser?:AdminResolver, auditPool
    if(report.sha256!==hash||report.merchant!==merchant||report.feedId!==feedId||!Array.isArray(report.issues))return res.status(409).json({code:"REPORT_IDENTITY_MISMATCH"});
    return res.json({page,pageSize,total:report.issues.length,issues:report.issues.slice((page-1)*pageSize,page*pageSize)});
   }catch{return res.status(404).json({code:"AUDIT_REPORT_NOT_FOUND"})}
+ });
+ router.get("/master-across-stores",authorize,async(req,res)=>{
+  const limit=Number(req.query.limit??8);
+  if(!Number.isSafeInteger(limit)||limit<1||limit>20)
+   return res.status(400).json({code:"CROSS_STORE_LIMIT_INVALID"});
+  try{
+   const pool=auditPool??(await import("../db")).pool;
+   const db=await pool.connect();
+   try{
+    await db.query("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY");
+    const report=await verifyCrossStoreMaster(db,limit);
+    await db.query("COMMIT");
+    return res.json(report);
+   }catch(error){
+    await db.query("ROLLBACK").catch(()=>{});
+    throw error;
+   }finally{db.release();}
+  }catch(_error){
+   return res.status(503).json({code:"MASTER_CROSS_STORE_AUDIT_UNAVAILABLE",
+    message:"Não foi possível verificar as correspondências no catálogo homologado."});
+  }
  });
  router.get("/stores",authorize,async(_req,res)=>{
   try{
