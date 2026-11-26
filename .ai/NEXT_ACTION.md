@@ -183,3 +183,8 @@ A migração aditiva 10.6 foi aplicada com autorização ao PostgreSQL de homolo
 2. Na Curadoria (navegador), reenviar feed original Clovis AWIN 107702/98680; a interface deve executar upload, processar 2.846 aprovados, monitorar job e terminar com `COMPLETED`/`ALREADY_ONBOARDED`, sem duplicar produtos. Conferir filtro Loja e catálogo na própria porta 5013.
 3. Homologar um **novo parceiro real** com `AWIN_PARTNER_CATALOG_READY` para provar caminho completo de primeiro onboarding e isolamento dos demais lojistas. Não usar Issue `INTEGRAR_AWIN` como substituto desse teste.
 4. Se bloqueado, ler o motivo seguro do job. Dados de staging e backup devem ficar intactos; sem alterar produção/Hostinger.
+
+## Homologação de Master multi-loja — próxima ação
+1. Publicar versão testada na 5013 por snapshot do GitHub, sem tocar em PostgreSQL ou checkout local; acessar Curadoria → Feeds de parceiros, clicar “Verificar tênis em duas ou mais lojas”.
+2. Registrar contagem de Master comprovado entre lojas, candidatos pelo matcher histórico e por GTIN, nomes e preços reais. Se 0 grupos confirmados, não apresentar candidato como oferta consolidada; planejar reconciliação revisada com provas por modelo/variante e backup antes de qualquer escrita.
+3. A Ficha Inteligente permanece desativada até validação da funcionalidade. Conservar preço regular 0% como produto elegível, sem etiqueta de promoção.
