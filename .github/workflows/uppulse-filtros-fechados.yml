@@ -1,0 +1,30 @@
+name: UpPulse Vitrine Filters Collapsed
+on:
+  push:
+    branches: [feat/uppulse-filtros-inicialmente-fechados-20261126]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  filters-closed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Verify TypeScript
+        run: npm run check
+      - name: Verify filter unit behavior
+        run: node --import tsx --test client/src/components/CatalogFilterSidebarV2.test.ts
+      - name: Verify all unit regressions
+        run: npm run test:unit
+      - name: Build real UI
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Responsive color and size interactions
+        run: npx playwright test --config=playwright.filters-v3.config.ts --grep="vitrine abre com todos os grupos de filtro fechados"
