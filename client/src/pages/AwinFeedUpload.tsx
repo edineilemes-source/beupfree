@@ -27,6 +27,8 @@ type CrossStoreReport={
  mode:"READ_ONLY";masterGroupsWithMultipleMerchants:number;inspectedMasterGroups:number;
  inspectionComplete:boolean;confirmed:Array<{masterId:string;label:string;brand:string|null;offers:CrossStoreOffer[]}>;
  gtinCandidates:Array<{gtin:string;offers:CrossStoreOffer[];reason:"SAME_GTIN_REVIEW_REQUIRED"}>;
+ matcherCandidates:Array<{label:string;brand:string;offers:CrossStoreOffer[];reason:"MATCHER_AUTO_MATCH_NOT_PERSISTED"}>;
+ scannedProducts:number;catalogScanComplete:boolean;
  gtinCandidatesComplete:boolean;note:string;publication:false;changes:0
 };
 const brl=(n:number)=>n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
@@ -247,6 +249,23 @@ export default function AwinFeedUpload(){
         <a href={offer.url} target="_blank" rel="noopener noreferrer" className="text-sm underline">Consultar oferta na loja</a>
        </div>)}</div>
       </div>)}</div>}
+     <div className="border-t pt-3 space-y-2" data-testid="cross-store-matcher-review">
+      <h3 className="font-semibold">Mesmo modelo sugerido pelo matcher histórico — ainda não associado ao Master</h3>
+      <p className="text-xs text-muted-foreground">Analisados {format(crossStore.scannedProducts)} produtos da vitrine atual. O matcher original encontrou semelhança de modelo, mas a Curadoria ainda precisa confirmar e persistir o grupo.</p>
+      {!crossStore.catalogScanComplete&&<p className="text-xs text-muted-foreground">Amostra limitada a 25 mil produtos; outros pares podem não ter sido examinados.</p>}
+      {crossStore.matcherCandidates.length===0?<p className="text-sm">Nenhuma dupla de lojas foi sugerida pelo matcher nesta consulta.</p>:
+       crossStore.matcherCandidates.map((group,index)=><div key={index} className="rounded-md border p-3 space-y-2" data-testid="matcher-cross-store-candidate">
+        <p className="font-semibold">{group.label}</p>
+        <p className="text-xs text-muted-foreground">Marca: {group.brand} · potencial mesmo modelo em {group.offers.length} lojas · vinculação Master ainda não comprovada</p>
+        <div className="grid gap-2 sm:grid-cols-2">{group.offers.map(offer=><div key={offer.merchant} className="border rounded-md p-3">
+         <p className="font-semibold">{offer.merchant}</p><p className="text-xs">{offer.name}</p>
+         <p className="font-semibold">{brl(offer.price)}</p>
+         {offer.priceStatus==="REGULAR_PRICE"?<p className="text-xs text-muted-foreground">Preço regular (0% de desconto)</p>:
+          <p className="text-xs">{offer.discountPercent}% de desconto comprovado</p>}
+         <a href={offer.url} target="_blank" rel="noopener noreferrer" className="text-xs underline">Consultar na loja</a>
+        </div>)}</div>
+       </div>)}
+     </div>
      <div className="border-t pt-3 space-y-2">
       <h3 className="font-semibold">Possíveis equivalências por GTIN — aguardando revisão</h3>
       <p className="text-xs text-muted-foreground">Um mesmo GTIN em duas lojas é um indício relevante, mas não autoriza fusão de Produtos Mestre sem validar modelo e variantes.</p>
