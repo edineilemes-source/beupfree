@@ -74,3 +74,28 @@ test("invalid limits are rejected before database access",async()=>{
  await assert.rejects(verifyCrossStoreMaster(db,0),/CROSS_STORE_LIMIT_INVALID/);
  await assert.rejects(verifyCrossStoreMaster(db,21),/CROSS_STORE_LIMIT_INVALID/);
 });
+
+
+test("historical matcher suggests a same-model pair across two stores without merging their Master records",async()=>{
+ const db={query:async(query:string)=>{
+  if(query.includes("count(*)::int total FROM"))return {rows:[{total:0}]};
+  if(query.includes("min(e.product_id) product_id"))return {rows:[]};
+  if(query.startsWith("SELECT v.gtin"))return {rows:[]};
+  if(query.includes("SELECT c.product_id,c.product_name,c.current_price"))return {rows:[
+   {product_id:"a",merchant_id:"ma",merchant_name:"Loja A",product_name:"Tênis Nike Air Max Excee",
+    brand_name:"Nike",current_price:199,previous_price:199,discount_percent:0,
+    promotion_status:"REGULAR_PRICE",affiliate_url:"https://example.test/a"},
+   {product_id:"b",merchant_id:"mb",merchant_name:"Loja B",product_name:"Tênis Nike Air Max Excee",
+    brand_name:"Nike",current_price:189,previous_price:189,discount_percent:0,
+    promotion_status:"REGULAR_PRICE",affiliate_url:"https://example.test/b"}
+  ]};
+  throw Error("QUERY_UNEXPECTED:"+query);
+ }};
+ const report=await verifyCrossStoreMaster(db);
+ assert.equal(report.confirmed.length,0);
+ assert.equal(report.matcherCandidates.length,1);
+ assert.equal(report.matcherCandidates[0].reason,"MATCHER_AUTO_MATCH_NOT_PERSISTED");
+ assert.equal(report.matcherCandidates[0].offers.length,2);
+ assert.equal(report.matcherCandidates[0].offers[0].price,189);
+ assert.equal(report.changes,0);
+});
