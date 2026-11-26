@@ -204,3 +204,8 @@ Foi publicado um agente restrito e um instalador para o Codespace de homologaç�
 
 ## Teste do Produto Mestre entre quatro lojas — 26/11/2026
 - Implementado diagnóstico estritamente somente leitura em Curadoria → Feeds de parceiros: botão “Verificar tênis em duas ou mais lojas”, que distingue Master confirmado, GTIN em revisão e pareamento sugerido pelo matcher histórico não persistido. Preços regulares 0% estão incluídos; Ficha Inteligente continua desativada na V1. A contagem real de produtos cruzados dependerá da consulta no PostgreSQL da homologação, sem inferir duplicatas a partir de volume de catálogo. Relatório: `docs/relatorios/MISSAO10_MASTER_COMPARACAO_QUATRO_LOJAS_20261126.md`.
+
+## Vitrine filtros recolhidos e timeout do Codespaces — 26/11/2026
+- **Implementado e testado**: vitrine Catálogo V2 inicia com todos os grupos de filtros recolhidos (Cor, Tamanho, Marca, Preço, Desconto, etc.), preserva seleções/URL e permite abrir os grupos individualmente. Testes Node e Playwright desktop/mobile concluídos em GitHub Actions #45907013539 SUCCESS, commit de código `b24bb62ca5af3206236fc89f67fe9ce7281f2f70`.
+- Codespaces: limite padrão configurável de 5 a 240 min pelo titular em Settings → Codespaces. **Nenhum ajuste automático foi aplicado ao Codespace existente**; mudanças padrão só são garantidas para novos Codespaces. Evitar keepalive e recriação por custo/preservação PostgreSQL. Relatório: `docs/relatorios/MISSAO10_FILTROS_RECOLHIDOS_TIMEOUT_CODESPACES_20261126.md`.
+- Preview 5013: Issue #122 solicitada para o commit atualizado; verificar resultado antes de declarar acesso público homologado.
