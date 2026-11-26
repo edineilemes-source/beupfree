@@ -201,3 +201,6 @@ Foi publicado um agente restrito e um instalador para o Codespace de homologaç�
 - O processo funciona no perfil seguro da ponte v1.3.6 já usado na 5013 (ou v1.3.7 atualizada), exclusivamente no clone auditado `127.0.0.1:5436/uppulse_catalog`. Sem alteração em Hostinger, main, base original ou outros fornecedores.
 - Clovis AWIN 107702/feed 98680: 2.846 produtos disponibilizados anteriormente via Issue #106, total 20.604 na busca. **Essa contagem é um baseline**, não demonstra o novo fluxo visual. O teste real deve partir de upload na Curadoria 5013, conferir status final e vitrine.
 - Fonte detalhada: `docs/relatorios/MISSAO10_CURADORIA_AUTOPUBLICACAO_5013_20261125.md`. O procedimento antigo de abrir Issues é apenas recuperação excepcional.
+
+## Teste do Produto Mestre entre quatro lojas — 26/11/2026
+- Implementado diagnóstico estritamente somente leitura em Curadoria → Feeds de parceiros: botão “Verificar tênis em duas ou mais lojas”, que distingue Master confirmado, GTIN em revisão e pareamento sugerido pelo matcher histórico não persistido. Preços regulares 0% estão incluídos; Ficha Inteligente continua desativada na V1. A contagem real de produtos cruzados dependerá da consulta no PostgreSQL da homologação, sem inferir duplicatas a partir de volume de catálogo. Relatório: `docs/relatorios/MISSAO10_MASTER_COMPARACAO_QUATRO_LOJAS_20261126.md`.
