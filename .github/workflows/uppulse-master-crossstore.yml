@@ -1,0 +1,24 @@
+name: UpPulse Multi-Store Master Diagnostic
+on:
+  push:
+    branches: [feat/uppulse-master-comparacao-4-lojas-20261126]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  master-crossstore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: TypeScript
+        run: npm run check
+      - name: Unit tests including Cross Store Master
+        run: npm run test:unit
+      - name: Build
+        run: npm run build
