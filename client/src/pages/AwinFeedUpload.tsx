@@ -21,6 +21,15 @@ type CurationWorkflow={workflowVersion:string;nextAction:string;blockers:string[
 type MerchantAudit={workflow?:CurationWorkflow;pipeline:{stages:Record<string,PipelineStep>;versions:{identity:{parser:string;matcher:string}};publicationApproved:boolean};merchant:{name:string;id:string};counts:{offers:number;distinctProducts:number;activeOffers:number;identities:number|null;stagedIdentities:number|null;promotionEvidence:number|null;classifiedProducts:number|null;eligibleClassifications:number|null;normalizedVariants:number|null;masterMemberships:number|null;masterIdentities:number|null;searchProducts:number|null;availableSearchProducts:number|null};steps:{received:boolean;masterCovered:boolean;catalogClassified:boolean;priceAudited:boolean;projected:boolean;storeVisibleInFilter:boolean};note:string;storeFacetRule:string};
 type PublicationJob={status:"QUEUED"|"RUNNING"|"COMPLETED"|"BLOCKED"|"NOT_ENABLED";phase:string;reason?:string;published?:number;result?:{status:string;availableSearchProducts?:number;catalogTotal?:number}};
 type ProcessReport={status:string;imported:number;unchanged:number;accepted:number;review:number;discarded:number;invalid:number;published:number;publication?:PublicationJob;message:string};
+type CrossStoreOffer={productId:string;name:string;merchant:string;price:number;
+ previousPrice:number|null;discountPercent:number;priceStatus:"REGULAR_PRICE"|"PROMOTION_CONFIRMED";url:string};
+type CrossStoreReport={
+ mode:"READ_ONLY";masterGroupsWithMultipleMerchants:number;inspectedMasterGroups:number;
+ inspectionComplete:boolean;confirmed:Array<{masterId:string;label:string;brand:string|null;offers:CrossStoreOffer[]}>;
+ gtinCandidates:Array<{gtin:string;offers:CrossStoreOffer[];reason:"SAME_GTIN_REVIEW_REQUIRED"}>;
+ gtinCandidatesComplete:boolean;note:string;publication:false;changes:0
+};
+const brl=(n:number)=>n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const format=(n:number)=>n.toLocaleString("pt-BR");
 export default function AwinFeedUpload(){
  const [file,setFile]=useState<File|null>(null);
@@ -37,12 +46,28 @@ export default function AwinFeedUpload(){
  const [processed,setProcessed]=useState<ProcessReport|null>(null);
  const [publication,setPublication]=useState<PublicationJob|null>(null);
  const [merchantAudit,setMerchantAudit]=useState<MerchantAudit|null>(null);
+ const [crossStore,setCrossStore]=useState<CrossStoreReport|null>(null);
+ const [crossStoreLoading,setCrossStoreLoading]=useState(false);
+ const [crossStoreError,setCrossStoreError]=useState("");
+
  const [masterPreview,setMasterPreview]=useState<MasterPreview|null>(null);
  const [masterShadow,setMasterShadow]=useState<MasterShadowReport|null>(null);
  const [shadowLoading,setShadowLoading]=useState(false);
  const [previewLoading,setPreviewLoading]=useState(false);
  const [auditLoading,setAuditLoading]=useState(false);
  const [auditMerchant,setAuditMerchant]=useState("17698");
+ async function compareStores(){
+  setCrossStoreLoading(true);setCrossStoreError("");setCrossStore(null);
+  try{
+   const response=await fetch("/api/admin/awin-feeds/master-across-stores?limit=8",{
+    credentials:"same-origin",cache:"no-store"});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.message||data.code||"Comparação indisponível");
+   setCrossStore(data as CrossStoreReport);
+  }catch(error){
+   setCrossStoreError(error instanceof Error?error.message:"Falha na verificação das lojas");
+  }finally{setCrossStoreLoading(false)}
+ }
  async function inspectMasterComparisons(id:string){
   if(!/^\d{2,12}$/.test(id))return;
   setShadowLoading(true);setMasterShadow(null);
@@ -199,6 +224,46 @@ export default function AwinFeedUpload(){
      </div>
      <Button variant="outline" size="sm" onClick={()=>{setAuditMerchant(store.externalMerchantId);void refreshMerchantAudit(store.externalMerchantId)}}>Auditar esta loja</Button>
     </div>)}
+   </Card>
+   <Card className="p-5 space-y-3" data-testid="cross-store-master-audit">
+    <h2 className="text-lg font-semibold">Comparação entre lojas — Produto Mestre</h2>
+    <p className="text-sm text-muted-foreground">Confere se o mesmo tênis já está associado a duas ou mais lojas e mostra seus preços reais. Também procura GTINs repetidos para revisão, sem juntar produtos automaticamente.</p>
+    <Button type="button" variant="outline" disabled={crossStoreLoading} onClick={()=>void compareStores()}>
+     {crossStoreLoading?"Verificando catálogo…":"Verificar tênis em duas ou mais lojas"}
+    </Button>
+    {crossStoreError&&<p role="alert" className="text-sm text-destructive">{crossStoreError}</p>}
+    {crossStore&&<div className="space-y-4" data-testid="cross-store-master-result">
+     <p className="text-sm font-semibold">Grupos Master com lojas diferentes: {format(crossStore.masterGroupsWithMultipleMerchants)} · Conferidos nesta consulta: {format(crossStore.inspectedMasterGroups)}</p>
+     {!crossStore.inspectionComplete&&<p className="text-xs text-muted-foreground">Verificação parcial: há outros grupos ainda não examinados. Os resultados abaixo não representam todo o catálogo.</p>}
+     {crossStore.confirmed.length===0?<p className="text-sm">Nenhuma comparação entre lojas foi confirmada nesta verificação do Master.</p>:
+      <div className="space-y-3">{crossStore.confirmed.map(group=><div key={group.masterId} className="rounded-md border p-3 space-y-2" data-testid="confirmed-cross-store">
+       <p className="font-semibold">{group.label}</p>
+       <p className="text-xs text-muted-foreground">Master confirmado · {group.offers.length} lojas · equivalência do modelo, não necessariamente do tamanho e cor</p>
+       <div className="grid gap-2 sm:grid-cols-2">{group.offers.map(offer=><div key={offer.merchant} className="rounded-md border p-3 space-y-1">
+        <p className="font-semibold">{offer.merchant}</p><p className="text-xs">{offer.name}</p>
+        <p className="font-semibold">{brl(offer.price)}</p>
+        {offer.priceStatus==="PROMOTION_CONFIRMED"&&offer.previousPrice!==null&&<p className="text-xs"><s>{brl(offer.previousPrice)}</s> · {offer.discountPercent}% de desconto</p>}
+        {offer.priceStatus==="REGULAR_PRICE"&&<p className="text-xs text-muted-foreground">Preço regular · sem desconto comprovado</p>}
+        <a href={offer.url} target="_blank" rel="noopener noreferrer" className="text-sm underline">Consultar oferta na loja</a>
+       </div>)}</div>
+      </div>)}</div>}
+     <div className="border-t pt-3 space-y-2">
+      <h3 className="font-semibold">Possíveis equivalências por GTIN — aguardando revisão</h3>
+      <p className="text-xs text-muted-foreground">Um mesmo GTIN em duas lojas é um indício relevante, mas não autoriza fusão de Produtos Mestre sem validar modelo e variantes.</p>
+      {crossStore.gtinCandidates.length===0?<p className="text-sm">Nenhum GTIN duplicado entre lojas encontrado na amostra pesquisada.</p>:
+       crossStore.gtinCandidates.map(group=><div key={group.gtin} className="border rounded-md p-3 space-y-2" data-testid="cross-store-gtin-candidate">
+        <p className="text-sm font-semibold">GTIN {group.gtin} · candidato, não confirmado</p>
+        <div className="grid sm:grid-cols-2 gap-2">{group.offers.map(offer=><div className="rounded border p-2" key={offer.merchant}>
+         <p className="text-sm font-medium">{offer.merchant}: {brl(offer.price)}</p>
+         <p className="text-xs">{offer.name}</p>
+         {offer.priceStatus==="REGULAR_PRICE"&&<p className="text-xs">Preço regular (0% de desconto)</p>}
+         <a href={offer.url} target="_blank" rel="noopener noreferrer" className="text-xs underline">Ver oferta</a>
+        </div>)}</div>
+       </div>)}
+      {!crossStore.gtinCandidatesComplete&&<p className="text-xs text-muted-foreground">Resultados de GTIN limitados; outros candidatos podem existir.</p>}
+     </div>
+     <p className="text-xs text-muted-foreground">Consulta somente leitura, sem criar ou alterar grupos Master, ofertas ou produtos.</p>
+    </div>}
    </Card>
    <Card className="p-5 space-y-3" data-testid="merchant-audit">
     <h2 className="text-lg font-semibold">Auditoria da loja — Produto Mestre e publicação</h2>
