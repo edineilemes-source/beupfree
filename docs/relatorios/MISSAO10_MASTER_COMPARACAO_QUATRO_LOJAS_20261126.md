@@ -37,3 +37,9 @@ O usuário quer localizar pelo menos um mesmo tênis em duas ou mais lojas (Dafi
 5. Os produtos e preços da Clovis e Olympikus permanecem elegíveis com desconto 0%; manter isolamento de lojas e preservação dos dados.
 
 **Status inicial:** código implementado. Testes GitHub e homologação real a confirmar.
+
+## Registro final de publicação e validação
+- Branch canônica \`feat/uppulse-missao10-supercatalogo\` atualizada por fast-forward não destrutivo ao snapshot \`70e39395ca37f4c4de3111816385ae5a03e7be86\`, sem alterar o checkout do Codespaces ou dados do PostgreSQL.
+- GitHub Actions \`45904737891\` no SHA acima: **SUCCESS** para TypeScript, suíte unitária e build. Teste de navegador com banco real não foi executado nesta etapa.
+- GitHub Issues \`#119\`: parada controlada do preview antigo somente da porta 5013. \`#120\`: **SUCCESS Preview OK HTTP 200; profile basic passed** no novo snapshot. Esse resultado valida o servidor HTTP local, não comprova o funcionamento do endereço público nem os pares reais do banco.
+- A contagem e os nomes de tênis coincidentes continuam **PENDENTES** até a consulta administrativa \`Verificar tênis em duas ou mais lojas\` ser executada sobre o banco homologado. Não declarar que há um exemplo real sem resultado.
