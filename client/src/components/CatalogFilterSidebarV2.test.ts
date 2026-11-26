@@ -60,3 +60,23 @@ test("seleções zeradas da API continuam como controles e chips removíveis", (
   assert.ok(html.includes('data-testid="chip-cor-preto"'));
   assert.ok(html.includes('data-testid="button-limpar-todos"'));
 });
+
+
+test("vitrine inicia com todos os grupos recolhidos, incluindo Cor, Tamanho e Preço",()=>{
+ const html=render("cor=preto&tamanho=40&marca=Nike&priceMin=200");
+ const buttons=html.match(/<button\b[^>]*data-testid="section-[^"]+"[^>]*>/g)??[];
+ assert.ok(buttons.length>=5,"deve haver seções de filtros para recolher");
+ assert.ok(buttons.every(button=>button.includes('aria-expanded="false"')),
+   "nenhuma seção pode iniciar expandida");
+ for(const section of ["marca","cor","tamanho","preço","desconto","frete grátis"]){
+  assert.ok(buttons.some(button=>button.includes('data-testid="section-'+section+'"')),
+   "seção não encontrada: "+section);
+ }
+ const panels=html.match(/<div\b[^>]*\bhidden=""/g)??[];
+ assert.equal(panels.length,buttons.length,"cada grupo precisa ter conteúdo oculto no carregamento");
+ assert.ok(input(html,"input-price-min").includes('value="200"'),
+   "recolher o preço não pode apagar filtros vindos da URL");
+ assert.ok(html.includes('data-testid="chip-cor-preto"'),
+   "chips selecionados devem continuar visíveis mesmo com a lista fechada");
+ assert.ok(html.includes('data-testid="chip-tamanho-40"'));
+});
